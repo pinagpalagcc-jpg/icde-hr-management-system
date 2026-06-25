@@ -32,21 +32,18 @@ export default function DashboardPage() {
           IC<span className="text-[#d2b241]">D</span>E
         </div>
 
-        <nav className="space-y-2">
-          <MenuItem icon={<Home size={18} />} label="Dashboard" active />
-          <MenuItem icon={<UserRound size={18} />} label="Doctors" />
-          <MenuItem icon={<UserRound size={18} />} label="Nurses" />
-          <MenuItem icon={<BriefcaseBusiness size={18} />} label="Front Office" />
-          <MenuItem icon={<BriefcaseBusiness size={18} />} label="Back Office" />
-          <MenuItem icon={<Users size={18} />} label="Admin" />
-          <MenuItem icon={<Users size={18} />} label="House Keeping" />
-          <MenuItem icon={<CalendarDays size={18} />} label="Leave Requests" />
-          <MenuItem icon={<FileWarning size={18} />} label="Document Expiry" />
-          <MenuItem icon={<ClipboardList size={18} />} label="Reports" />
-        </nav>
+        <div className="flex flex-col h-[calc(100vh-120px)] justify-between">
+          <nav className="space-y-3">
+            <MenuItem icon={<Home size={18} />} label="Dashboard" active />
+            <MenuItem icon={<Users size={18} />} label="Employees" />
+            <MenuItem icon={<CalendarDays size={18} />} label="Leave Requests" />
+            <MenuItem icon={<FileWarning size={18} />} label="Document Expiry" />
+            <MenuItem icon={<ClipboardList size={18} />} label="Reports" />
+          </nav>
 
-        <div className="absolute bottom-8">
-          <MenuItem icon={<LogOut size={18} />} label="Logout" />
+          <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
+            Sign Out
+          </button>
         </div>
       </aside>
 
