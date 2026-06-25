@@ -35,7 +35,7 @@ export default function DashboardPage() {
         <div className="flex flex-col h-[calc(100vh-120px)] justify-between">
           <nav className="space-y-3">
             <MenuItem icon={<Home size={18} />} label="Dashboard" active />
-            <MenuItem icon={<Users size={18} />} label="Employees" />
+            <a href="/employees"><MenuItem icon={<Users size={18} />} label="Employees" /></a>
             <MenuItem icon={<CalendarDays size={18} />} label="Leave Requests" />
             <MenuItem icon={<FileWarning size={18} />} label="Document Expiry" />
             <MenuItem icon={<ClipboardList size={18} />} label="Reports" />
