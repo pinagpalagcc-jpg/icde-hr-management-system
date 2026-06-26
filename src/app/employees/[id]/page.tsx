@@ -207,8 +207,26 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
             <InfoWide title="Address Information" rows={[
               ["UAE Residence Address", employee.uae_address || "-"],
-              ["Home Country Address", employee.home_country_address || "-"],
             ]} />
+
+
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+              <h2 className="text-xl font-bold text-[#3f4447] mb-5">Leaves Summary</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
+                  <p className="text-gray-500 text-sm">Total Leaves</p>
+                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">30 Days</h3>
+                </div>
+                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
+                  <p className="text-gray-500 text-sm">Leaves Used</p>
+                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">6 Days</h3>
+                </div>
+                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
+                  <p className="text-gray-500 text-sm">Balance Leaves</p>
+                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">24 Days</h3>
+                </div>
+              </div>
+            </section>
 
             <DocumentSection />
 
