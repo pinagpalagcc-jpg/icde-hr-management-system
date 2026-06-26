@@ -42,7 +42,7 @@ export default function EmployeesPage() {
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-xl font-bold text-[#3f4447]">Employee List</h2>
-            <button className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Add Employee</button>
+            <a href="/employees/add" className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Add Employee</a>
           </div>
 
           <table className="w-full text-sm">
