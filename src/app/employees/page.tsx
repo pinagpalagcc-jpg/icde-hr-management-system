@@ -7,7 +7,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
-      <aside className="w-72 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
+      <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
         <div>
           <div className="text-3xl font-bold tracking-widest mb-10">
             IC<span className="text-[#d2b241]">D</span>E
@@ -16,9 +16,9 @@ export default function EmployeesPage() {
           <nav className="space-y-3">
             <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
             <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
-            <a className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
-            <a className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
-            <a className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
+            <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
+            <a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
+            <a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
           </nav>
         </div>
 
@@ -27,7 +27,7 @@ export default function EmployeesPage() {
         </button>
       </aside>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 overflow-x-hidden">
         <h1 className="text-3xl font-bold text-[#3f4447]">Employees</h1>
         <p className="text-gray-500 mb-8">Manage employee records by department</p>
 

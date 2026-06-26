@@ -27,27 +27,27 @@ const expiry = [
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
-      <aside className="w-72 bg-[#3f4447] text-white p-6 hidden md:block">
-        <div className="text-3xl font-bold tracking-widest mb-10">
-          IC<span className="text-[#d2b241]">D</span>E
-        </div>
+      <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
+        <div>
+          <div className="text-3xl font-bold tracking-widest mb-10">
+            IC<span className="text-[#d2b241]">D</span>E
+          </div>
 
-        <div className="flex flex-col h-[calc(100vh-120px)] justify-between">
           <nav className="space-y-3">
-            <MenuItem icon={<Home size={18} />} label="Dashboard" active />
-            <a href="/employees"><MenuItem icon={<Users size={18} />} label="Employees" /></a>
-            <MenuItem icon={<CalendarDays size={18} />} label="Leave Requests" />
-            <MenuItem icon={<FileWarning size={18} />} label="Document Expiry" />
-            <MenuItem icon={<ClipboardList size={18} />} label="Reports" />
+            <a href="/dashboard" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Dashboard</a>
+            <a href="/employees" className="block px-4 py-3 rounded-xl hover:bg-white/10">Employees</a>
+            <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
+            <a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
+            <a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
           </nav>
-
-          <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
-            Sign Out
-          </button>
         </div>
+
+        <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
+          Sign Out
+        </button>
       </aside>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 overflow-x-hidden">
         <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-3xl font-bold text-[#3f4447]">Admin Dashboard</h1>
