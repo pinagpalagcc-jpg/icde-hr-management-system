@@ -1,51 +1,33 @@
-import {
-  Users,
-  UserRound,
-  BriefcaseBusiness,
-  ClipboardList,
-  CalendarDays,
-  FileWarning,
-  Home,
-  LogOut
-} from "lucide-react";
+import { departments, getEmployees, daysRemaining, fullName } from "@/lib/hr";
 
-const departments = [
-  { name: "Doctors", count: 18 },
-  { name: "Nurses", count: 22 },
-  { name: "Front Office", count: 10 },
-  { name: "Back Office", count: 12 },
-  { name: "Admin", count: 8 },
-  { name: "House Keeping", count: 15 }
-];
+export default async function DashboardPage() {
+  const employees = await getEmployees();
 
-const expiry = [
-  { name: "Dr. Ahmad Khan", department: "Doctors", document: "Medical License", expiry: "2026-07-20", days: 25 },
-  { name: "Nurse Maria", department: "Nurses", document: "Emirates ID", expiry: "2026-08-05", days: 41 },
-  { name: "Fatima Ali", department: "Front Office", document: "Employment Contract", expiry: "2026-08-30", days: 66 }
-];
+  const total = employees.length;
+  const inactive = employees.filter((e) => e.status === "Inactive").length;
+  const active = total - inactive;
 
-export default function DashboardPage() {
+  const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);
+
+  const alerts = employees.flatMap((e) => {
+    const rows = [];
+    const contractDays = daysRemaining(e.contract_end_date);
+    const ticketDays = daysRemaining(e.annual_ticket_due);
+
+    if (contractDays !== null && contractDays >= 0 && contractDays <= 90) {
+      rows.push([fullName(e), e.department || "-", "Contract End", e.contract_end_date, `${contractDays} days`]);
+    }
+
+    if (ticketDays !== null && ticketDays >= 0 && ticketDays <= 90) {
+      rows.push([fullName(e), e.department || "-", "Annual Ticket Due", e.annual_ticket_due, `${ticketDays} days`]);
+    }
+
+    return rows;
+  });
+
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
-      <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
-        <div>
-          <div className="text-3xl font-bold tracking-widest mb-10">
-            IC<span className="text-[#d2b241]">D</span>E
-          </div>
-
-          <nav className="space-y-3">
-            <a href="/dashboard" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Dashboard</a>
-            <a href="/employees" className="block px-4 py-3 rounded-xl hover:bg-white/10">Employees</a>
-            <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
-            <a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
-            <a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
-          </nav>
-        </div>
-
-        <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
-          Sign Out
-        </button>
-      </aside>
+      <Sidebar active="Dashboard" />
 
       <main className="flex-1 p-8 overflow-x-hidden">
         <div className="flex justify-between items-start mb-8">
@@ -55,57 +37,46 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <TopStat title="Total Employees" value="85" />
-            <TopStat title="Active Employees" value="82" />
-            <TopStat title="Inactive Employees" value="3" />
+            <Kpi title="Total Employees" value={total} />
+            <Kpi title="Active Employees" value={active} />
+            <Kpi title="Inactive Employees" value={inactive} />
           </div>
         </div>
 
-        <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-          {departments.map((d) => (
-            <DepartmentCard key={d.name} title={d.name} value={String(d.count)} />
+        <section className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+          {deptCounts.map(([name, count]) => (
+            <a key={name} href={`/employees?department=${encodeURIComponent(String(name))}`} className="bg-white rounded-2xl p-4 shadow-sm border-t-4 border-[#d2b241] hover:shadow-lg hover:-translate-y-1 transition-all text-center">
+              <p className="text-sm text-gray-500">{name}</p>
+              <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{count}</h3>
+            </a>
           ))}
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <MiniCard title="Pending Leave Requests" value="4" />
-          <MiniCard title="Employees On Leave" value="3" />
-          <MiniCard title="Documents Expiring" value="12" />
-          <MiniCard title="Annual Tickets Due" value="5" />
+          <Kpi title="Pending Leave Requests" value="0" />
+          <Kpi title="Employees On Leave" value="0" />
+          <Kpi title="Documents Expiring" value={alerts.length} />
+          <Kpi title="Annual Tickets Due" value={alerts.filter((a) => a[2] === "Annual Ticket Due").length} />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-4">Upcoming Document Expiry - 90 Days Alert</h2>
+          <h2 className="text-xl font-bold text-[#3f4447] mb-5">Upcoming Document Expiry - 90 Days Alert</h2>
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#3f4447] text-white">
-                  <th className="p-3 text-left">Employee</th>
-                  <th className="p-3 text-left">Department</th>
-                  <th className="p-3 text-left">Document</th>
-                  <th className="p-3 text-left">Expiry</th>
-                  <th className="p-3 text-left">Remaining Days</th>
-                  <th className="p-3 text-left">Preview</th>
+                  {["Employee", "Department", "Document", "Expiry", "Remaining Days"].map((h) => <th key={h} className="p-3 text-left">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {expiry.map((e) => (
-                  <tr key={e.name} className="border-b hover:bg-[#f7f4ec]">
-                    <td className="p-3 font-semibold text-[#3f4447]">{e.name}</td>
-                    <td className="p-3">{e.department}</td>
-                    <td className="p-3">{e.document}</td>
-                    <td className="p-3">{e.expiry}</td>
-                    <td className="p-3">
-                      <span className="bg-[#d2b241]/20 text-[#8a721e] px-3 py-1 rounded-full font-semibold">
-                        {e.days} days
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <button className="text-[#d2b241] font-bold">Preview</button>
-                    </td>
+                {alerts.length ? alerts.map((r, i) => (
+                  <tr key={i} className="border-b">
+                    {r.map((c) => <td key={c} className="p-3">{c}</td>)}
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan={5} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -115,38 +86,11 @@ export default function DashboardPage() {
   );
 }
 
-function MenuItem({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer ${active ? "bg-[#d2b241] text-white" : "hover:bg-white/10"}`}>
-      {icon}
-      <span>{label}</span>
-    </div>
-  );
+function Kpi({ title, value }: { title: string; value: string | number }) {
+  return <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center min-w-[140px]"><p className="text-gray-500 text-sm font-medium">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
 }
 
-function TopStat({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border-t-4 border-[#d2b241] text-center min-w-36">
-      <p className="text-gray-500 text-xs font-medium">{title}</p>
-      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
-    </div>
-  );
-}
-
-function DepartmentCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border-t-4 border-[#d2b241] cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all text-center">
-      <p className="text-gray-500 text-sm font-medium">{title}</p>
-      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
-    </div>
-  );
-}
-
-function MiniCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border-l-4 border-[#d2b241]">
-      <p className="text-gray-500 text-sm">{title}</p>
-      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
-    </div>
-  );
+function Sidebar({ active }: { active: string }) {
+  const items = [["Dashboard","/dashboard"],["Employees","/employees"],["Leave Requests","/leave-requests"],["Document Expiry","/document-expiry"],["Reports","/reports"]];
+  return <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between"><div><div className="text-3xl font-bold tracking-widest mb-10">IC<span className="text-[#d2b241]">D</span>E</div><nav className="space-y-3">{items.map(([n,h])=><a key={n} href={h} className={`block px-4 py-3 rounded-xl ${active===n?"bg-[#d2b241] font-semibold":"hover:bg-white/10"}`}>{n}</a>)}</nav></div><button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button></aside>;
 }

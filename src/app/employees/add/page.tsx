@@ -1,4 +1,62 @@
+"use client";
+
+import { useState } from "react";
+
 export default function AddEmployeePage() {
+  const [saving, setSaving] = useState(false);
+
+  async function createEmployee(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+
+    const fd = new FormData(e.currentTarget);
+
+    const payload = {
+      employee_code: String(fd.get("employee_code") || "").trim(),
+      first_name: String(fd.get("first_name") || "").trim(),
+      middle_name: String(fd.get("middle_name") || "").trim(),
+      last_name: String(fd.get("last_name") || "").trim(),
+      gender: String(fd.get("gender") || ""),
+      date_of_birth: String(fd.get("date_of_birth") || "") || null,
+      nationality: String(fd.get("nationality") || "").trim(),
+      department: String(fd.get("department") || ""),
+      position: String(fd.get("position") || "").trim(),
+      employment_type: String(fd.get("employment_type") || ""),
+      joining_date: String(fd.get("joining_date") || "") || null,
+      contract_end_date: String(fd.get("contract_end_date") || "") || null,
+      annual_ticket_due: String(fd.get("annual_ticket_due") || "") || null,
+      basic_salary: Number(fd.get("basic_salary") || 0),
+      other_benefits: Number(fd.get("other_benefits") || 0),
+      status: "Active",
+      mobile_number: String(fd.get("mobile_number") || "").trim(),
+      email: String(fd.get("email") || "").trim(),
+      uae_address: String(fd.get("uae_address") || "").trim(),
+    };
+
+    if (!payload.employee_code || !payload.first_name || !payload.last_name) {
+      alert("Employee ID, First Name, and Last Name are required.");
+      setSaving(false);
+      return;
+    }
+
+    const res = await fetch("/api/employees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "Failed to create employee");
+      setSaving(false);
+      return;
+    }
+
+    alert("Employee created successfully");
+    window.location.href = "/employees";
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
       <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
@@ -24,87 +82,105 @@ export default function AddEmployeePage() {
       <main className="flex-1 p-8 overflow-x-hidden">
         <a href="/employees" className="text-[#d2b241] font-semibold">← Back to Employees</a>
 
-        <div className="mt-6 mb-8">
+        <div className="mt-6 mb-6">
           <h1 className="text-3xl font-bold text-[#3f4447]">Add New Employee</h1>
-          <p className="text-gray-500">Step 1 of 4 — Basic Information</p>
+          <p className="text-gray-500">Single-page employee registration — saves directly to Supabase</p>
         </div>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="grid grid-cols-4 gap-3 text-center">
-            <Step title="Basic Information" active />
-            <Step title="Employment" />
-            <Step title="Contact" />
-            <Step title="Documents" />
-          </div>
-        </section>
+        <form onSubmit={createEmployee}>
+          <FormSection title="Basic Information">
+            <Field label="Employee ID" name="employee_code" defaultValue="" required />
+            <Field label="First Name" name="first_name" required />
+            <Field label="Middle Name" name="middle_name" />
+            <Field label="Last Name" name="last_name" required />
+            <Field label="Date of Birth" name="date_of_birth" type="date" />
+            <Select label="Gender" name="gender" options={["Male", "Female"]} />
+            <Field label="Nationality" name="nationality" />
+          </FormSection>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-6">Basic Information</h2>
+          <FormSection title="Employment Information">
+            <Select label="Department" name="department" options={["Doctors", "Nurses", "Front Office", "Back Office", "Admin", "House Keeping"]} />
+            <Field label="Position" name="position" />
+            <Select label="Employment Type" name="employment_type" options={["Full Time", "Part Time", "Contract", "Probation"]} />
+            <Field label="Joining Date" name="joining_date" type="date" />
+            <Field label="Contract End Date" name="contract_end_date" type="date" />
+            <Field label="Annual Ticket Due Date" name="annual_ticket_due" type="date" />
+            <Field label="Basic Salary" name="basic_salary" />
+            <Field label="Other Benefits" name="other_benefits" />
+          </FormSection>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Field label="Employee ID" value="ICDE-004" />
-              <Field label="First Name" placeholder="Enter first name" />
-              <Field label="Middle Name" placeholder="Optional" />
-              <Field label="Last Name" placeholder="Enter last name" />
-              <Field label="Date of Birth" type="date" />
-              <Select label="Gender" options={["Male", "Female"]} />
-              <Field label="Nationality" placeholder="Enter nationality" />
-              <Select label="Marital Status" options={["Single", "Married", "Divorced", "Widowed"]} />
-              <Field label="Blood Group" placeholder="Optional" />
-            </div>
+          <FormSection title="Contact Information">
+            <Field label="Mobile Number" name="mobile_number" />
+            <Field label="Email Address" name="email" />
+            <Field label="UAE Residence Address" name="uae_address" />
+          </FormSection>
 
-            <div className="bg-[#f7f4ec] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
-              <div className="w-36 h-36 rounded-2xl bg-[#3f4447] text-white flex items-center justify-center text-4xl font-bold mb-4">
-                Photo
-              </div>
-              <label className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold cursor-pointer">
-                Upload Photo
-                <input type="file" className="hidden" />
-              </label>
-              <p className="text-gray-500 text-sm mt-3">Passport size photo recommended</p>
-            </div>
-          </div>
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h2 className="text-xl font-bold text-[#3f4447] mb-3">Documents</h2>
+            <p className="text-gray-500">Upload documents from the employee profile after creating the employee.</p>
+          </section>
 
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between mb-10">
             <a href="/employees" className="px-6 py-3 rounded-xl border font-semibold">Cancel</a>
-            <div className="flex gap-3">
-              <button className="px-6 py-3 rounded-xl border font-semibold">Save Draft</button>
-              <a href="/employees/add/employment" className="px-6 py-3 rounded-xl bg-[#d2b241] text-white font-semibold">
-                Next →
-              </a>
-            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-3 rounded-xl bg-[#d2b241] text-white font-semibold"
+            >
+              {saving ? "Saving..." : "Save Employee"}
+            </button>
           </div>
-        </section>
+        </form>
       </main>
     </div>
   );
 }
 
-function Step({ title, active = false }: { title: string; active?: boolean }) {
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className={`rounded-xl py-3 font-semibold ${active ? "bg-[#d2b241] text-white" : "bg-[#f7f4ec] text-[#3f4447]"}`}>
-      {title}
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <h2 className="text-xl font-bold text-[#3f4447] mb-5">{title}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  name,
+  type = "text",
+  defaultValue = "",
+  required = false,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  defaultValue?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-gray-600">{label}</label>
+      <input
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        required={required}
+        className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white"
+      />
     </div>
   );
 }
 
-function Field({ label, placeholder, type = "text", value }: { label: string; placeholder?: string; type?: string; value?: string }) {
+function Select({ label, name, options }: { label: string; name: string; options: string[] }) {
   return (
     <div>
       <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <input type={type} defaultValue={value} readOnly={!!value} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white" placeholder={placeholder} />
-    </div>
-  );
-}
-
-function Select({ label, options }: { label: string; options: string[] }) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <select className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">
-        <option>Select</option>
-        {options.map((o) => <option key={o}>{o}</option>)}
+      <select name={name} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">
+        <option value="">Select</option>
+        {options.map((o) => (
+          <option key={o}>{o}</option>
+        ))}
       </select>
     </div>
   );

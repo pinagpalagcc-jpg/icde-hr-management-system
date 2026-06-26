@@ -1,99 +1,66 @@
-export default function AddEmployeeEmploymentPage() {
-  return (
-    <div className="min-h-screen bg-[#f7f4ec] flex">
-      <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
-        <div>
-          <div className="text-3xl font-bold tracking-widest mb-10">
-            IC<span className="text-[#d2b241]">D</span>E
-          </div>
+"use client";
 
-          <nav className="space-y-3">
-            <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
-            <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
-            <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
-            <a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
-            <a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
-          </nav>
+import { useEffect, useState } from "react";
+
+export default function EmploymentPage() {
+  const [form, setForm] = useState({
+    department: "",
+    position: "",
+    reporting_manager: "",
+    employment_type: "",
+    joining_date: "",
+    contract_start_date: "",
+    contract_end_date: "",
+    annual_ticket_due: "",
+    basic_salary: "",
+    other_benefits: "",
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem("employee_employment");
+    if (saved) setForm(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("employee_employment", JSON.stringify(form));
+  }, [form]);
+
+  function saveAndNext() {
+    localStorage.setItem("employee_employment", JSON.stringify(form));
+    window.location.href = "/employees/add/contact";
+  }
+
+  return (
+    <PageLayout step="Step 2 of 4 — Employment Information" active="Employment">
+      <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <h2 className="text-xl font-bold text-[#3f4447] mb-6">Employment Information</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Select label="Department" value={form.department} options={["Doctors", "Nurses", "Front Office", "Back Office", "Admin", "House Keeping"]} onChange={(v: string) => setForm({ ...form, department: v })} />
+          <Input label="Position" value={form.position} onChange={(v: string) => setForm({ ...form, position: v })} />
+          <Input label="Reporting Manager" value={form.reporting_manager} onChange={(v: string) => setForm({ ...form, reporting_manager: v })} />
+          <Select label="Employment Type" value={form.employment_type} options={["Full Time", "Part Time", "Contract", "Probation"]} onChange={(v: string) => setForm({ ...form, employment_type: v })} />
+          <Input label="Date of Joining" type="date" value={form.joining_date} onChange={(v: string) => setForm({ ...form, joining_date: v })} />
+          <Input label="Contract Start Date" type="date" value={form.contract_start_date} onChange={(v: string) => setForm({ ...form, contract_start_date: v })} />
+          <Input label="Contract End Date" type="date" value={form.contract_end_date} onChange={(v: string) => setForm({ ...form, contract_end_date: v })} />
+          <Input label="Annual Ticket Due Date" type="date" value={form.annual_ticket_due} onChange={(v: string) => setForm({ ...form, annual_ticket_due: v })} />
+          <Input label="Basic Salary" value={form.basic_salary} onChange={(v: string) => setForm({ ...form, basic_salary: v })} />
+          <Input label="Other Benefits" value={form.other_benefits} onChange={(v: string) => setForm({ ...form, other_benefits: v })} />
         </div>
 
-        <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
-          Sign Out
-        </button>
-      </aside>
-
-      <main className="flex-1 p-8 overflow-x-hidden">
-        <a href="/employees/add" className="text-[#d2b241] font-semibold">← Back to Basic Information</a>
-
-        <div className="mt-6 mb-8">
-          <h1 className="text-3xl font-bold text-[#3f4447]">Add New Employee</h1>
-          <p className="text-gray-500">Step 2 of 4 — Employment Information</p>
+        <div className="flex justify-between mt-8">
+          <a href="/employees/add" className="px-6 py-3 rounded-xl border font-semibold">Previous</a>
+          <button onClick={saveAndNext} className="px-6 py-3 rounded-xl bg-[#d2b241] text-white font-semibold">Next →</button>
         </div>
-
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="grid grid-cols-4 gap-3 text-center">
-            <Step title="Basic Information" done />
-            <Step title="Employment" active />
-            <Step title="Contact" />
-            <Step title="Documents" />
-          </div>
-        </section>
-
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-6">Employment Information</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Select label="Department" options={["Doctors", "Nurses", "Front Office", "Back Office", "Admin", "House Keeping"]} />
-            <Field label="Position" placeholder="Enter position" />
-            <Field label="Reporting Manager" placeholder="Enter reporting manager" />
-            <Select label="Employment Type" options={["Full Time", "Part Time", "Contract", "Probation"]} />
-            <Field label="Date of Joining" type="date" />
-            <Field label="Contract Start Date" type="date" />
-            <Field label="Contract End Date" type="date" />
-            <Field label="Annual Ticket Due Date" type="date" />
-            <Field label="Basic Salary" placeholder="AED 0.00" />
-            <Field label="Other Benefits" placeholder="AED 0.00" />
-          </div>
-
-          <div className="flex justify-between mt-8">
-            <a href="/employees/add" className="px-6 py-3 rounded-xl border font-semibold">Previous</a>
-            <div className="flex gap-3">
-              <button className="px-6 py-3 rounded-xl border font-semibold">Save Draft</button>
-              <a href="/employees/add/contact" className="px-6 py-3 rounded-xl bg-[#d2b241] text-white font-semibold">
-                Next →
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      </section>
+    </PageLayout>
   );
 }
 
-function Step({ title, active = false, done = false }: { title: string; active?: boolean; done?: boolean }) {
-  return (
-    <div className={`rounded-xl py-3 font-semibold ${active || done ? "bg-[#d2b241] text-white" : "bg-[#f7f4ec] text-[#3f4447]"}`}>
-      {title}
-    </div>
-  );
+function PageLayout({ children, step, active }: { children: React.ReactNode; step: string; active: string }) {
+  return <div className="min-h-screen bg-[#f7f4ec] flex"><Sidebar /><main className="flex-1 p-8 overflow-x-hidden"><a href="/employees/add" className="text-[#d2b241] font-semibold">← Back</a><div className="mt-6 mb-8"><h1 className="text-3xl font-bold text-[#3f4447]">Add New Employee</h1><p className="text-gray-500">{step}</p></div><Steps active={active} />{children}</main></div>;
 }
-
-function Field({ label, placeholder, type = "text" }: { label: string; placeholder?: string; type?: string }) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <input type={type} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white" placeholder={placeholder} />
-    </div>
-  );
-}
-
-function Select({ label, options }: { label: string; options: string[] }) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <select className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">
-        <option>Select</option>
-        {options.map((o) => <option key={o}>{o}</option>)}
-      </select>
-    </div>
-  );
-}
+function Sidebar(){return <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between"><div><div className="text-3xl font-bold tracking-widest mb-10">IC<span className="text-[#d2b241]">D</span>E</div><nav className="space-y-3"><a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a><a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a><a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a><a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a><a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a></nav></div><button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">Sign Out</button></aside>}
+function Steps({active}:{active:string}){return <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6"><div className="grid grid-cols-4 gap-3 text-center">{["Basic Information","Employment","Contact","Documents"].map(s=><div key={s} className={`rounded-xl py-3 font-semibold ${s===active?"bg-[#d2b241] text-white":"bg-[#f7f4ec] text-[#3f4447]"}`}>{s}</div>)}</div></section>}
+function Input({label,value,onChange,type="text"}:any){return <div><label className="text-sm font-semibold text-gray-600">{label}</label><input type={type} value={value} onChange={(e)=>onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white"/></div>}
+function Select({label,value,options,onChange}:any){return <div><label className="text-sm font-semibold text-gray-600">{label}</label><select value={value} onChange={(e)=>onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white"><option value="">Select</option>{options.map((o:string)=><option key={o}>{o}</option>)}</select></div>}
