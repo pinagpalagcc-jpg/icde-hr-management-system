@@ -2,18 +2,41 @@
 
 import { useEffect, useState } from "react";
 
+const ADMIN_DELETE_PASSWORD = "admin123";
+
 export default function EmployeeProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [docForm, setDocForm] = useState({
+    document_name: "",
+    category: "Office Documents",
+    issue_date: "",
+    expiry_date: "",
+    file_name: "",
+    file_type: "",
+    file_data: "",
+  });
 
   useEffect(() => {
     params.then((p) => {
       setId(p.id);
-      fetch(`/api/employees/${p.id}`).then((r) => r.json()).then(setEmployee);
+      loadEmployee(p.id);
+      loadDocuments(p.id);
     });
   }, [params]);
+
+  async function loadEmployee(employeeId: string) {
+    const data = await fetch(`/api/employees/${employeeId}`).then((r) => r.json());
+    setEmployee(data);
+  }
+
+  async function loadDocuments(employeeId: string) {
+    const data = await fetch(`/api/employee-documents?employee_id=${employeeId}`).then((r) => r.json());
+    setDocuments(Array.isArray(data) ? data : []);
+  }
 
   function update(field: string, value: string) {
     setEmployee((prev: any) => ({ ...prev, [field]: value }));
@@ -21,7 +44,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
   async function saveChanges() {
     setSaving(true);
-
     const payload = {
       employee_code: employee.employee_code,
       first_name: employee.first_name,
@@ -30,7 +52,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       gender: employee.gender,
       date_of_birth: employee.date_of_birth || null,
       nationality: employee.nationality,
-      marital_status: employee.marital_status,
       department: employee.department,
       position: employee.position,
       employment_type: employee.employment_type,
@@ -42,7 +63,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       mobile_number: employee.mobile_number,
       email: employee.email,
       uae_address: employee.uae_address,
-      home_country_address: employee.home_country_address,
       status: employee.status || "Active",
     };
 
@@ -53,7 +73,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
     });
 
     const result = await res.json();
-
     if (!res.ok) {
       alert(result.error || "Failed to update employee");
       setSaving(false);
@@ -68,13 +87,11 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
   async function toggleStatus() {
     const nextStatus = employee.status === "Inactive" ? "Active" : "Inactive";
-
     await fetch(`/api/employees/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus }),
     });
-
     location.reload();
   }
 
@@ -82,6 +99,95 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
     if (!confirm("Delete this employee permanently?")) return;
     await fetch(`/api/employees/${id}`, { method: "DELETE" });
     window.location.href = "/employees";
+  }
+
+  async function handleFile(file: File | null) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDocForm((prev) => ({
+        ...prev,
+        file_name: file.name,
+        file_type: file.type || "application/octet-stream",
+        file_data: String(reader.result || ""),
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadDocument() {
+    if (!docForm.document_name) {
+      alert("Please enter document name.");
+      return;
+    }
+
+    if (!docForm.file_data) {
+      alert("Please choose a file.");
+      return;
+    }
+
+    const payload = {
+      employee_id: id,
+      document_name: docForm.document_name,
+      category: docForm.category,
+      issue_date: docForm.issue_date || null,
+      expiry_date: docForm.expiry_date || null,
+      file_name: docForm.file_name,
+      file_type: docForm.file_type,
+      file_data: docForm.file_data,
+      status: "Active",
+    };
+
+    const res = await fetch("/api/employee-documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "Failed to upload document");
+      return;
+    }
+
+    setDocForm({
+      document_name: "",
+      category: "Office Documents",
+      issue_date: "",
+      expiry_date: "",
+      file_name: "",
+      file_type: "",
+      file_data: "",
+    });
+
+    await loadDocuments(id);
+    alert("Document uploaded successfully");
+  }
+
+  async function deleteDocument(documentId: string) {
+    const password = prompt("Enter Admin password to delete this document:");
+
+    if (password !== ADMIN_DELETE_PASSWORD) {
+      alert("Wrong password. Document was not deleted.");
+      return;
+    }
+
+    if (!confirm("Delete this document permanently?")) return;
+
+    const res = await fetch(`/api/employee-documents/${documentId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const result = await res.json();
+      alert(result.error || "Failed to delete document");
+      return;
+    }
+
+    await loadDocuments(id);
+    alert("Document deleted successfully");
   }
 
   if (!employee) return <div className="p-10">Loading...</div>;
@@ -115,17 +221,13 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
             <div className="flex flex-wrap gap-3">
               {editMode ? (
                 <>
-                  <button onClick={() => setEditMode(false)} className="bg-gray-100 text-gray-700 px-5 py-3 rounded-xl font-semibold">
-                    Cancel Edit
-                  </button>
+                  <button onClick={() => setEditMode(false)} className="bg-gray-100 text-gray-700 px-5 py-3 rounded-xl font-semibold">Cancel Edit</button>
                   <button onClick={saveChanges} disabled={saving} className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
                     {saving ? "Saving..." : "Save Changes"}
                   </button>
                 </>
               ) : (
-                <button onClick={() => setEditMode(true)} className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
-                  Edit Profile
-                </button>
+                <button onClick={() => setEditMode(true)} className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Edit Profile</button>
               )}
 
               <button
@@ -137,9 +239,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
                 {employee.status === "Inactive" ? "Activate" : "Deactivate"}
               </button>
 
-              <button onClick={deleteEmployee} className="bg-red-100 text-red-700 px-5 py-3 rounded-xl font-semibold">
-                Delete
-              </button>
+              <button onClick={deleteEmployee} className="bg-red-100 text-red-700 px-5 py-3 rounded-xl font-semibold">Delete</button>
             </div>
           </div>
         </section>
@@ -154,7 +254,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               <EditInput label="Date of Birth" field="date_of_birth" type="date" value={employee.date_of_birth} update={update} />
               <EditSelect label="Gender" field="gender" value={employee.gender} options={["Male", "Female"]} update={update} />
               <EditInput label="Nationality" field="nationality" value={employee.nationality} update={update} />
-              <EditSelect label="Marital Status" field="marital_status" value={employee.marital_status} options={["Single", "Married", "Divorced", "Widowed"]} update={update} />
             </EditSection>
 
             <EditSection title="Employment Information">
@@ -172,7 +271,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               <EditInput label="Mobile Number" field="mobile_number" value={employee.mobile_number} update={update} />
               <EditInput label="Email Address" field="email" value={employee.email} update={update} />
               <EditInput label="UAE Address" field="uae_address" value={employee.uae_address} update={update} />
-              <EditInput label="Home Country Address" field="home_country_address" value={employee.home_country_address} update={update} />
             </EditSection>
           </>
         ) : (
@@ -184,7 +282,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
                 ["Date of Birth", employee.date_of_birth || "-"],
                 ["Nationality", employee.nationality || "-"],
                 ["Gender", employee.gender || "-"],
-                ["Marital Status", employee.marital_status || "-"],
               ]} />
 
               <InfoCard title="Employment Details" rows={[
@@ -209,26 +306,23 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               ["UAE Residence Address", employee.uae_address || "-"],
             ]} />
 
-
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
               <h2 className="text-xl font-bold text-[#3f4447] mb-5">Leaves Summary</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
-                  <p className="text-gray-500 text-sm">Total Leaves</p>
-                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">30 Days</h3>
-                </div>
-                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
-                  <p className="text-gray-500 text-sm">Leaves Used</p>
-                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">6 Days</h3>
-                </div>
-                <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
-                  <p className="text-gray-500 text-sm">Balance Leaves</p>
-                  <h3 className="text-2xl font-bold text-[#3f4447] mt-2">24 Days</h3>
-                </div>
+                <MiniKpi title="Total Leaves" value="30 Days" />
+                <MiniKpi title="Leaves Used" value="6 Days" />
+                <MiniKpi title="Balance Leaves" value="24 Days" />
               </div>
             </section>
 
-            <DocumentSection />
+            <DocumentCenter
+              docForm={docForm}
+              setDocForm={setDocForm}
+              handleFile={handleFile}
+              uploadDocument={uploadDocument}
+              documents={documents}
+              deleteDocument={deleteDocument}
+            />
 
             <LeaveSection />
 
@@ -255,6 +349,145 @@ function Sidebar() {
       </div>
       <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
     </aside>
+  );
+}
+
+function DocumentCenter({ docForm, setDocForm, handleFile, uploadDocument, documents, deleteDocument }: any) {
+  const categories = ["Office Documents", "Immigration Documents", "Personal Documents"];
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="flex justify-between items-center mb-5">
+        <div>
+          <h2 className="text-xl font-bold text-[#3f4447]">Employee Document Center</h2>
+          <p className="text-gray-500 text-sm">Upload unlimited documents with issue date, expiry date, preview, download, and protected delete.</p>
+        </div>
+      </div>
+
+      <div className="bg-[#f7f4ec] rounded-2xl p-5 mb-6">
+        <h3 className="font-bold text-[#3f4447] mb-4">Upload New Document</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Input label="Document Name" value={docForm.document_name} onChange={(v: string) => setDocForm({ ...docForm, document_name: v })} />
+          <Select label="Section / Category" value={docForm.category} options={categories} onChange={(v: string) => setDocForm({ ...docForm, category: v })} />
+          <div>
+            <label className="text-sm font-semibold text-gray-600">Upload File</label>
+            <input type="file" onChange={(e) => handleFile(e.target.files?.[0] || null)} className="mt-2 w-full border rounded-xl px-4 py-3 bg-white" />
+            {docForm.file_name && <p className="text-xs text-green-700 mt-1">Selected: {docForm.file_name}</p>}
+          </div>
+          <Input label="Date of Issue" type="date" value={docForm.issue_date} onChange={(v: string) => setDocForm({ ...docForm, issue_date: v })} />
+          <Input label="Date of Expiry" type="date" value={docForm.expiry_date} onChange={(v: string) => setDocForm({ ...docForm, expiry_date: v })} />
+          <div className="flex items-end">
+            <button onClick={uploadDocument} className="w-full bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
+              Upload Document
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {categories.map((category) => {
+        const rows = documents.filter((d: any) => d.category === category);
+
+        return (
+          <div key={category} className="mb-8">
+            <h3 className="text-lg font-bold text-[#3f4447] mb-3">{category}</h3>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-[1050px] w-full text-sm">
+                <thead>
+                  <tr className="bg-[#3f4447] text-white">
+                    <th className="p-3 text-left">Document Name</th>
+                    <th className="p-3 text-left">Date of Issue</th>
+                    <th className="p-3 text-left">Date of Expiry</th>
+                    <th className="p-3 text-left">Remaining Days</th>
+                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-left">Preview</th>
+                    <th className="p-3 text-left">Download</th>
+                    <th className="p-3 text-left">Delete</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length ? (
+                    rows.map((doc: any) => {
+                      const info = expiryInfo(doc.expiry_date);
+
+                      return (
+                        <tr key={doc.id} className="border-b hover:bg-[#f7f4ec]">
+                          <td className="p-3 font-semibold">{doc.document_name}</td>
+                          <td className="p-3">{doc.issue_date || "-"}</td>
+                          <td className="p-3">{doc.expiry_date || "No Expiry"}</td>
+                          <td className="p-3">
+                            <span className={`${info.className} px-3 py-1 rounded-full font-semibold`}>
+                              {info.daysText}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`${info.className} px-3 py-1 rounded-full font-semibold`}>
+                              {info.status}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {doc.file_data ? (
+                              <a href={doc.file_data} target="_blank" className="text-[#d2b241] font-bold">Preview</a>
+                            ) : "-"}
+                          </td>
+                          <td className="p-3">
+                            {doc.file_data ? (
+                              <a href={doc.file_data} download={doc.file_name || doc.document_name} className="text-[#d2b241] font-bold">Download</a>
+                            ) : "-"}
+                          </td>
+                          <td className="p-3">
+                            <button onClick={() => deleteDocument(doc.id)} className="bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold">
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="p-5 text-center text-gray-500">
+                        No {category.toLowerCase()} uploaded yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function expiryInfo(expiryDate: string | null) {
+  if (!expiryDate) {
+    return {
+      daysText: "No Expiry",
+      status: "No Expiry",
+      className: "bg-gray-100 text-gray-700",
+    };
+  }
+
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const days = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (days < 0) return { daysText: `${Math.abs(days)} days expired`, status: "Expired", className: "bg-red-200 text-red-900" };
+  if (days <= 30) return { daysText: `${days} days`, status: "Critical", className: "bg-red-100 text-red-700" };
+  if (days <= 60) return { daysText: `${days} days`, status: "Warning", className: "bg-orange-100 text-orange-700" };
+  if (days <= 90) return { daysText: `${days} days`, status: "Upcoming", className: "bg-yellow-100 text-yellow-700" };
+
+  return { daysText: `${days} days`, status: "Active", className: "bg-green-100 text-green-700" };
+}
+
+function MiniKpi({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center">
+      <p className="text-gray-500 text-sm">{title}</p>
+      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
+    </div>
   );
 }
 
@@ -316,24 +549,23 @@ function EditSelect({ label, field, value, options, update }: any) {
   );
 }
 
-function DocumentSection() {
-  const rows = [
-    ["Office Documents", "Employment Contract", "N/A", "Active"],
-    ["Immigration Documents", "Visa / Emirates ID", "Pending Upload", "Pending"],
-    ["Degrees & Certificates", "Degree / License", "Pending Upload", "Pending"],
-  ];
-
+function Input({ label, value, onChange, type = "text" }: any) {
   return (
-    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-bold text-[#3f4447]">Employee Documents</h2>
-        <button className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Upload Document</button>
-      </div>
-      <table className="w-full text-sm">
-        <thead><tr className="bg-[#3f4447] text-white"><th className="p-3 text-left">Category</th><th className="p-3 text-left">Document</th><th className="p-3 text-left">Expiry</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">Preview</th></tr></thead>
-        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b"><td className="p-3">{r[0]}</td><td className="p-3">{r[1]}</td><td className="p-3">{r[2]}</td><td className="p-3">{r[3]}</td><td className="p-3 text-[#d2b241] font-bold">Preview</td></tr>)}</tbody>
-      </table>
-    </section>
+    <div>
+      <label className="text-sm font-semibold text-gray-600">{label}</label>
+      <input type={type} value={value || ""} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white" />
+    </div>
+  );
+}
+
+function Select({ label, value, options, onChange }: any) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-gray-600">{label}</label>
+      <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">
+        {options.map((o: string) => <option key={o}>{o}</option>)}
+      </select>
+    </div>
   );
 }
 
@@ -341,12 +573,7 @@ function LeaveSection() {
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
       <h2 className="text-xl font-bold text-[#3f4447] mb-5">Leave Applications & History</h2>
-      <table className="w-full text-sm">
-        <thead><tr className="bg-[#3f4447] text-white"><th className="p-3 text-left">Leave Type</th><th className="p-3 text-left">From</th><th className="p-3 text-left">To</th><th className="p-3 text-left">Duration</th><th className="p-3 text-left">Status</th></tr></thead>
-        <tbody>
-          <tr className="border-b"><td className="p-3">Annual Leave</td><td className="p-3">01 May 2026</td><td className="p-3">06 May 2026</td><td className="p-3">6 Days</td><td className="p-3"><span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">Completed</span></td></tr>
-        </tbody>
-      </table>
+      <p className="text-gray-500">Leave history will connect in the Leave Management phase.</p>
     </section>
   );
 }
@@ -358,7 +585,7 @@ function AuditSection({ status }: { status: string }) {
       <div className="space-y-3 text-sm">
         <p>✅ Employee profile loaded from Supabase.</p>
         <p>✅ Current status: <b>{status}</b></p>
-        <p>✅ Edit, deactivate, activate, and delete actions are available.</p>
+        <p>✅ Edit, activate, deactivate, delete, and document actions are available.</p>
       </div>
     </section>
   );
