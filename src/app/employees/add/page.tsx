@@ -68,9 +68,10 @@ export default function AddEmployeePage() {
     <div className="min-h-screen bg-[#f7f4ec] flex">
       <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
         <div>
-          <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain mx-auto mb-10" /></div>
+          
 
-          <nav className="space-y-3">
+          <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
+        <nav className="space-y-3">
             <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
             <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
             <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>

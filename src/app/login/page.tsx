@@ -41,8 +41,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f7f4ec] flex items-center justify-center p-6">
       <section className="w-full max-w-5xl bg-white rounded-3xl shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2">
         <div className="bg-[#3f4447] text-white p-10 flex flex-col justify-between">
-          <div>
-            <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-64 h-auto object-contain mb-10" /></div>
+          <div><img src="/icde-logo.png" alt="ICDE Logo" className="w-72 h-auto object-contain mb-10" />
             <h1 className="text-3xl font-bold mb-4">HR Management System</h1>
             <p className="text-white/80">Admin and Staff secure access portal.</p>
           </div>
