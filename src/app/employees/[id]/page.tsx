@@ -102,6 +102,52 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
     window.location.href = "/employees";
   }
 
+  async function handlePhotoUpload(file: File | null) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const photoData = String(reader.result || "");
+
+      const res = await fetch(`/api/employees/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile_photo: photoData }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert(result.error || "Failed to upload photo");
+        return;
+      }
+
+      setEmployee(result);
+      alert("Profile photo updated successfully");
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  async function removePhoto() {
+    const res = await fetch(`/api/employees/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_photo: null }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "Failed to remove photo");
+      return;
+    }
+
+    setEmployee(result);
+    alert("Profile photo removed successfully");
+  }
+
   async function handleFile(file: File | null) {
     if (!file) return;
 
@@ -207,8 +253,25 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-8 mb-6">
           <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-5">
             <div className="flex items-center gap-6">
-              <div className="w-32 h-32 rounded-2xl bg-[#3f4447] text-white flex items-center justify-center text-4xl font-bold">
-                {initials}
+              <div>
+                <div className="w-32 h-32 rounded-2xl bg-[#3f4447] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
+                  {employee.profile_photo ? (
+                    <img src={employee.profile_photo} alt="Employee Photo" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </div>
+
+                <label className="mt-3 block text-center bg-[#d2b241] text-white px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer">
+                  Upload Photo
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e.target.files?.[0] || null)} />
+                </label>
+
+                {employee.profile_photo && (
+                  <button onClick={removePhoto} className="mt-2 w-full text-sm bg-red-100 text-red-700 px-3 py-2 rounded-xl font-semibold">
+                    Remove Photo
+                  </button>
+                )}
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-[#3f4447]">{fullName}</h1>
