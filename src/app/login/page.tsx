@@ -48,7 +48,14 @@ export default function LoginPage() {
               <div className="absolute bottom-5 left-[104px] w-24 h-10 border-b-[16px] border-[#d2b241] rounded-b-full"></div>
             </div>
           </div>
-            <h1 className="text-3xl font-bold mb-4">HR Management System</h1>
+            <div className="mb-12">
+            <div className="text-7xl font-serif tracking-widest font-bold leading-none">
+              <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+            </div>
+            <div className="w-56 h-[4px] bg-[#d2b241] mt-4 rounded-full"></div>
+            <div className="text-sm tracking-[0.35em] text-white/80 mt-4">HR MANAGEMENT SYSTEM</div>
+          </div>
+          <h1 className="text-3xl font-bold mb-4">HR Management System</h1>
             <p className="text-white/80">Admin and Staff secure access portal.</p>
           </div>
         </div>

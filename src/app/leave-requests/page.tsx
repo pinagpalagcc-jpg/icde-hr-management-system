@@ -164,7 +164,14 @@ function Sidebar({ active }: { active: string }) {
             <div className="absolute bottom-3 left-[58px] w-14 h-6 border-b-[10px] border-[#d2b241] rounded-b-full"></div>
           </div>
         </div>
-        <nav className="space-y-3">
+        <div className="mb-10 text-center">
+        <div className="text-5xl font-serif tracking-widest font-bold leading-none">
+          <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+        </div>
+        <div className="w-32 h-[3px] bg-[#d2b241] mx-auto mt-3 rounded-full"></div>
+        <div className="text-[11px] tracking-[0.25em] text-white/80 mt-3">HR MANAGEMENT SYSTEM</div>
+      </div>
+      <nav className="space-y-3">
           {items.map(([name, href]) => (
             <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>
           ))}

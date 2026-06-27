@@ -422,8 +422,15 @@ function Sidebar() {
       <div>
         
         
-        <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
-        <nav className="space-y-3">
+        <div className="mb-10 flex justify-center"></div>
+        <div className="mb-10 text-center">
+        <div className="text-5xl font-serif tracking-widest font-bold leading-none">
+          <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+        </div>
+        <div className="w-32 h-[3px] bg-[#d2b241] mx-auto mt-3 rounded-full"></div>
+        <div className="text-[11px] tracking-[0.25em] text-white/80 mt-3">HR MANAGEMENT SYSTEM</div>
+      </div>
+      <nav className="space-y-3">
           <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
           <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
           <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
