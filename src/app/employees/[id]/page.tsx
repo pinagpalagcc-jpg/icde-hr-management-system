@@ -68,7 +68,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       login_password: employee.login_password,
       user_role: employee.user_role || "Staff",
       must_change_password: employee.must_change_password === true || employee.must_change_password === "true",
-      status: employee.status || "Active",
+      status: employee.status || "Available",
     };
 
     const res = await fetch(`/api/employees/${id}`, {
@@ -91,7 +91,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
   }
 
   async function toggleStatus() {
-    const nextStatus = employee.status === "Inactive" ? "Active" : "Inactive";
+    const nextStatus = employee.status === "On Leave" ? "Available" : "On Leave";
     await fetch(`/api/employees/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -187,7 +187,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       file_name: docForm.file_name,
       file_type: docForm.file_type,
       file_data: docForm.file_data,
-      status: "Active",
+      status: "Available",
     };
 
     const res = await fetch("/api/employee-documents", {
@@ -281,8 +281,8 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
                 <h1 className="text-3xl font-bold text-[#3f4447]">{fullName}</h1>
                 <p className="text-gray-500">Employee ID: {employee.employee_code}</p>
                 <p className="text-gray-500">Department: {employee.department || "-"} | Position: {employee.position || "-"}</p>
-                <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${employee.status === "Inactive" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                  {employee.status || "Active"}
+                <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${employee.status === "On Leave" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                  {employee.status || "Available"}
                 </span>
               </div>
             </div>
@@ -301,11 +301,11 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
               <button
                 onClick={toggleStatus}
-                className={employee.status === "Inactive"
+                className={employee.status === "On Leave"
                   ? "bg-green-100 text-green-700 px-5 py-3 rounded-xl font-semibold"
                   : "bg-orange-100 text-orange-700 px-5 py-3 rounded-xl font-semibold"}
               >
-                {employee.status === "Inactive" ? "Activate" : "Deactivate"}
+                {employee.status === "On Leave" ? "Activate" : "Deactivate"}
               </button>
 
               <button onClick={deleteEmployee} className="bg-red-100 text-red-700 px-5 py-3 rounded-xl font-semibold">Delete</button>
@@ -408,7 +408,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
             <LeaveSection />
 
-            <AuditSection status={employee.status || "Active"} />
+            <AuditSection status={employee.status || "Available"} />
           </>
         )}
       </main>
@@ -613,7 +613,7 @@ function expiryInfo(expiryDate: string | null) {
   if (days <= 60) return { daysText: `${days} days`, status: "Warning", className: "bg-orange-100 text-orange-700" };
   if (days <= 90) return { daysText: `${days} days`, status: "Upcoming", className: "bg-yellow-100 text-yellow-700" };
 
-  return { daysText: `${days} days`, status: "Active", className: "bg-green-100 text-green-700" };
+  return { daysText: `${days} days`, status: "Available", className: "bg-green-100 text-green-700" };
 }
 
 function MiniKpi({ title, value }: { title: string; value: string }) {

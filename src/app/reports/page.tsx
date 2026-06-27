@@ -4,12 +4,12 @@ export default async function ReportsPage() {
   const employees = await getEmployees();
 
   const total = employees.length;
-  const active = employees.filter((e) => e.status !== "Inactive").length;
-  const inactive = employees.filter((e) => e.status === "Inactive").length;
+  const active = employees.filter((e) => e.status !== "On Leave").length;
+  const inactive = employees.filter((e) => e.status === "On Leave").length;
 
   const rows = departments.map((d) => {
     const dept = employees.filter((e) => e.department === d);
-    return [d, String(dept.length), String(dept.filter((e) => e.status !== "Inactive").length), String(dept.filter((e) => e.status === "Inactive").length)];
+    return [d, String(dept.length), String(dept.filter((e) => e.status !== "On Leave").length), String(dept.filter((e) => e.status === "On Leave").length)];
   });
 
   return (
@@ -21,14 +21,14 @@ export default async function ReportsPage() {
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Kpi title="Total Employees" value={total} />
-          <Kpi title="Active Employees" value={active} />
-          <Kpi title="Inactive Employees" value={inactive} />
+          <Kpi title="Available Employees" value={active} />
+          <Kpi title="Employees On Leave" value={inactive} />
           <Kpi title="Departments" value={departments.length} />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-xl font-bold text-[#3f4447] mb-5">Employee Summary by Department</h2>
-          <Table headers={["Department", "Total", "Active", "Inactive"]} rows={rows} />
+          <Table headers={["Department", "Total", "Available", "On Leave"]} rows={rows} />
         </section>
       </main>
     </div>

@@ -88,7 +88,7 @@ export default function StaffProfilePage({ params }: { params: Promise<{ id: str
               <p className="text-gray-500">Employee ID: {employee.employee_code}</p>
               <p className="text-gray-500">Department: {employee.department || "-"} | Position: {employee.position || "-"}</p>
               <span className="inline-block mt-3 bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold">
-                {employee.status || "Active"}
+                {employee.status || "Available"}
               </span>
             </div>
           </div>

@@ -5,7 +5,7 @@ export default async function DashboardPage() {
   const employees = await getEmployees();
 
   const total = employees.length;
-  const inactive = employees.filter((e) => e.status === "Inactive").length;
+  const inactive = employees.filter((e) => e.status === "On Leave").length;
   const active = total - inactive;
 
   const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);
@@ -43,8 +43,8 @@ export default async function DashboardPage() {
 
           <div className="grid grid-cols-3 gap-3">
             <Kpi title="Total Employees" value={total} />
-            <Kpi title="Active Employees" value={active} />
-            <Kpi title="Inactive Employees" value={inactive} />
+            <Kpi title="Available Employees" value={active} />
+            <Kpi title="Employees On Leave" value={inactive} />
           </div>
         </div>
 
