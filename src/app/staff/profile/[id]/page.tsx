@@ -157,6 +157,7 @@ function DocumentCenter({ documents }: { documents: any[] }) {
                     <th className="p-3 text-left">Document Name</th>
                     <th className="p-3 text-left">Date of Issue</th>
                     <th className="p-3 text-left">Date of Expiry</th>
+                    <th className="p-3 text-left">Remaining Days</th>
                     <th className="p-3 text-left">Preview</th>
                     <th className="p-3 text-left">Download</th>
                   </tr>
@@ -168,6 +169,11 @@ function DocumentCenter({ documents }: { documents: any[] }) {
                       <td className="p-3">{doc.issue_date || "-"}</td>
                       <td className="p-3">{doc.expiry_date || "No Expiry"}</td>
                       <td className="p-3">
+                        <span className={`${staffDocExpiryInfo(doc.expiry_date).className} px-3 py-1 rounded-full font-semibold`}>
+                          {staffDocExpiryInfo(doc.expiry_date).text}
+                        </span>
+                      </td>
+                      <td className="p-3">
                         <button onClick={() => previewDoc(doc)} className="text-[#d2b241] font-bold">Preview</button>
                       </td>
                       <td className="p-3">
@@ -175,7 +181,7 @@ function DocumentCenter({ documents }: { documents: any[] }) {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan={5} className="p-5 text-center text-gray-500">No documents uploaded yet.</td></tr>
+                    <tr><td colSpan={6} className="p-5 text-center text-gray-500">No documents uploaded yet.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -185,6 +191,23 @@ function DocumentCenter({ documents }: { documents: any[] }) {
       })}
     </section>
   );
+}
+
+function staffDocExpiryInfo(expiryDate: string | null) {
+  if (!expiryDate) {
+    return { text: "No Expiry", className: "bg-gray-100 text-gray-700" };
+  }
+
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const days = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (days < 0) return { text: `${Math.abs(days)} days expired`, className: "bg-red-200 text-red-900" };
+  if (days <= 30) return { text: `${days} days`, className: "bg-red-100 text-red-700" };
+  if (days <= 60) return { text: `${days} days`, className: "bg-orange-100 text-orange-700" };
+  if (days <= 90) return { text: `${days} days`, className: "bg-purple-100 text-purple-700" };
+
+  return { text: `${days} days`, className: "bg-green-100 text-green-700" };
 }
 
 function previewDoc(doc: any) {
