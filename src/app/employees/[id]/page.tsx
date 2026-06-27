@@ -422,7 +422,39 @@ function Sidebar() {
       <div>
         
         
-        
+        <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
+        <nav className="space-y-3">
+          <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
+          <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
+          <a href="/leave-requests" className="block px-4 py-3 rounded-xl hover:bg-white/10">Leave Requests</a>
+          <a href="/document-expiry" className="block px-4 py-3 rounded-xl hover:bg-white/10">Document Expiry</a>
+          <a href="/reports" className="block px-4 py-3 rounded-xl hover:bg-white/10">Reports</a>
+        </nav>
+      </div>
+      <button
+        onClick={() => {
+          localStorage.clear();
+          window.location.href = "/login";
+        }}
+        className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"
+      >
+        Sign Out
+      </button>
+    </aside>
+  );
+}
+
+function DocumentCenter({ docForm, setDocForm, handleFile, uploadDocument, documents, deleteDocument }: any) {
+  const categories = ["Office Documents", "Immigration Documents", "Personal Documents"];
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="flex justify-between items-center mb-5">
+        <div>
+          <h2 className="text-xl font-bold text-[#3f4447]">Employee Document Center</h2>
+          <p className="text-gray-500 text-sm">Upload unlimited documents with issue date, expiry date, preview, download, and protected delete.</p>
+        </div>
+      </div>
 
       <div className="bg-[#f7f4ec] rounded-2xl p-5 mb-6">
         <h3 className="font-bold text-[#3f4447] mb-4">Upload New Document</h3>
