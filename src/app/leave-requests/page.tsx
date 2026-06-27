@@ -156,6 +156,7 @@ function Sidebar({ active }: { active: string }) {
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
         
+        
         <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
         <nav className="space-y-3">
           {items.map(([name, href]) => (
