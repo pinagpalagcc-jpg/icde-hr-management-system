@@ -238,7 +238,15 @@ function StaffSidebar({ active, employeeId }: { active: string; employeeId: stri
           ))}
         </nav>
       </div>
-      <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
+      <button
+        onClick={() => {
+          localStorage.clear();
+          window.location.href = "/login";
+        }}
+        className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"
+      >
+        Sign Out
+      </button>
     </aside>
   );
 }

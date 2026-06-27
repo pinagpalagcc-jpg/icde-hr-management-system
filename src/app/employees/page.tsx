@@ -122,9 +122,7 @@ function Sidebar({ active }: { active: string }) {
         </nav>
       </div>
 
-      <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">
-        Sign Out
-      </button>
+      <a href="/login" className="block text-center w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</a>
     </aside>
   );
 }

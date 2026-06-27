@@ -34,7 +34,7 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = user.user_role === "Admin" ? "/dashboard" : "/staff";
+    window.location.href = String(user.user_role || "").toLowerCase() === "admin" ? "/dashboard" : "/staff";
   }
 
   return (

@@ -81,9 +81,7 @@ export default function AddEmployeePage() {
           </nav>
         </div>
 
-        <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10 transition-all">
-          Sign Out
-        </button>
+        <a href="/login" className="block text-center w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</a>
       </aside>
 
       <main className="flex-1 p-8 overflow-x-hidden">
