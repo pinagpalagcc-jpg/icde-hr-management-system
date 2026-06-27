@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-export default function ApplyLeavePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ employee_id?: string }>;
-}) {
+export default function ApplyLeavePage() {
   const [employeeId, setEmployeeId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [form, setForm] = useState({
     leave_type: "Annual Leave",
     start_date: "",
@@ -17,12 +15,22 @@ export default function ApplyLeavePage({
   });
 
   useEffect(() => {
-    searchParams.then((p) => {
-      const id = p.employee_id || "";
-      setEmployeeId(id);
-      if (id) fetch(`/api/employees/${id}`).then((r) => r.json()).then(setEmployee);
-    });
-  }, [searchParams]);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("employee_id") || localStorage.getItem("authUser") || "";
+
+    setEmployeeId(id);
+
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`/api/employees/${id}`)
+      .then((r) => r.json())
+      .then((data) => setEmployee(data))
+      .catch(() => setEmployee(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   function totalDays() {
     if (!form.start_date || !form.end_date) return 0;
@@ -35,7 +43,7 @@ export default function ApplyLeavePage({
     const days = totalDays();
 
     if (!employeeId) {
-      alert("Employee not selected.");
+      alert("Employee not selected. Please login again.");
       return;
     }
 
@@ -74,11 +82,23 @@ export default function ApplyLeavePage({
     alert("Leave request submitted to Admin for approval.");
   }
 
-  if (!employee) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f4ec] flex">
         <StaffSidebar active="Apply Leave" employeeId={employeeId} />
         <main className="flex-1 p-8">Loading...</main>
+      </div>
+    );
+  }
+
+  if (!employee) {
+    return (
+      <div className="min-h-screen bg-[#f7f4ec] flex">
+        <StaffSidebar active="Apply Leave" employeeId={employeeId} />
+        <main className="flex-1 p-8">
+          <h1 className="text-3xl font-bold text-[#3f4447]">Apply Leave</h1>
+          <p className="text-red-600 mt-4">Employee profile not found. Please login again.</p>
+        </main>
       </div>
     );
   }
@@ -118,7 +138,7 @@ export default function ApplyLeavePage({
 }
 
 function Kpi({ title, value }: { title: string; value: string | number }) {
-  return <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center"><p className="text-gray-500 text-sm font-medium">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
+  return <div className="bg-white rounded-2xl shadow-sm border-t-4 border-[#d2b241] p-6 text-center"><p className="text-gray-500">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
 }
 
 function Input({ label, value, onChange, type = "text" }: any) {
@@ -126,7 +146,7 @@ function Input({ label, value, onChange, type = "text" }: any) {
 }
 
 function Select({ label, value, options, onChange }: any) {
-  return <div><label className="text-sm font-semibold text-gray-600">{label}</label><select value={value || ""} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">{options.map((o: string)=><option key={o}>{o}</option>)}</select></div>;
+  return <div><label className="text-sm font-semibold text-gray-600">{label}</label><select value={value || ""} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white">{options.map((o: string) => <option key={o}>{o}</option>)}</select></div>;
 }
 
 function StaffSidebar({ active, employeeId }: { active: string; employeeId: string }) {
@@ -140,23 +160,22 @@ function StaffSidebar({ active, employeeId }: { active: string; employeeId: stri
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
-        
-        
-        
-      <div className="mb-10">
-        <div className="text-4xl font-black tracking-widest">
-          <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+        <div className="mb-10">
+          <div className="text-4xl font-black tracking-widest">
+            <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+          </div>
+          <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
+          <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
+          <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
         </div>
-        <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
-        <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
-        <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
-      </div>
-      <nav className="space-y-3">
+
+        <nav className="space-y-3">
           {items.map(([name, href]) => (
             <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>
           ))}
         </nav>
       </div>
+
       <button
         onClick={() => {
           localStorage.clear();
