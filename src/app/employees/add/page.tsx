@@ -71,19 +71,14 @@ export default function AddEmployeePage() {
           
 
           
-        <div className="mb-10 flex justify-center"></div>
-        <div className="mb-10 flex justify-center">
-          <div className="relative w-40 h-16 flex items-center justify-center">
-            <div className="text-5xl font-black tracking-widest text-[#6b7780] leading-none">ICDE</div>
-            <div className="absolute bottom-3 left-[58px] w-14 h-6 border-b-[10px] border-[#d2b241] rounded-b-full"></div>
-          </div>
-        </div>
-        <div className="mb-10 text-center">
-        <div className="text-5xl font-serif tracking-widest font-bold leading-none">
+        
+      <div className="mb-10">
+        <div className="text-4xl font-black tracking-widest">
           <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
         </div>
-        <div className="w-32 h-[3px] bg-[#d2b241] mx-auto mt-3 rounded-full"></div>
-        <div className="text-[11px] tracking-[0.25em] text-white/80 mt-3">HR MANAGEMENT SYSTEM</div>
+        <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
+        <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
+        <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
       </div>
       <nav className="space-y-3">
             <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>

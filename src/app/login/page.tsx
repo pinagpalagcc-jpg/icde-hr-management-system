@@ -44,7 +44,7 @@ export default function LoginPage() {
           <div>
             <div className="mb-12">
             <div className="relative w-72 h-28 flex items-center">
-              <div className="text-8xl font-black tracking-widest text-[#6b7780] leading-none">ICDE</div>
+              
               <div className="absolute bottom-5 left-[104px] w-24 h-10 border-b-[16px] border-[#d2b241] rounded-b-full"></div>
             </div>
           </div>
@@ -55,8 +55,15 @@ export default function LoginPage() {
             <div className="w-56 h-[4px] bg-[#d2b241] mt-4 rounded-full"></div>
             <div className="text-sm tracking-[0.35em] text-white/80 mt-4">HR MANAGEMENT SYSTEM</div>
           </div>
-          <h1 className="text-3xl font-bold mb-4">HR Management System</h1>
+          <div className="mb-10">
+            <div className="text-5xl font-black tracking-widest">
+              <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+            </div>
+            <h1 className="text-3xl font-bold mt-8 mb-4">HR Management Portal</h1>
+            <div className="w-32 h-[3px] bg-[#d2b241] mb-6 rounded-full"></div>
             <p className="text-white/80">Admin and Staff secure access portal.</p>
+            <p className="text-white/60 mt-28">@2026 V.1.1</p>
+          </div>
           </div>
         </div>
 
