@@ -67,7 +67,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       login_username: employee.login_username,
       login_password: employee.login_password,
       user_role: employee.user_role || "Staff",
-      must_change_password: employee.must_change_password ?? false,
+      must_change_password: employee.must_change_password === true || employee.must_change_password === "true",
       status: employee.status || "Active",
     };
 
@@ -348,7 +348,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               <EditSelect label="User Role" field="user_role" value={employee.user_role} options={["Staff", "Admin"]} update={update} />
               <button
                 type="button"
-                onClick={() => update("must_change_password", true)}
+                onClick={() => update("must_change_password", "true")}
                 className="bg-orange-100 text-orange-700 px-5 py-3 rounded-xl font-semibold mt-7"
               >
                 Force Password Change
