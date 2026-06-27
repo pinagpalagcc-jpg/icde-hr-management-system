@@ -64,6 +64,10 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       mobile_number: employee.mobile_number,
       email: employee.email,
       uae_address: employee.uae_address,
+      login_username: employee.login_username,
+      login_password: employee.login_password,
+      user_role: employee.user_role || "Staff",
+      must_change_password: employee.must_change_password ?? false,
       status: employee.status || "Active",
     };
 
@@ -336,6 +340,19 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               <EditInput label="Mobile Number" field="mobile_number" value={employee.mobile_number} update={update} />
               <EditInput label="Email Address" field="email" value={employee.email} update={update} />
               <EditInput label="UAE Address" field="uae_address" value={employee.uae_address} update={update} />
+            </EditSection>
+
+            <EditSection title="Login Account">
+              <EditInput label="Username / Email" field="login_username" value={employee.login_username} update={update} />
+              <EditInput label="Reset Temporary Password" field="login_password" value={employee.login_password} update={update} />
+              <EditSelect label="User Role" field="user_role" value={employee.user_role} options={["Staff", "Admin"]} update={update} />
+              <button
+                type="button"
+                onClick={() => update("must_change_password", true)}
+                className="bg-orange-100 text-orange-700 px-5 py-3 rounded-xl font-semibold mt-7"
+              >
+                Force Password Change
+              </button>
             </EditSection>
           </>
         ) : (

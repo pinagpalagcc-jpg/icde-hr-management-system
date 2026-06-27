@@ -55,16 +55,24 @@ export default function LoginPage() {
           <div className="space-y-5">
             <div>
               <label className="text-sm font-semibold text-gray-600">Username / Email</label>
-              <input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
+              <input autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
             </div>
 
             <div>
               <label className="text-sm font-semibold text-gray-600">Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
+              <input autoComplete="off" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
             </div>
 
             <button onClick={login} disabled={loading} className="w-full bg-[#d2b241] text-white rounded-xl py-3 font-bold">
               {loading ? "Checking..." : "Login"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => alert("Forgot username or password? Please contact HR Admin. Admin can reset your temporary password from your employee profile.")}
+              className="w-full text-[#d2b241] font-semibold text-sm"
+            >
+              Forgot Username / Password?
             </button>
           </div>
         </div>
