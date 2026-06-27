@@ -19,6 +19,7 @@ export default async function DashboardPage() {
     .map((doc: any) => {
       const remaining = daysRemaining(doc.expiry_date);
       return {
+        employee_id: doc.employee_id,
         employee: fullName(doc.employees || {}),
         department: doc.employees?.department || "-",
         document: doc.document_name || "-",
@@ -76,7 +77,11 @@ export default async function DashboardPage() {
               <tbody>
                 {alerts.length ? alerts.map((a: any, i: number) => (
                   <tr key={i} className="border-b">
-                    <td className="p-3">{a.employee}</td>
+                    <td className="p-3">
+                      <a href={`/employees/${a.employee_id}`} className="text-[#d2b241] font-bold">
+                        {a.employee}
+                      </a>
+                    </td>
                     <td className="p-3">{a.department}</td>
                     <td className="p-3">{a.document}</td>
                     <td className="p-3">{a.expiry}</td>

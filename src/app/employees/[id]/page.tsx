@@ -445,7 +445,26 @@ function DocumentCenter({ docForm, setDocForm, handleFile, uploadDocument, docum
                           </td>
                           <td className="p-3">
                             {doc.file_data ? (
-                              <a href={doc.file_data} target="_blank" className="text-[#d2b241] font-bold">Preview</a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const w = window.open("", "_blank");
+                                  if (w) {
+                                    w.document.write(`
+                                      <html>
+                                        <head><title>${doc.document_name}</title></head>
+                                        <body style="margin:0">
+                                          <iframe src="${doc.file_data}" style="width:100%;height:100vh;border:0"></iframe>
+                                        </body>
+                                      </html>
+                                    `);
+                                    w.document.close();
+                                  }
+                                }}
+                                className="text-[#d2b241] font-bold"
+                              >
+                                Preview
+                              </button>
                             ) : "-"}
                           </td>
                           <td className="p-3">
