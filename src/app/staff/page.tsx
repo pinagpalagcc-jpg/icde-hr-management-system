@@ -112,7 +112,7 @@ function StaffSidebar({ active, employeeId }: { active: string; employeeId: stri
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
-        <div className="bg-white rounded-xl p-2 mb-10 inline-block"><img src="/icde-logo.png" alt="ICDE Logo" className="w-28 h-auto" /></div>
+        <div className="bg-white rounded-xl p-2 mb-10 inline-block"><img src="/icde-logo.svg" alt="ICDE Logo" className="w-32 h-auto" /></div>
         <nav className="space-y-3">{items.map(([name, href]) => <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>)}</nav>
       </div>
       <button onClick={() => { localStorage.clear(); window.location.href="/login"; }} className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>

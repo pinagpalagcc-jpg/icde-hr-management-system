@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 280">
+  <rect width="780" height="280" fill="none"/>
+  <text x="40" y="215" font-family="Arial, Helvetica, sans-serif" font-size="260" font-weight="700" fill="#66727a">ICDE</text>
+  <path d="M215 145 Q320 235 435 145" fill="none" stroke="#d9c34a" stroke-width="55" stroke-linecap="round"/>
+</svg>

@@ -134,7 +134,7 @@ function Sidebar({ active }: { active: string }) {
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
-        <div className="bg-white rounded-xl p-2 mb-10 inline-block"><img src="/icde-logo.png" alt="ICDE Logo" className="w-28 h-auto" /></div>
+        <div className="bg-white rounded-xl p-2 mb-10 inline-block"><img src="/icde-logo.svg" alt="ICDE Logo" className="w-32 h-auto" /></div>
 
         <nav className="space-y-3">
           {items.map(([name, href]) => (
