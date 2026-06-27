@@ -40,7 +40,7 @@ function Kpi({ title, value }: { title: string; value: string | number }) {
 }
 
 function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
-  return <table className="w-full text-sm"><thead><tr className="bg-[#3f4447] text-white">{headers.map((h)=><th key={h} className="p-3 text-left">{h}</th>)}</tr></thead><tbody>{rows.map((r)=><tr key={r[0]} className="border-b">{r.map((c)=><td key={c} className="p-3">{c}</td>)}</tr>)}</tbody></table>;
+  return <table className="w-full text-sm"><thead><tr className="bg-[#3f4447] text-white">{headers.map((h)=><th key={h} className="p-3 text-left">{h}</th>)}</tr></thead><tbody>{rows.map((r, rowIndex)=><tr key={`${r[0]}-${rowIndex}`} className="border-b">{r.map((c, cellIndex)=><td key={`${r[0]}-${cellIndex}`} className="p-3">{c}</td>)}</tr>)}</tbody></table>;
 }
 
 function Sidebar({ active }: { active: string }) {
