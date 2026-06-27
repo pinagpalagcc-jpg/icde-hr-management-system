@@ -1,37 +1,44 @@
-import { getEmployees, fullName, daysRemaining } from "@/lib/hr";
-import { supabase } from "@/lib/supabase";
+"use client";
 
-export default async function StaffDashboardPage() {
-  const employees = await getEmployees();
-  const employee = employees[0];
+import { useEffect, useState } from "react";
 
-  if (!employee) {
-    return (
-      <div className="min-h-screen bg-[#f7f4ec] flex">
-        <StaffSidebar active="Dashboard" employeeId="" />
-        <main className="flex-1 p-8">
-          <h1 className="text-3xl font-bold text-[#3f4447]">Staff Dashboard</h1>
-          <p className="text-gray-500 mt-4">No employee found. Add an employee first.</p>
-        </main>
-      </div>
-    );
+export default function StaffDashboardPage() {
+  const [employee, setEmployee] = useState<any>(null);
+  const [expiryAlerts, setExpiryAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const id = localStorage.getItem("icde_user_id");
+    const role = localStorage.getItem("icde_user_role");
+
+    if (!id || role !== "Staff") {
+      window.location.href = "/login";
+      return;
+    }
+
+    loadStaff(id);
+  }, []);
+
+  async function loadStaff(id: string) {
+    const emp = await fetch(`/api/employees/${id}`).then((r) => r.json());
+    setEmployee(emp);
+
+    const docs = await fetch(`/api/employee-documents?employee_id=${id}`).then((r) => r.json());
+
+    const alerts = (docs || [])
+      .filter((d: any) => d.expiry_date)
+      .map((d: any) => {
+        const days = daysRemaining(d.expiry_date);
+        return { ...d, remaining: days };
+      })
+      .filter((d: any) => d.remaining >= 0 && d.remaining <= 90)
+      .sort((a: any, b: any) => a.remaining - b.remaining);
+
+    setExpiryAlerts(alerts);
   }
 
-  const { data: docs } = await supabase
-    .from("employee_documents")
-    .select("*")
-    .eq("employee_id", employee.id)
-    .not("expiry_date", "is", null);
+  if (!employee) return <div className="p-10">Loading Staff Dashboard...</div>;
 
-  const expiryAlerts = (docs || [])
-    .map((d: any) => ({
-      document: d.document_name,
-      category: d.category,
-      expiry: d.expiry_date,
-      remaining: daysRemaining(d.expiry_date),
-    }))
-    .filter((d: any) => d.remaining !== null && d.remaining >= 0 && d.remaining <= 90)
-    .sort((a: any, b: any) => a.remaining - b.remaining);
+  const name = `${employee.first_name || ""} ${employee.middle_name || ""} ${employee.last_name || ""}`.replace(/\s+/g, " ").trim();
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -39,7 +46,7 @@ export default async function StaffDashboardPage() {
 
       <main className="flex-1 p-8 overflow-x-hidden">
         <h1 className="text-3xl font-bold text-[#3f4447]">Staff Dashboard</h1>
-        <p className="text-gray-500 mb-8">Welcome, {fullName(employee)}</p>
+        <p className="text-gray-500 mb-8">Welcome, {name}</p>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Kpi title="Total Leaves" value={`${employee.total_leaves || 30} Days`} />
@@ -50,38 +57,38 @@ export default async function StaffDashboardPage() {
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <h2 className="text-xl font-bold text-[#3f4447] mb-5">Upcoming My Document Expiry - 90 Days Alert</h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#d2b241] text-white">
-                  <th className="p-3 text-left">Document</th>
-                  <th className="p-3 text-left">Category</th>
-                  <th className="p-3 text-left">Expiry Date</th>
-                  <th className="p-3 text-left">Remaining Days</th>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#d2b241] text-white">
+                <th className="p-3 text-left">Document</th>
+                <th className="p-3 text-left">Category</th>
+                <th className="p-3 text-left">Expiry Date</th>
+                <th className="p-3 text-left">Remaining Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expiryAlerts.length ? expiryAlerts.map((d) => (
+                <tr key={d.id} className="border-b">
+                  <td className="p-3 font-semibold">{d.document_name}</td>
+                  <td className="p-3">{d.category}</td>
+                  <td className="p-3">{d.expiry_date}</td>
+                  <td className="p-3"><span className={`${expiryBadgeClass(d.remaining)} px-3 py-1 rounded-full font-semibold`}>{d.remaining} days</span></td>
                 </tr>
-              </thead>
-              <tbody>
-                {expiryAlerts.length ? expiryAlerts.map((d: any, i: number) => (
-                  <tr key={i} className="border-b">
-                    <td className="p-3 font-semibold">{d.document}</td>
-                    <td className="p-3">{d.category}</td>
-                    <td className="p-3">{d.expiry}</td>
-                    <td className="p-3">
-                      <span className={`${expiryBadgeClass(d.remaining)} px-3 py-1 rounded-full font-semibold`}>
-                        {d.remaining} days
-                      </span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan={4} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              )) : (
+                <tr><td colSpan={4} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
+              )}
+            </tbody>
+          </table>
         </section>
       </main>
     </div>
   );
+}
+
+function daysRemaining(dateValue: string) {
+  const today = new Date();
+  const expiry = new Date(dateValue);
+  return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function expiryBadgeClass(days: number) {
@@ -97,22 +104,18 @@ function Kpi({ title, value }: { title: string; value: string | number }) {
 function StaffSidebar({ active, employeeId }: { active: string; employeeId: string }) {
   const items = [
     ["Dashboard", "/staff"],
-    ["My Profile", employeeId ? `/staff/profile/${employeeId}` : "/staff"],
-    ["Apply Leave", employeeId ? `/staff/apply-leave?employee_id=${employeeId}` : "/staff"],
-    ["My Leave Requests", employeeId ? `/staff/my-leave-requests?employee_id=${employeeId}` : "/staff"],
+    ["My Profile", `/staff/profile/${employeeId}`],
+    ["Apply Leave", `/staff/apply-leave?employee_id=${employeeId}`],
+    ["My Leave Requests", `/staff/my-leave-requests?employee_id=${employeeId}`],
   ];
 
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
         <div className="text-3xl font-bold tracking-widest mb-10">IC<span className="text-[#d2b241]">D</span>E</div>
-        <nav className="space-y-3">
-          {items.map(([name, href]) => (
-            <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>
-          ))}
-        </nav>
+        <nav className="space-y-3">{items.map(([name, href]) => <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>)}</nav>
       </div>
-      <button className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
+      <button onClick={() => { localStorage.clear(); window.location.href="/login"; }} className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
     </aside>
   );
 }

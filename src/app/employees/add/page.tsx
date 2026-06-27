@@ -30,6 +30,10 @@ export default function AddEmployeePage() {
       total_leaves: Number(fd.get("total_leaves") || 30),
       leaves_used: Number(fd.get("leaves_used") || 0),
       balance_leaves: Number(fd.get("balance_leaves") || 30),
+      login_username: String(fd.get("login_username") || "").trim(),
+      login_password: String(fd.get("login_password") || "").trim(),
+      user_role: String(fd.get("user_role") || "Staff"),
+      must_change_password: true,
       status: "Active",
       mobile_number: String(fd.get("mobile_number") || "").trim(),
       email: String(fd.get("email") || "").trim(),
@@ -126,7 +130,17 @@ export default function AddEmployeePage() {
             <p className="text-gray-500">Upload documents from the employee profile after creating the employee.</p>
           </section>
 
-          <div className="flex justify-between mb-10">
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="text-xl font-bold text-[#3f4447] mb-5">Login Account</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <Field label="Username / Email" name="login_username" />
+            <Field label="Temporary Password" name="login_password" />
+            <Select label="User Role" name="user_role" options={["Staff", "Admin"]} />
+          </div>
+          <p className="text-sm text-gray-500 mt-3">User must change temporary password after first login.</p>
+        </section>
+
+        <div className="flex justify-between mb-10">
             <a href="/employees" className="px-6 py-3 rounded-xl border font-semibold">Cancel</a>
             <button
               type="submit"
