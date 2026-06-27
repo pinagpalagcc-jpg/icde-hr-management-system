@@ -1,4 +1,5 @@
 import { departments, getEmployees, daysRemaining, fullName } from "@/lib/hr";
+import { supabase } from "@/lib/supabase";
 
 export default async function DashboardPage() {
   const employees = await getEmployees();
@@ -9,21 +10,24 @@ export default async function DashboardPage() {
 
   const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);
 
-  const alerts = employees.flatMap((e) => {
-    const rows = [];
-    const contractDays = daysRemaining(e.contract_end_date);
-    const ticketDays = daysRemaining(e.annual_ticket_due);
+  const { data: documents } = await supabase
+    .from("employee_documents")
+    .select("*, employees(first_name, middle_name, last_name, department)")
+    .not("expiry_date", "is", null);
 
-    if (contractDays !== null && contractDays >= 0 && contractDays <= 90) {
-      rows.push([fullName(e), e.department || "-", "Contract End", e.contract_end_date, `${contractDays} days`]);
-    }
-
-    if (ticketDays !== null && ticketDays >= 0 && ticketDays <= 90) {
-      rows.push([fullName(e), e.department || "-", "Annual Ticket Due", e.annual_ticket_due, `${ticketDays} days`]);
-    }
-
-    return rows;
-  });
+  const alerts = (documents || [])
+    .map((doc: any) => {
+      const remaining = daysRemaining(doc.expiry_date);
+      return {
+        employee: fullName(doc.employees || {}),
+        department: doc.employees?.department || "-",
+        document: doc.document_name || "-",
+        expiry: doc.expiry_date,
+        remaining,
+      };
+    })
+    .filter((a: any) => a.remaining !== null && a.remaining >= 0 && a.remaining <= 90)
+    .sort((a: any, b: any) => a.remaining - b.remaining);
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -56,7 +60,7 @@ export default async function DashboardPage() {
           <Kpi title="Pending Leave Requests" value="0" />
           <Kpi title="Employees On Leave" value="0" />
           <Kpi title="Documents Expiring" value={alerts.length} />
-          <Kpi title="Annual Tickets Due" value={alerts.filter((a) => a[2] === "Annual Ticket Due").length} />
+          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -70,9 +74,13 @@ export default async function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {alerts.length ? alerts.map((r, i) => (
+                {alerts.length ? alerts.map((a: any, i: number) => (
                   <tr key={i} className="border-b">
-                    {r.map((c) => <td key={c} className="p-3">{c}</td>)}
+                    <td className="p-3">{a.employee}</td>
+                    <td className="p-3">{a.department}</td>
+                    <td className="p-3">{a.document}</td>
+                    <td className="p-3">{a.expiry}</td>
+                    <td className="p-3 font-semibold">{a.remaining} days</td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
