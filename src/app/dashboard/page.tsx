@@ -58,10 +58,10 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Kpi title="Pending Leave Requests" value="0" href="/leave-requests" />
-          <Kpi title="Employees On Leave" value="0" href="/reports?filter=on-leave" />
-          <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" />
-          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} href="/document-expiry?type=annual-ticket" />
+          <Kpi title="Pending Leave Requests" value="0" href="/leave-requests" className="block" />
+          <Kpi title="Employees On Leave" value="0" href="/reports?filter=on-leave" className="block" />
+          <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" className="block" />
+          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} href="/document-expiry?type=annual-ticket" className="block" />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
