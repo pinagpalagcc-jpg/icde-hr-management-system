@@ -58,10 +58,10 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Kpi title="Pending Leave Requests" value="0" />
-          <Kpi title="Employees On Leave" value="0" />
-          <Kpi title="Documents Expiring" value={alerts.length} />
-          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} />
+          <Kpi title="Pending Leave Requests" value="0" href="/leave-requests" />
+          <Kpi title="Employees On Leave" value="0" href="/reports?filter=on-leave" />
+          <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" />
+          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} href="/document-expiry?type=annual-ticket" />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -110,7 +110,7 @@ function expiryBadgeClass(days: number) {
   return "bg-purple-100 text-purple-700";
 }
 
-function Kpi({ title, value }: { title: string; value: string | number }) {
+function Kpi({ title, value, href }: { title: string; value: string | number; href?: string }) {
   return <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center min-w-[140px]"><p className="text-gray-500 text-sm font-medium">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
 }
 
