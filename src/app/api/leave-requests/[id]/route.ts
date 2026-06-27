@@ -1,49 +1,58 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await request.json();
-
-  const { data: leave, error: leaveError } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (leaveError || !leave) {
-    return NextResponse.json({ error: leaveError?.message || "Leave request not found" }, { status: 500 });
-  }
-
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> | { id: string } }
+) {
+  const params = await Promise.resolve(context.params);
   const { data, error } = await supabase
     .from("leave_requests")
-    .update(body)
-    .eq("id", id)
-    .select()
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> | { id: string } }
+) {
+  const params = await Promise.resolve(context.params);
+  const body = await req.json();
+
+  const updateData: any = {};
+  if (body.status) updateData.status = body.status;
+  if (body.rejection_reason !== undefined) updateData.rejection_reason = body.rejection_reason;
+
+  const { data: leave, error } = await supabase
+    .from("leave_requests")
+    .update(updateData)
+    .eq("id", params.id)
+    .select("*")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (body.status === "Approved" && leave.status !== "Approved") {
-    const { data: employee } = await supabase
+  if (leave?.status === "Approved" && leave?.employee_id) {
+    const { error: empError } = await supabase
       .from("employees")
-      .select("*")
-      .eq("id", leave.employee_id)
-      .single();
+      .update({ status: "On Leave" })
+      .eq("id", leave.employee_id);
 
-    if (employee) {
-      const used = Number(employee.leaves_used || 0) + Number(leave.total_days || 0);
-      const balance = Math.max(Number(employee.balance_leaves || 0) - Number(leave.total_days || 0), 0);
-
-      await supabase
-        .from("employees")
-        .update({
-          leaves_used: used,
-          balance_leaves: balance,
-        })
-        .eq("id", leave.employee_id);
+    if (empError) {
+      return NextResponse.json({ error: empError.message }, { status: 500 });
     }
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({
+    success: true,
+    leave,
+    message:
+      leave?.status === "Approved"
+        ? "Leave approved and employee status changed to On Leave."
+        : "Leave request updated.",
+  });
 }
