@@ -361,9 +361,9 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               <InfoCard title="Salary & Leave" rows={[
                 ["Basic Salary", `AED ${employee.basic_salary || 0}`],
                 ["Other Benefits", `AED ${employee.other_benefits || 0}`],
-                ["Annual Leave", "30 Days"],
-                ["Leave Used", "6 Days"],
-                ["Leave Balance", "24 Days"],
+                ["Annual Leave", `${employee.total_leaves || 30} Days`],
+                ["Leave Used", `${employee.leaves_used || 0} Days`],
+                ["Leave Balance", `${employee.balance_leaves || 30} Days`],
               ]} />
             </section>
 
@@ -374,9 +374,9 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
               <h2 className="text-xl font-bold text-[#3f4447] mb-5">Leaves Summary</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MiniKpi title="Total Leaves" value="30 Days" />
-                <MiniKpi title="Leaves Used" value="6 Days" />
-                <MiniKpi title="Balance Leaves" value="24 Days" />
+                <MiniKpi title="Total Leaves" value={`${employee.total_leaves || 30} Days`} />
+                <MiniKpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
+                <MiniKpi title="Balance Leaves" value={`${employee.balance_leaves || 30} Days`} />
               </div>
             </section>
 
