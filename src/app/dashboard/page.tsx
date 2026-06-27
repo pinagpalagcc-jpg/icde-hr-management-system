@@ -80,7 +80,11 @@ export default async function DashboardPage() {
                     <td className="p-3">{a.department}</td>
                     <td className="p-3">{a.document}</td>
                     <td className="p-3">{a.expiry}</td>
-                    <td className="p-3 font-semibold">{a.remaining} days</td>
+                    <td className="p-3">
+                      <span className={`${expiryBadgeClass(a.remaining)} px-3 py-1 rounded-full font-semibold`}>
+                        {a.remaining} days
+                      </span>
+                    </td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
@@ -92,6 +96,13 @@ export default async function DashboardPage() {
       </main>
     </div>
   );
+}
+
+
+function expiryBadgeClass(days: number) {
+  if (days <= 30) return "bg-red-100 text-red-700";
+  if (days <= 60) return "bg-orange-100 text-orange-700";
+  return "bg-purple-100 text-purple-700";
 }
 
 function Kpi({ title, value }: { title: string; value: string | number }) {
