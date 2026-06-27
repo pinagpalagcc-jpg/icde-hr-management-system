@@ -15,6 +15,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
     category: "Office Documents",
     issue_date: "",
     expiry_date: "",
+    not_applicable: false,
     file_name: "",
     file_type: "",
     file_data: "",
@@ -131,8 +132,8 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       employee_id: id,
       document_name: docForm.document_name,
       category: docForm.category,
-      issue_date: docForm.issue_date || null,
-      expiry_date: docForm.expiry_date || null,
+      issue_date: docForm.not_applicable ? null : (docForm.issue_date || null),
+      expiry_date: docForm.not_applicable ? null : (docForm.expiry_date || null),
       file_name: docForm.file_name,
       file_type: docForm.file_type,
       file_data: docForm.file_data,
@@ -157,6 +158,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
       category: "Office Documents",
       issue_date: "",
       expiry_date: "",
+      not_applicable: false,
       file_name: "",
       file_type: "",
       file_data: "",
@@ -377,6 +379,21 @@ function DocumentCenter({ docForm, setDocForm, handleFile, uploadDocument, docum
           </div>
           <Input label="Date of Issue" type="date" value={docForm.issue_date} onChange={(v: string) => setDocForm({ ...docForm, issue_date: v })} />
           <Input label="Date of Expiry" type="date" value={docForm.expiry_date} onChange={(v: string) => setDocForm({ ...docForm, expiry_date: v })} />
+
+          <label className="flex items-center gap-3 bg-white rounded-xl border px-4 py-3 mt-7">
+            <input
+              type="checkbox"
+              checked={docForm.not_applicable}
+              onChange={(e) => setDocForm({
+                ...docForm,
+                not_applicable: e.target.checked,
+                issue_date: e.target.checked ? "" : docForm.issue_date,
+                expiry_date: e.target.checked ? "" : docForm.expiry_date
+              })}
+            />
+            <span className="font-semibold text-[#3f4447]">Not Applicable</span>
+          </label>
+
           <div className="flex items-end">
             <button onClick={uploadDocument} className="w-full bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
               Upload Document
@@ -395,7 +412,7 @@ function DocumentCenter({ docForm, setDocForm, handleFile, uploadDocument, docum
             <div className="overflow-x-auto">
               <table className="min-w-[1050px] w-full text-sm">
                 <thead>
-                  <tr className="bg-[#3f4447] text-white">
+                  <tr className="bg-[#d2b241] text-white">
                     <th className="p-3 text-left">Document Name</th>
                     <th className="p-3 text-left">Date of Issue</th>
                     <th className="p-3 text-left">Date of Expiry</th>
