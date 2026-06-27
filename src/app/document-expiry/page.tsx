@@ -49,6 +49,12 @@ function Kpi({ title, value }: { title: string; value: string | number }) {
 function Sidebar({ active }: { active: string }) {
   const items = [["Dashboard","/dashboard"],["Employees","/employees"],["Leave Requests","/leave-requests"],["Document Expiry","/document-expiry"],["Reports","/reports"]];
   return <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between"><div>
-        <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
+        <div className="mb-10 flex justify-center"></div>
+        <div className="mb-10 flex justify-center">
+          <div className="relative w-40 h-16 flex items-center justify-center">
+            <div className="text-5xl font-black tracking-widest text-[#6b7780] leading-none">ICDE</div>
+            <div className="absolute bottom-3 left-[58px] w-14 h-6 border-b-[10px] border-[#d2b241] rounded-b-full"></div>
+          </div>
+        </div>
         <nav className="space-y-3">{items.map(([n,h])=><a key={n} href={h} className={`block px-4 py-3 rounded-xl ${active===n?"bg-[#d2b241] font-semibold":"hover:bg-white/10"}`}>{n}</a>)}</nav></div><a href="/login" className="block text-center w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</a></aside>;
 }

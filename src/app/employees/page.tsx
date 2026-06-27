@@ -137,7 +137,13 @@ function Sidebar({ active }: { active: string }) {
         
 
         
-        <div className="mb-10 flex justify-center"><img src="/icde-logo.png" alt="ICDE Logo" className="w-44 h-auto object-contain" /></div>
+        <div className="mb-10 flex justify-center"></div>
+        <div className="mb-10 flex justify-center">
+          <div className="relative w-40 h-16 flex items-center justify-center">
+            <div className="text-5xl font-black tracking-widest text-[#6b7780] leading-none">ICDE</div>
+            <div className="absolute bottom-3 left-[58px] w-14 h-6 border-b-[10px] border-[#d2b241] rounded-b-full"></div>
+          </div>
+        </div>
         <nav className="space-y-3">
           {items.map(([name, href]) => (
             <a
