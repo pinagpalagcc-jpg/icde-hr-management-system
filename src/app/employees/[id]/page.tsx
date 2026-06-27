@@ -420,7 +420,7 @@ function Sidebar() {
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
-        <img src="/icde-logo.png" alt="ICDE Logo" className="w-24 mb-10" />
+        <div className="bg-white rounded-xl p-2 mb-10 inline-block"><img src="/icde-logo.png" alt="ICDE Logo" className="w-28 h-auto" /></div>
         <nav className="space-y-3">
           <a href="/dashboard" className="block px-4 py-3 rounded-xl hover:bg-white/10">Dashboard</a>
           <a href="/employees" className="block px-4 py-3 rounded-xl bg-[#d2b241] font-semibold">Employees</a>
