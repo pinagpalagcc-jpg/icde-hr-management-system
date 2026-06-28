@@ -4,12 +4,23 @@ export default async function ReportsPage() {
   const employees = await getEmployees();
 
   const total = employees.length;
-  const active = employees.filter((e) => (e.status || "Available") !== "On Leave").length;
-  const inactive = employees.filter((e) => (e.status || "Available") === "On Leave").length;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: activeLeaves } = await supabase
+    .from("leave_requests")
+    .select("employee_id")
+    .eq("status", "Approved")
+    .lte("start_date", today)
+    .gte("end_date", today);
+
+  const onLeaveIds = new Set((activeLeaves || []).map((l: any) => l.employee_id));
+
+  const active = employees.filter((e: any) => !onLeaveIds.has(e.id)).length;
+  const inactive = employees.filter((e: any) => onLeaveIds.has(e.id)).length;
 
   const rows = departments.map((d) => {
     const dept = employees.filter((e) => e.department === d);
-    return [d, String(dept.length), String(dept.filter((e) => (e.status || "Available") !== "On Leave").length), String(dept.filter((e) => (e.status || "Available") === "On Leave").length)];
+    return [d, String(dept.length), String(dept.filter((e: any) => !onLeaveIds.has(e.id)).length), String(dept.filter((e: any) => onLeaveIds.has(e.id)).length)];
   });
 
   return (

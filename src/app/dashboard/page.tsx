@@ -9,8 +9,19 @@ export default async function DashboardPage() {
     .select("*")
     .eq("status", "Pending");
 
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: activeLeaves } = await supabase
+    .from("leave_requests")
+    .select("employee_id")
+    .eq("status", "Approved")
+    .lte("start_date", today)
+    .gte("end_date", today);
+
+  const onLeaveIds = new Set((activeLeaves || []).map((l: any) => l.employee_id));
+
   const total = employees.length;
-  const inactive = employees.filter((e) => (e.status || "Available") === "On Leave").length;
+  const inactive = employees.filter((e: any) => onLeaveIds.has(e.id)).length;
   const active = total - inactive;
 
   const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);

@@ -52,7 +52,7 @@ export async function PATCH(
     leave,
     message:
       leave?.status === "Approved"
-        ? "Leave approved and employee status changed to On Leave."
+        ? "Leave approved. Employee will show On Leave only during approved leave dates."
         : "Leave request updated.",
   });
 }
