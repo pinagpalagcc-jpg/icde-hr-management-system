@@ -4,6 +4,11 @@ import { supabase } from "@/lib/supabase";
 export default async function DashboardPage() {
   const employees = await getEmployees();
 
+  const { data: leaves } = await supabase
+    .from("leave_requests")
+    .select("*")
+    .eq("status", "Pending");
+
   const total = employees.length;
   const inactive = employees.filter((e) => (e.status || "Available") === "On Leave").length;
   const active = total - inactive;
@@ -58,10 +63,10 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Kpi title="Pending Leave Requests" value="0" href="/leave-requests" />
-          <Kpi title="Employees On Leave" value="0" href="/reports?filter=on-leave" />
+          <Kpi title="Pending Leave Requests" value={(leaves || []).length} href="/leave-requests" />
+          <Kpi title="Employees On Leave" value={inactive} href="/reports?filter=on-leave" />
           <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" />
-          <Kpi title="Annual Tickets Due" value={alerts.filter((a: any) => a.document === "Annual Ticket Due").length} href="/document-expiry?type=annual-ticket" />
+          <Kpi title="Annual Tickets Due" value={employees.filter((e: any) => daysRemaining(e.annual_ticket_due) !== null && daysRemaining(e.annual_ticket_due)! >= 0 && daysRemaining(e.annual_ticket_due)! <= 90).length} href="/document-expiry?type=annual-ticket" />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
