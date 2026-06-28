@@ -34,7 +34,7 @@ export default function AddEmployeePage() {
       login_password: String(fd.get("login_password") || "").trim(),
       user_role: String(fd.get("user_role") || "Staff"),
       must_change_password: true,
-      status: "Active",
+      status: "Available",
       mobile_number: String(fd.get("mobile_number") || "").trim(),
       email: String(fd.get("email") || "").trim(),
       uae_address: String(fd.get("uae_address") || "").trim(),

@@ -91,7 +91,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
   }
 
   async function toggleStatus() {
-    const nextStatus = employee.status === "On Leave" ? "Available" : "On Leave";
+    const nextStatus = employe(e.status || "Available") === "On Leave" ? "Available" : "On Leave";
     await fetch(`/api/employees/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -281,7 +281,7 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
                 <h1 className="text-3xl font-bold text-[#3f4447]">{fullName}</h1>
                 <p className="text-gray-500">Employee ID: {employee.employee_code}</p>
                 <p className="text-gray-500">Department: {employee.department || "-"} | Position: {employee.position || "-"}</p>
-                <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${employee.status === "On Leave" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${employe(e.status || "Available") === "On Leave" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
                   {employee.status || "Available"}
                 </span>
               </div>
@@ -301,11 +301,11 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
 
               <button
                 onClick={toggleStatus}
-                className={employee.status === "On Leave"
+                className={employe(e.status || "Available") === "On Leave"
                   ? "bg-green-100 text-green-700 px-5 py-3 rounded-xl font-semibold"
                   : "bg-orange-100 text-orange-700 px-5 py-3 rounded-xl font-semibold"}
               >
-                {employee.status === "On Leave" ? "Activate" : "Deactivate"}
+                {employe(e.status || "Available") === "On Leave" ? "Activate" : "Deactivate"}
               </button>
 
               <button onClick={deleteEmployee} className="bg-red-100 text-red-700 px-5 py-3 rounded-xl font-semibold">Delete</button>

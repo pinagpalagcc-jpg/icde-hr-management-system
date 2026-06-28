@@ -5,7 +5,7 @@ export default async function DashboardPage() {
   const employees = await getEmployees();
 
   const total = employees.length;
-  const inactive = employees.filter((e) => e.status === "On Leave").length;
+  const inactive = employees.filter((e) => (e.status || "Available") === "On Leave").length;
   const active = total - inactive;
 
   const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);

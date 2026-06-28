@@ -4,12 +4,12 @@ export default async function ReportsPage() {
   const employees = await getEmployees();
 
   const total = employees.length;
-  const active = employees.filter((e) => e.status !== "On Leave").length;
-  const inactive = employees.filter((e) => e.status === "On Leave").length;
+  const active = employees.filter((e) => (e.status || "Available") !== "On Leave").length;
+  const inactive = employees.filter((e) => (e.status || "Available") === "On Leave").length;
 
   const rows = departments.map((d) => {
     const dept = employees.filter((e) => e.department === d);
-    return [d, String(dept.length), String(dept.filter((e) => e.status !== "On Leave").length), String(dept.filter((e) => e.status === "On Leave").length)];
+    return [d, String(dept.length), String(dept.filter((e) => (e.status || "Available") !== "On Leave").length), String(dept.filter((e) => (e.status || "Available") === "On Leave").length)];
   });
 
   return (
