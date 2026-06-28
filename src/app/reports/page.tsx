@@ -1,4 +1,5 @@
 import { departments, getEmployees } from "@/lib/hr";
+import { supabase } from "@/lib/supabase";
 
 export default async function ReportsPage() {
   const employees = await getEmployees();
