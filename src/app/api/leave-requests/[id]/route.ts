@@ -23,6 +23,14 @@ export async function PATCH(
   const params = await Promise.resolve(context.params);
   const body = await req.json();
 
+  const { data: oldLeave, error: oldError } = await supabase
+    .from("leave_requests")
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  if (oldError) return NextResponse.json({ error: oldError.message }, { status: 500 });
+
   const updateData: any = {};
   if (body.status) updateData.status = body.status;
   if (body.rejection_reason !== undefined) updateData.rejection_reason = body.rejection_reason;
@@ -36,14 +44,37 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (leave?.status === "Approved" && leave?.employee_id) {
-    const { error: empError } = await supabase
+  const newlyApproved =
+    oldLeave.status !== "Approved" &&
+    leave.status === "Approved" &&
+    leave.employee_id;
+
+  if (newlyApproved) {
+    const days = Number(leave.total_days || 0);
+
+    const { data: employee, error: empReadError } = await supabase
       .from("employees")
-      .update({ status: "On Leave" })
+      .select("leaves_used,balance_leaves")
+      .eq("id", leave.employee_id)
+      .single();
+
+    if (empReadError) {
+      return NextResponse.json({ error: empReadError.message }, { status: 500 });
+    }
+
+    const currentUsed = Number(employee?.leaves_used || 0);
+    const currentBalance = Number(employee?.balance_leaves ?? 30);
+
+    const { error: empUpdateError } = await supabase
+      .from("employees")
+      .update({
+        leaves_used: currentUsed + days,
+        balance_leaves: Math.max(currentBalance - days, 0),
+      })
       .eq("id", leave.employee_id);
 
-    if (empError) {
-      return NextResponse.json({ error: empError.message }, { status: 500 });
+    if (empUpdateError) {
+      return NextResponse.json({ error: empUpdateError.message }, { status: 500 });
     }
   }
 
@@ -51,8 +82,8 @@ export async function PATCH(
     success: true,
     leave,
     message:
-      leave?.status === "Approved"
-        ? "Leave approved. Employee will show On Leave only during approved leave dates."
+      leave.status === "Approved"
+        ? "Leave approved and balance updated."
         : "Leave request updated.",
   });
 }
