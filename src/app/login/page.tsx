@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
+  useEffect(() => {
+    localStorage.removeItem("icde_user_id");
+    localStorage.removeItem("icde_user_role");
+    document.cookie = "icde_auth=; path=/; max-age=0";
+  }, []);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
