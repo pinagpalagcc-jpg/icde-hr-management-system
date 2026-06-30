@@ -1,8 +1,9 @@
-import { departments, getEmployees, daysRemaining, fullName } from "@/lib/hr";
+import { departments, getEmployees, daysRemaining, fullName, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
 import { supabase } from "@/lib/supabase";
 
 export default async function DashboardPage() {
   const employees = await getEmployees();
+  const activeLeaveIds = await getActiveLeaveEmployeeIds();
 
   const { data: leaves } = await supabase
     .from("leave_requests")

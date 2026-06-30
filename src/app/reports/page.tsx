@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export default async function ReportsPage() {
   const employees = await getEmployees();
+  const activeLeaveIds = await getActiveLeaveEmployeeIds();
 
   const total = employees.length;
   const today = new Date().toISOString().slice(0, 10);
