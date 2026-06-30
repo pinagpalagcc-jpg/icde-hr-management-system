@@ -5,15 +5,16 @@ import { useEffect, useState } from "react";
 export default function ChangePasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ employee_id?: string }>;
+  searchParams: Promise<{ employee_id?: string }> | { employee_id?: string };
 }) {
   const [employeeId, setEmployeeId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    searchParams.then((p) => {
+    Promise.resolve(searchParams).then((p) => {
       const id = p.employee_id || "";
       setEmployeeId(id);
       if (id) fetch(`/api/employees/${id}`).then((r) => r.json()).then(setEmployee);
@@ -21,6 +22,13 @@ export default function ChangePasswordPage({
   }, [searchParams]);
 
   async function changePassword() {
+    if (saving) return;
+
+    if (!employeeId) {
+      alert("Employee account not found.");
+      return;
+    }
+
     if (!newPassword || newPassword.length < 4) {
       alert("Password must be at least 4 characters.");
       return;
@@ -31,30 +39,32 @@ export default function ChangePasswordPage({
       return;
     }
 
+    setSaving(true);
+
     const res = await fetch(`/api/employees/${employeeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         login_password: newPassword,
         must_change_password: false,
-        status: "Available",
+        status: employee?.status || "Available",
       }),
     });
 
     const result = await res.json();
 
     if (!res.ok) {
-      alert(result.error || "Failed to change password.");
+      alert(result.error || "Password change failed.");
+      setSaving(false);
       return;
     }
 
     localStorage.setItem("icde_user_id", employeeId);
-    localStorage.setItem("icde_user_role", result?.user_role || employee?.user_role || "Staff");
-  document.cookie = "icde_auth=" + employeeId + "; path=/; max-age=86400; SameSite=Lax";
+    localStorage.setItem("icde_user_role", result.user_role || employee?.user_role || "Staff");
+    document.cookie = "icde_auth=" + employeeId + "; path=/; max-age=86400; SameSite=Lax";
 
     alert("Password changed successfully.");
-
-    window.location.href = (result?.user_role || employee?.user_role) === "Admin" ? "/dashboard" : "/staff";
+    window.location.href = (result.user_role || employee?.user_role) === "Admin" ? "/dashboard" : "/staff";
   }
 
   return (
@@ -66,16 +76,30 @@ export default function ChangePasswordPage({
         <div className="space-y-5">
           <div>
             <label className="text-sm font-semibold text-gray-600">New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-2 w-full border rounded-xl px-4 py-3 outline-none"
+            />
           </div>
 
           <div>
             <label className="text-sm font-semibold text-gray-600">Confirm Password</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 outline-none" />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="mt-2 w-full border rounded-xl px-4 py-3 outline-none"
+            />
           </div>
 
-          <button onClick={changePassword} className="w-full bg-[#d2b241] text-white rounded-xl py-3 font-bold">
-            Save New Password
+          <button
+            onClick={changePassword}
+            disabled={saving}
+            className="w-full bg-[#d2b241] text-white rounded-xl py-3 font-bold disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save New Password"}
           </button>
         </div>
       </section>
