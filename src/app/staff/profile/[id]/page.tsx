@@ -273,7 +273,7 @@ function StaffSidebar({ active, employeeId }: { active: string; employeeId: stri
       </div>
       <button
         onClick={() => {
-          localStorage.clear();
+          localStorage.clear(); document.cookie = "icde_auth=; path=/; max-age=0";
           window.location.href = "/login";
         }}
         className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"

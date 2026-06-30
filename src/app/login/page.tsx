@@ -28,6 +28,7 @@ export default function LoginPage() {
 
     localStorage.setItem("icde_user_id", user.id);
     localStorage.setItem("icde_user_role", user.user_role || "Staff");
+      document.cookie = "icde_auth=" + user.id + "; path=/; max-age=86400; SameSite=Lax";
 
     if (user.must_change_password) {
       window.location.href = `/change-password?employee_id=${user.id}`;

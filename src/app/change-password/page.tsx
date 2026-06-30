@@ -49,6 +49,7 @@ export default function ChangePasswordPage({
 
     localStorage.setItem("icde_user_id", employeeId);
     localStorage.setItem("icde_user_role", employee?.user_role || "Staff");
+  document.cookie = "icde_auth=" + employeeId + "; path=/; max-age=86400; SameSite=Lax";
 
     alert("Password changed successfully.");
 
