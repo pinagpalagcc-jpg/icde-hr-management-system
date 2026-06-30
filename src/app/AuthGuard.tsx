@@ -7,23 +7,37 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const path = window.location.pathname;
+
     const publicPages = ["/login", "/change-password"];
 
-    if (publicPages.includes(path)) {
-      setReady(true);
-      return;
-    }
+    const adminPages = [
+      "/dashboard",
+      "/employees",
+      "/leave-requests",
+      "/document-expiry",
+      "/reports",
+    ];
 
     const userId = localStorage.getItem("icde_user_id");
     const role = localStorage.getItem("icde_user_role");
 
-    if (!userId) {
-      window.location.href = "/login";
+    if (publicPages.some((p) => path.startsWith(p))) {
+      setReady(true);
       return;
     }
 
-    if (role === "Staff" && !path.startsWith("/staff")) {
-      window.location.href = "/staff";
+    if (!userId || !role) {
+      window.location.replace("/login");
+      return;
+    }
+
+    if (role === "Staff" && adminPages.some((p) => path.startsWith(p))) {
+      window.location.replace("/staff");
+      return;
+    }
+
+    if (role === "Admin" && path.startsWith("/staff")) {
+      window.location.replace("/dashboard");
       return;
     }
 
@@ -31,5 +45,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!ready) return null;
+
   return <>{children}</>;
 }
