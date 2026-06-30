@@ -15,10 +15,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     const userId = localStorage.getItem("icde_user_id");
-    const hasCookie = document.cookie.includes("icde_auth=");
+    const role = localStorage.getItem("icde_user_role");
 
-    if (!userId && !hasCookie) {
+    if (!userId) {
       window.location.href = "/login";
+      return;
+    }
+
+    if (role === "Staff" && !path.startsWith("/staff")) {
+      window.location.href = "/staff";
       return;
     }
 
@@ -26,6 +31,5 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!ready) return null;
-
   return <>{children}</>;
 }
