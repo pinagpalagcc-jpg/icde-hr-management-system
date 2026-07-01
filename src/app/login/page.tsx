@@ -19,12 +19,14 @@ export default function LoginPage() {
     const res = await fetch("/api/employees");
     const employees = await res.json();
 
-    const user = (employees || []).find(
-      (e: any) =>
-        e.login_username === username.trim() &&
-        e.login_password === password.trim() &&
-        e.status !== "Inactive"
-    );
+    const inputUsername = username.trim().toLowerCase();
+    const inputPassword = password.trim();
+
+    const user = (employees || []).find((e: any) => {
+      const dbUsername = String(e.login_username || "").trim().toLowerCase();
+      const dbPassword = String(e.login_password || "").trim();
+      return dbUsername === inputUsername && dbPassword === inputPassword && e.status !== "Inactive";
+    });
 
     if (!user) {
       alert("Invalid username or password.");
