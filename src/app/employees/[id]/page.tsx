@@ -250,7 +250,23 @@ export default function EmployeeProfilePage({
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 rounded-xl font-semibold text-sm ${activeTab === tab ? "bg-[#d2b241] text-white" : "bg-[#f7f4ec] text-[#3f4447]"}`}>
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-4 rounded-2xl font-bold text-sm shadow-md border-2 transition-all ${
+                  activeTab === tab
+                    ? "bg-[#d2b241] text-white border-[#b99316] scale-[1.03]"
+                    : tab === "Personal Information"
+                    ? "bg-[#efe7ff] text-[#5b21b6] border-[#c4b5fd] hover:bg-[#ddd6fe]"
+                    : tab === "Employment Detail"
+                    ? "bg-[#dbeafe] text-[#1d4ed8] border-[#93c5fd] hover:bg-[#bfdbfe]"
+                    : tab === "Salary and Benefits"
+                    ? "bg-[#fef3c7] text-[#92400e] border-[#fbbf24] hover:bg-[#fde68a]"
+                    : tab === "Leaves Detail"
+                    ? "bg-[#dcfce7] text-[#166534] border-[#86efac] hover:bg-[#bbf7d0]"
+                    : tab === "Office Documents"
+                    ? "bg-[#e0f2fe] text-[#075985] border-[#7dd3fc] hover:bg-[#bae6fd]"
+                    : tab === "Immigration Documents"
+                    ? "bg-[#d1fae5] text-[#047857] border-[#6ee7b7] hover:bg-[#a7f3d0]"
+                    : "bg-[#f3e8ff] text-[#7e22ce] border-[#d8b4fe] hover:bg-[#e9d5ff]"
+                }`}>
                 {tab}
               </button>
             ))}
