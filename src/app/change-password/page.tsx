@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function ChangePasswordPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ employee_id?: string }> | { employee_id?: string };
-}) {
+export default function ChangePasswordPage() {
+  const searchParams = useSearchParams();
+
   const [employeeId, setEmployeeId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -14,11 +13,15 @@ export default function ChangePasswordPage({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.resolve(searchParams).then((p) => {
-      const id = p.employee_id || "";
-      setEmployeeId(id);
-      if (id) fetch(`/api/employees/${id}`).then((r) => r.json()).then(setEmployee);
-    });
+    const id = searchParams.get("employee_id") || "";
+    setEmployeeId(id);
+
+    if (id) {
+      fetch(`/api/employees/${id}`)
+        .then((r) => r.json())
+        .then((data) => setEmployee(data))
+        .catch(() => setEmployee(null));
+    }
   }, [searchParams]);
 
   async function changePassword() {
@@ -59,12 +62,14 @@ export default function ChangePasswordPage({
       return;
     }
 
+    const role = result.user_role || employee?.user_role || "Staff";
+
     localStorage.setItem("icde_user_id", employeeId);
-    localStorage.setItem("icde_user_role", result.user_role || employee?.user_role || "Staff");
+    localStorage.setItem("icde_user_role", role);
     document.cookie = "icde_auth=" + employeeId + "; path=/; max-age=86400; SameSite=Lax";
 
     alert("Password changed successfully.");
-    window.location.href = (result.user_role || employee?.user_role) === "Admin" ? "/dashboard" : "/staff";
+    window.location.href = String(role).toLowerCase() === "admin" ? "/dashboard" : "/staff";
   }
 
   return (
