@@ -14,10 +14,10 @@ function shouldUpdateLeaveBalance(leaveType: string | null | undefined) {
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = params;
 
     const { data, error } = await supabase
       .from("leave_requests")
@@ -40,17 +40,15 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const params = await context.params;
   return updateLeaveRequest(req, params.id);
 }
 
 export async function PATCH(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const params = await context.params;
   return updateLeaveRequest(req, params.id);
 }
 
@@ -136,10 +134,10 @@ async function updateLeaveRequest(req: Request, id: string) {
 
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = params;
 
     const { error } = await supabase
       .from("leave_requests")
