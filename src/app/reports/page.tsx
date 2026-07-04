@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { departments, getEmployees, daysRemaining, fullName, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
 import { supabase } from "@/lib/supabase";
 

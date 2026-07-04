@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { getEmployees, daysRemaining, fullName } from "@/lib/hr";
 
 export default async function DocumentExpiryPage() {
