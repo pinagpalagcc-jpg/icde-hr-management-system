@@ -112,7 +112,7 @@ export default function AddEmployeePage() {
           </FormSection>
 
           <FormSection title="Employment Information">
-            <Select label="Department" name="department" options={["Doctors", "Nurses", "Front Office", "Back Office", "Admin", "House Keeping"]} />
+            <Select label="Department" name="department" options={["Clinicians", "Admin", "Front Desk", "Dental Assistant", "Insurance", "House Keeping", "Dependants"]} />
             <Field label="Position" name="position" />
             <Select label="Employment Type" name="employment_type" options={["Full Time", "Part Time", "Contract", "Probation"]} />
             <Field label="Joining Date" name="joining_date" type="date" />
