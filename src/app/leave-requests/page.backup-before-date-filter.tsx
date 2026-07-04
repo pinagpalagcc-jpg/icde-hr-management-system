@@ -6,15 +6,6 @@ export default function LeaveRequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [filters, setFilters] = useState({
-    from: "",
-    to: "",
-    status: "All",
-    leaveType: "All",
-  });
-
-  const [showResults, setShowResults] = useState(false);
-
   async function loadLeaves() {
     setLoading(true);
 
@@ -46,21 +37,6 @@ export default function LeaveRequestsPage() {
   useEffect(() => {
     loadLeaves();
   }, []);
-
-  function filteredLeaves() {
-    if (!showResults) return [];
-
-    return leaves.filter((leave) => {
-      const startDate = leave.start_date || "";
-
-      const matchFrom = filters.from ? startDate >= filters.from : true;
-      const matchTo = filters.to ? startDate <= filters.to : true;
-      const matchStatus = filters.status === "All" ? true : leave.status === filters.status;
-      const matchType = filters.leaveType === "All" ? true : leave.leave_type === filters.leaveType;
-
-      return matchFrom && matchTo && matchStatus && matchType;
-    });
-  }
 
   async function approveLeave(leave: any) {
     if (!leave?.id) {
@@ -108,14 +84,9 @@ export default function LeaveRequestsPage() {
     loadLeaves();
   }
 
-  const allFiltered = filteredLeaves();
-  const pending = allFiltered.filter((leave) => leave.status === "Pending");
-  const approved = allFiltered.filter((leave) => leave.status === "Approved");
-  const rejected = allFiltered.filter((leave) => leave.status === "Rejected");
-
-  const totalPending = leaves.filter((leave) => leave.status === "Pending").length;
-  const totalApproved = leaves.filter((leave) => leave.status === "Approved").length;
-  const totalRejected = leaves.filter((leave) => leave.status === "Rejected").length;
+  const pending = leaves.filter((leave) => leave.status === "Pending");
+  const approved = leaves.filter((leave) => leave.status === "Approved");
+  const rejected = leaves.filter((leave) => leave.status === "Rejected");
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -123,101 +94,23 @@ export default function LeaveRequestsPage() {
 
       <main className="flex-1 p-8 overflow-x-hidden">
         <h1 className="text-3xl font-bold text-[#3f4447]">Leave Requests</h1>
-        <p className="text-gray-500 mb-8">
-          Filter, review, approve, or reject employee leave applications.
-        </p>
+        <p className="text-gray-500 mb-8">Review, approve, or reject employee leave applications.</p>
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Kpi title="Pending Requests" value={totalPending} />
-          <Kpi title="Approved Requests" value={totalApproved} />
-          <Kpi title="Rejected Requests" value={totalRejected} />
+          <Kpi title="Pending Requests" value={pending.length} />
+          <Kpi title="Approved Requests" value={approved.length} />
+          <Kpi title="Rejected Requests" value={rejected.length} />
           <Kpi title="Total Requests" value={leaves.length} />
-        </section>
-
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-5">Filter Leave Requests</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-            <Input
-              label="From Date"
-              type="date"
-              value={filters.from}
-              onChange={(v: string) => setFilters({ ...filters, from: v })}
-            />
-
-            <Input
-              label="To Date"
-              type="date"
-              value={filters.to}
-              onChange={(v: string) => setFilters({ ...filters, to: v })}
-            />
-
-            <Select
-              label="Status"
-              value={filters.status}
-              options={["All", "Pending", "Approved", "Rejected"]}
-              onChange={(v: string) => setFilters({ ...filters, status: v })}
-            />
-
-            <Select
-              label="Leave Type"
-              value={filters.leaveType}
-              options={[
-                "All",
-                "Annual Leave",
-                "Sick Leave",
-                "Emergency Leave",
-                "Unpaid Leave",
-                "Holiday Credit Leave",
-              ]}
-              onChange={(v: string) => setFilters({ ...filters, leaveType: v })}
-            />
-          </div>
-
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={() => setShowResults(true)}
-              className="bg-[#d2b241] text-white px-6 py-3 rounded-xl font-semibold"
-            >
-              Search Requests
-            </button>
-
-            <button
-              onClick={() => {
-                setFilters({ from: "", to: "", status: "All", leaveType: "All" });
-                setShowResults(false);
-              }}
-              className="bg-[#3f4447] text-white px-6 py-3 rounded-xl font-semibold"
-            >
-              Clear Filter
-            </button>
-          </div>
-
-          {!showResults && (
-            <p className="text-gray-500 mt-4">
-              Select date range or filter, then click Search Requests to show the table.
-            </p>
-          )}
         </section>
 
         {loading ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm">Loading...</div>
-        ) : showResults ? (
+        ) : (
           <>
-            <LeaveTable
-              title="Pending Leave Applications"
-              leaves={pending}
-              showActions
-              approveLeave={approveLeave}
-              rejectLeave={rejectLeave}
-            />
+            <LeaveTable title="Pending Leave Applications" leaves={pending} showActions approveLeave={approveLeave} rejectLeave={rejectLeave} />
             <LeaveTable title="Approved Requests" leaves={approved} />
             <LeaveTable title="Rejected Requests" leaves={rejected} />
           </>
-        ) : (
-          <div className="bg-white rounded-2xl p-8 shadow-sm text-center text-gray-500">
-            Leave request table is hidden. Use the filter above to view requests.
-          </div>
         )}
       </main>
     </div>
@@ -273,9 +166,7 @@ function LeaveTable({ title, leaves, showActions = false, approveLeave, rejectLe
                   <td className="p-3">{leave.end_date}</td>
                   <td className="p-3">{leave.total_days}</td>
                   <td className="p-3">{leave.reason || "-"}</td>
-                  <td className="p-3">
-                    {leave.employee?.balance_leaves ?? leave.employees?.balance_leaves ?? "-"}
-                  </td>
+                  <td className="p-3">{leave.employee?.balance_leaves ?? leave.employees?.balance_leaves ?? "-"}</td>
                   <td className="p-3 font-semibold">{leave.status}</td>
 
                   {showActions && (
@@ -305,37 +196,6 @@ function Kpi({ title, value }: { title: string; value: string | number }) {
     <div className="bg-white rounded-2xl shadow-sm border-t-4 border-[#d2b241] p-6 text-center">
       <p className="text-gray-500">{title}</p>
       <h3 className="text-3xl font-bold text-[#3f4447] mt-2">{value}</h3>
-    </div>
-  );
-}
-
-function Input({ label, value, onChange, type = "text" }: any) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <input
-        type={type}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white"
-      />
-    </div>
-  );
-}
-
-function Select({ label, value, options, onChange }: any) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-gray-600">{label}</label>
-      <select
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full border rounded-xl px-4 py-3 outline-none bg-white"
-      >
-        {options.map((option: string) => (
-          <option key={option}>{option}</option>
-        ))}
-      </select>
     </div>
   );
 }
