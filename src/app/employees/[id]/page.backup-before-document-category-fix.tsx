@@ -141,7 +141,7 @@ export default function EmployeeProfilePage({
     reader.readAsDataURL(file);
   }
 
-  async function uploadDocument(categoryOverride?: string) {
+  async function uploadDocument() {
     if (!docForm.document_name) return alert("Please enter document name.");
     if (!docForm.file_data) return alert("Please choose a file.");
 
@@ -151,7 +151,7 @@ export default function EmployeeProfilePage({
       body: JSON.stringify({
         employee_id: id,
         document_name: docForm.document_name,
-        category: categoryOverride || docForm.category,
+        category: docForm.category,
         issue_date: docForm.not_applicable ? null : docForm.issue_date || null,
         expiry_date: docForm.not_applicable ? null : docForm.expiry_date || null,
         file_name: docForm.file_name,
@@ -420,7 +420,7 @@ function DocumentCenter({ category, docForm, setDocForm, handleFile, uploadDocum
             <span className="font-semibold text-[#3f4447]">Not Applicable</span>
           </label>
         </div>
-        <button onClick={() => uploadDocument(category)} className="mt-5 bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Upload Document</button>
+        <button onClick={uploadDocument} className="mt-5 bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">Upload Document</button>
       </div>
 
       <div className="overflow-x-auto">
