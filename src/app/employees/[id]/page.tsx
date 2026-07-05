@@ -26,7 +26,7 @@ export default function EmployeeProfilePage({
   const [id, setId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<TabName>("Personal Information");
+  const [activeTab, setActiveTab] = useState<string>("Personal Information");
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   // Custom Employee Tabs
