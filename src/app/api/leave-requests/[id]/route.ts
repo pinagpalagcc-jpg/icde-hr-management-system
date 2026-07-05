@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { sendEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 const BALANCE_DEDUCTING_LEAVE_TYPES = [
   "Annual Leave",
@@ -114,6 +115,21 @@ async function updateLeaveRequest(req: Request, id: string) {
     }
 
     if ((newStatus === "Approved" || newStatus === "Rejected") && oldStatus !== newStatus && employee) {
+      const name = employeeName(employee);
+      const title = `Leave Request ${newStatus}`;
+      const message = `Your ${leaveType} request has been ${newStatus}.`;
+
+      try {
+        await createNotification(
+          existingRequest.employee_id,
+          title,
+          message,
+          "Leave"
+        );
+      } catch (notificationError) {
+        console.log("In-app notification failed:", notificationError);
+      }
+
       const to = employeeEmail(employee);
 
       if (to) {
@@ -124,7 +140,7 @@ async function updateLeaveRequest(req: Request, id: string) {
             html: `
               <div style="font-family: Arial, sans-serif; line-height: 1.6;">
                 <h2>ICDE HR Management</h2>
-                <p>Dear ${employeeName(employee)},</p>
+                <p>Dear ${name},</p>
                 <p>Your <strong>${leaveType}</strong> request has been <strong>${newStatus}</strong>.</p>
                 <p><strong>Total Days:</strong> ${totalDays || "-"}</p>
                 <p>Please login to the HR portal for more details.</p>
