@@ -26,25 +26,10 @@ export default function EmployeeProfilePage({
   const [id, setId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("Personal Information");
+  const [activeTab, setActiveTab] = useState<TabName>("Personal Information");
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Custom Employee Tabs
-const [customTabs, setCustomTabs] = useState<string[]>([]);
-const ALL_TABS = 
-[...TABS, ...customTabs];
-const [showAddTab, setShowAddTab] = useState(false);
-const [newTabName, setNewTabName] = useState("");
-function addCustomTab() {
-  if (!newTabName.trim()) return;
 
-  const tab = newTabName.trim();
-
-setCustomTabs([...customTabs, tab]);
-setActiveTab(tab as TabName);
-setNewTabName("");
-setShowAddTab(false);
-}
   const [docForm, setDocForm] = useState({
     document_name: "",
     category: "Office Documents",
@@ -330,34 +315,8 @@ setShowAddTab(false);
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-          <div className="flex flex-wrap gap-2 items-center">
-            {showAddTab && (
-  <div className="w-full mt-3 flex gap-2">
-    <input
-      type="text"
-      value={newTabName}
-      onChange={(e) => setNewTabName(e.target.value)}
-      placeholder="Tab name (e.g. Bank Details)"
-      className="border rounded-xl px-4 py-2 flex-1"
-    />
-
-    <button
-      type="button"
-      onClick={addCustomTab}
-      className="px-4 py-2 rounded-xl bg-[#d2b241] text-white"
-    >
-      Save
-    </button>
-  </div>
-)}
-            <button
-  type="button"
-  onClick={() => setShowAddTab(!showAddTab)}
-  className="px-4 py-2 rounded-xl bg-green-600 text-white font-semibold"
->
-  + Add Tab
-</button>
-            {ALL_TABS.map((tab) => (
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -382,16 +341,6 @@ setShowAddTab(false);
                 {tab}
               </button>
             ))}
-            {customTabs.includes(activeTab as string) && (
-  <div className="mt-6 rounded-xl border p-6 bg-gray-50">
-    <h3 className="text-lg font-bold">{activeTab}</h3>
-
-    <textarea
-      placeholder={`Enter ${activeTab} details here...`}
-      className="mt-4 w-full h-48 border rounded-xl p-4"
-    />
-  </div>
-)}
           </div>
         </section>
 
