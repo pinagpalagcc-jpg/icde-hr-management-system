@@ -17,6 +17,7 @@
     "react-dom": "latest",
     "react-hook-form": "latest",
     "react-icons": "latest",
+    "resend": "^6.17.1",
     "sonner": "latest",
     "zod": "latest"
   },
