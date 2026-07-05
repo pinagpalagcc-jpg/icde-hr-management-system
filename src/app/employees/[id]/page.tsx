@@ -391,7 +391,7 @@ export default function EmployeeProfilePage({
         {activeTab === "Employment Detail" &&
           (editMode ? (
             <EditSection title="Employment Detail">
-              <EditSelect label="Department" field="department" value={employee.department} options={["Doctors", "Nurses", "Front Office", "Back Office", "Admin", "House Keeping"]} update={update} />
+              <EditSelect label="Department" field="department" value={employee.department} options={["Clinicians", "Admin", "Front Desk", "Dental Assistant", "Insurance", "House Keeping", "Dependants"]} update={update} />
               <EditInput label="Position" field="position" value={employee.position} update={update} />
               <EditSelect label="Employment Type" field="employment_type" value={employee.employment_type} options={["Full Time", "Part Time", "Contract", "Probation"]} update={update} />
               <EditInput label="Joining Date" field="joining_date" type="date" value={employee.joining_date} update={update} />
