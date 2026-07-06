@@ -47,7 +47,7 @@ export default async function DashboardPage() {
         remaining,
       };
     })
-    .filter((a: any) => a.remaining !== null && a.remaining >= 0 && a.remaining <= 90)
+    .filter((a: any) => a.remaining !== null && a.remaining <= 90)
     .sort((a: any, b: any) => a.remaining - b.remaining);
 
   return (
@@ -107,7 +107,7 @@ export default async function DashboardPage() {
                     <td className="p-3">{a.expiry}</td>
                     <td className="p-3">
                       <span className={`${expiryBadgeClass(a.remaining)} px-3 py-1 rounded-full font-semibold`}>
-                        {a.remaining} days
+                        {a.remaining < 0 ? `${Math.abs(a.remaining)} days expired` : `${a.remaining} days`}
                       </span>
                     </td>
                   </tr>
