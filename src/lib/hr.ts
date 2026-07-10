@@ -10,14 +10,35 @@ export const departments = [
   "Dependants",
 ];
 
+function employeeIdNumber(employeeCode: string | null | undefined) {
+  const matches = String(employeeCode || "").match(/\d+/g);
+
+  if (!matches?.length) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Number(matches.join(""));
+}
+
 export async function getEmployees() {
   const { data, error } = await supabase
     .from("employees")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*");
 
   if (error) return [];
-  return data || [];
+
+  return (data || []).sort((a: any, b: any) => {
+    const numberA = employeeIdNumber(a.employee_code);
+    const numberB = employeeIdNumber(b.employee_code);
+
+    if (numberA !== numberB) {
+      return numberA - numberB;
+    }
+
+    return String(a.employee_code || "").localeCompare(
+      String(b.employee_code || "")
+    );
+  });
 }
 
 export function fullName(e: any) {
@@ -32,7 +53,9 @@ export function daysRemaining(dateValue: string | null) {
   const today = new Date();
   const expiry = new Date(dateValue);
 
-  return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil(
+    (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
 }
 
 export async function getActiveLeaveEmployeeIds() {
@@ -46,10 +69,19 @@ export async function getActiveLeaveEmployeeIds() {
     .gte("to_date", today);
 
   if (error) return [];
-  return (data || []).map((l: any) => l.employee_id).filter(Boolean);
+
+  return (data || [])
+    .map((leave: any) => leave.employee_id)
+    .filter(Boolean);
 }
 
-export function displayStatus(employee: any, activeLeaveIds: string[] = []) {
-  if (activeLeaveIds.includes(employee.id)) return "On Leave";
+export function displayStatus(
+  employee: any,
+  activeLeaveIds: string[] = []
+) {
+  if (activeLeaveIds.includes(employee.id)) {
+    return "On Leave";
+  }
+
   return employee.status || "Available";
 }
