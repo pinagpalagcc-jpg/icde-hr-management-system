@@ -169,6 +169,8 @@ export default function LeaveRequestsPage() {
                 "Emergency Leave",
                 "Unpaid Leave",
                 "Holiday Credit Leave",
+                "Maternity Leave",
+                "Paternity Leave",
               ]}
               onChange={(v: string) => setFilters({ ...filters, leaveType: v })}
             />

@@ -15,6 +15,8 @@ const LEAVE_TYPES = [
   "Emergency Leave",
   "Unpaid Leave",
   "Holiday Credit Leave",
+  "Maternity Leave",
+  "Paternity Leave",
 ];
 
 export default function ApplyLeavePage() {

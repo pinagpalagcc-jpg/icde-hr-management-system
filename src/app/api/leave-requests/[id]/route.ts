@@ -7,7 +7,6 @@ const BALANCE_DEDUCTING_LEAVE_TYPES = [
   "Annual Leave",
   "Sick Leave",
   "Emergency Leave",
-  "Unpaid Leave",
 ];
 
 function shouldUpdateLeaveBalance(leaveType: string | null | undefined) {
