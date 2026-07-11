@@ -168,15 +168,105 @@ export default function StaffProfilePage({
         )}
 
         {activeTab === "Leave Details" && (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-            <h2 className="text-xl font-bold text-[#3f4447] mb-5">Leave Summary</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <MiniKpi title="Total Leaves" value={`${employee.total_leaves || 30} Days`} />
-              <MiniKpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
-              <MiniKpi title="Balance Leaves" value={`${employee.balance_leaves || 30} Days`} />
-            </div>
-          </section>
-        )}
+  <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h2 className="text-xl font-bold text-[#3f4447] mb-6">
+      Leave Summary
+    </h2>
+
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-lg font-bold text-[#3f4447] mb-4">
+          Annual Leave
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MiniKpi
+            title="Total"
+            value={`${employee.total_leaves ?? 30} Days`}
+          />
+          <MiniKpi
+            title="Used"
+            value={`${employee.leaves_used ?? 0} Days`}
+          />
+          <MiniKpi
+            title="Balance"
+            value={`${employee.balance_leaves ?? 30} Days`}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-lg font-bold text-[#3f4447] mb-4">
+          Paternity Leave
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MiniKpi title="Total" value="15 Days" />
+          <MiniKpi
+            title="Used"
+            value={`${employee.paternity_leave_used ?? 0} Days`}
+          />
+          <MiniKpi
+            title="Balance"
+            value={`${employee.paternity_leave_balance ?? 15} Days`}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-lg font-bold text-[#3f4447] mb-4">
+          Maternity Leave
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MiniKpi title="Total" value="45 Days" />
+          <MiniKpi
+            title="Used"
+            value={`${employee.maternity_leave_used ?? 0} Days`}
+          />
+          <MiniKpi
+            title="Balance"
+            value={`${employee.maternity_leave_balance ?? 45} Days`}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-lg font-bold text-[#3f4447] mb-4">
+          Holiday Credit Leave
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MiniKpi
+            title="Earned"
+            value={`${employee.credit_leave_earned ?? 0} Days`}
+          />
+          <MiniKpi
+            title="Used"
+            value={`${employee.credit_leave_used ?? 0} Days`}
+          />
+          <MiniKpi
+            title="Balance"
+            value={`${employee.credit_leave_balance ?? 0} Days`}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-lg font-bold text-[#3f4447] mb-4">
+          Unpaid Leave
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <MiniKpi
+            title="Used"
+            value={`${employee.unpaid_leave_used ?? 0} Days`}
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+)}
 
         {activeTab === "Office Documents" && (
           <DocumentCenter category="Office Documents" documents={documents} />
