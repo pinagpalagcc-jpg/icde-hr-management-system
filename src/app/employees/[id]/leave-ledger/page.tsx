@@ -46,6 +46,7 @@ export default function LeaveLedgerPage({
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [ledgerType, setLedgerType] = useState("annual");
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -54,6 +55,34 @@ export default function LeaveLedgerPage({
   const [appliedFromDate, setAppliedFromDate] = useState("");
   const [appliedToDate, setAppliedToDate] = useState("");
   const [appliedLeaveType, setAppliedLeaveType] = useState("All");
+
+  const ledgerConfig =
+    ledgerType === "paternity"
+      ? {
+          title: "Paternity Leave Ledger",
+          subtitle: "Approved Paternity Leave records",
+          leaveTypes: ["Paternity Leave"],
+          entitlement: 15,
+          used: Number(employee?.paternity_leave_used ?? 0),
+          balance: Number(employee?.paternity_leave_balance ?? 15),
+        }
+      : ledgerType === "maternity"
+      ? {
+          title: "Maternity Leave Ledger",
+          subtitle: "Approved Maternity Leave records",
+          leaveTypes: ["Maternity Leave"],
+          entitlement: 45,
+          used: Number(employee?.maternity_leave_used ?? 0),
+          balance: Number(employee?.maternity_leave_balance ?? 45),
+        }
+      : {
+          title: "Annual Leave Ledger",
+          subtitle: "Approved Annual, Sick and Emergency Leave records",
+          leaveTypes: ANNUAL_GROUP_TYPES,
+          entitlement: Number(employee?.total_leaves ?? 30),
+          used: Number(employee?.leaves_used ?? 0),
+          balance: Number(employee?.balance_leaves ?? 30),
+        };
 
   useEffect(() => {
     let active = true;
@@ -67,7 +96,18 @@ export default function LeaveLedgerPage({
 
         if (!active) return;
 
+        const currentLedgerType =
+          new URLSearchParams(window.location.search).get("type") || "annual";
+
+        setLedgerType(currentLedgerType);
         setEmployeeId(id);
+
+        const selectedLeaveTypes =
+          currentLedgerType === "paternity"
+            ? ["Paternity Leave"]
+            : currentLedgerType === "maternity"
+            ? ["Maternity Leave"]
+            : ANNUAL_GROUP_TYPES;
 
         const [employeeRes, leaveRes] = await Promise.all([
           fetch(`/api/employees/${id}`, {
@@ -98,7 +138,7 @@ export default function LeaveLedgerPage({
               return (
                 String(request.employee_id) === String(id) &&
                 String(request.status).toLowerCase() === "approved" &&
-                ANNUAL_GROUP_TYPES.includes(String(request.leave_type))
+                selectedLeaveTypes.includes(String(request.leave_type))
               );
             })
           : [];
@@ -168,12 +208,17 @@ export default function LeaveLedgerPage({
     appliedLeaveType,
   ]);
 
-  const totalEntitlement = Number(employee?.total_leaves ?? 30);
-  const totalUsed = Number(employee?.leaves_used ?? 0);
+  const totalEntitlement = ledgerConfig.entitlement;
 
-  const currentBalance = Number(
-    employee?.balance_leaves ??
-      totalEntitlement - totalUsed
+  const totalUsed = requests.reduce(
+    (total, request) =>
+      total + Number(request.total_days || 0),
+    0
+  );
+
+  const currentBalance = Math.max(
+    totalEntitlement - totalUsed,
+    0
   );
 
   const filteredUsedDays = filteredRequests.reduce(
@@ -281,11 +326,11 @@ export default function LeaveLedgerPage({
 
         <div className="mt-6 mb-8">
           <h1 className="text-3xl font-bold text-[#3f4447]">
-            Annual Leave Ledger
+            {ledgerConfig.title}
           </h1>
 
           <p className="text-gray-500 mt-2">
-            Approved Annual, Sick and Emergency Leave records
+            {ledgerConfig.subtitle}
           </p>
         </div>
 
@@ -299,7 +344,7 @@ export default function LeaveLedgerPage({
           <LedgerKpi
             title="Total Entitlement"
             value={`${totalEntitlement} Days`}
-            subtitle="Annual leave entitlement"
+            subtitle={`${ledgerConfig.title.replace(" Ledger", "")} entitlement`}
           />
 
           <LedgerKpi
@@ -311,26 +356,28 @@ export default function LeaveLedgerPage({
           <LedgerKpi
             title="Current Balance"
             value={`${currentBalance} Days`}
-            subtitle="Available annual leave"
+            subtitle="Available leave balance"
           />
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <LeaveTypeSummary
-            title="Annual Leave Used"
-            value={`${annualLeaveUsed} Days`}
-          />
+        {ledgerType === "annual" ? (
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <LeaveTypeSummary
+              title="Annual Leave Used"
+              value={`${annualLeaveUsed} Days`}
+            />
 
-          <LeaveTypeSummary
-            title="Sick Leave Used"
-            value={`${sickLeaveUsed} Days`}
-          />
+            <LeaveTypeSummary
+              title="Sick Leave Used"
+              value={`${sickLeaveUsed} Days`}
+            />
 
-          <LeaveTypeSummary
-            title="Emergency Leave Used"
-            value={`${emergencyLeaveUsed} Days`}
-          />
-        </section>
+            <LeaveTypeSummary
+              title="Emergency Leave Used"
+              value={`${emergencyLeaveUsed} Days`}
+            />
+          </section>
+        ) : null}
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
@@ -378,17 +425,11 @@ export default function LeaveLedgerPage({
                   All Leave Types
                 </option>
 
-                <option value="Annual Leave">
-                  Annual Leave
-                </option>
-
-                <option value="Sick Leave">
-                  Sick Leave
-                </option>
-
-                <option value="Emergency Leave">
-                  Emergency Leave
-                </option>
+                {ledgerConfig.leaveTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -477,6 +477,9 @@ export default function EmployeeProfilePage({
           <MiniKpi
             title="Used"
             value={`${employee.paternity_leave_used ?? 0} Days`}
+              onClick={() =>
+                window.location.href = `/employees/${id}/leave-ledger?type=paternity`
+              }
           />
           <MiniKpi
             title="Balance"
@@ -495,6 +498,9 @@ export default function EmployeeProfilePage({
           <MiniKpi
             title="Used"
             value={`${employee.maternity_leave_used ?? 0} Days`}
+              onClick={() =>
+                window.location.href = `/employees/${id}/leave-ledger?type=maternity`
+              }
           />
           <MiniKpi
             title="Balance"
