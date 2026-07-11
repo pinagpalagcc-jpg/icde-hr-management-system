@@ -518,10 +518,16 @@ export default function EmployeeProfilePage({
           <MiniKpi
             title="Earned"
             value={`${employee.credit_leave_earned ?? 0} Days`}
+              onClick={() =>
+                window.location.href = `/employees/${id}/holiday-credit-ledger`
+              }
           />
           <MiniKpi
             title="Used"
             value={`${employee.credit_leave_used ?? 0} Days`}
+              onClick={() =>
+                window.location.href = `/employees/${id}/holiday-credit-ledger`
+              }
           />
           <MiniKpi
             title="Balance"
