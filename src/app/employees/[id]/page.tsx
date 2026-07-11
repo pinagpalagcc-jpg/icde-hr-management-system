@@ -454,9 +454,12 @@ export default function EmployeeProfilePage({
             value={`${employee.total_leaves ?? 30} Days`}
           />
           <MiniKpi
-            title="Used"
-            value={`${employee.leaves_used ?? 0} Days`}
-          />
+  title="Used"
+  value={`${employee.leaves_used ?? 0} Days`}
+  onClick={() =>
+    window.location.href = `/employees/${id}/leave-ledger?type=annual`
+  }
+/>
           <MiniKpi
             title="Balance"
             value={`${employee.balance_leaves ?? 30} Days`}
@@ -708,8 +711,30 @@ function previewDoc(doc: any) {
   }
 }
 
-function MiniKpi({ title, value }: { title: string; value: string }) {
-  return <div className="rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center"><p className="text-gray-500 text-sm">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
+function MiniKpi({
+  title,
+  value,
+  onClick,
+}: {
+  title: string;
+  value: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`w-full rounded-2xl border-t-4 border-[#d2b241] shadow-sm p-5 text-center transition ${
+        onClick
+          ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+          : "cursor-default"
+      }`}
+    >
+      <p className="text-gray-500 text-sm">{title}</p>
+      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
+    </button>
+  );
 }
 
 function InfoWide({ title, rows }: { title: string; rows: string[][] }) {
