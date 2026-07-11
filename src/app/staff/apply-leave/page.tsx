@@ -89,14 +89,14 @@ export default function ApplyLeavePage() {
     }
 
     const availableBalance =
-  form.leave_type === "Annual Leave"
+  form.leave_type === "Annual Leave" ||
+  form.leave_type === "Sick Leave" ||
+  form.leave_type === "Emergency Leave"
     ? Number(employee?.balance_leaves || 0)
-    : form.leave_type === "Sick Leave"
-    ? Number(employee?.sick_leave_balance || 0)
     : form.leave_type === "Maternity Leave"
-    ? Number(employee?.maternity_leave_balance || 45)
+    ? Number(employee?.maternity_leave_balance ?? 45)
     : form.leave_type === "Paternity Leave"
-    ? Number(employee?.paternity_leave_balance || 15)
+    ? Number(employee?.paternity_leave_balance ?? 15)
     : form.leave_type === "Holiday Credit Leave"
     ? Number(employee?.credit_leave_balance || 0)
     : Number.MAX_SAFE_INTEGER;

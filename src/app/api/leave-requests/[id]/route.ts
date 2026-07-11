@@ -112,7 +112,62 @@ async function updateLeaveRequest(req: Request, id: string) {
         return NextResponse.json({ error: employeeUpdateError.message }, { status: 500 });
       }
     }
+if (
+  newStatus === "Approved" &&
+  oldStatus !== "Approved" &&
+  totalDays > 0 &&
+  existingRequest.employee_id
+) {
+  let balanceUpdate: Record<string, number> | null = null;
 
+  if (leaveType === "Paternity Leave") {
+    balanceUpdate = {
+      paternity_leave_used:
+        Number(employee?.paternity_leave_used || 0) + totalDays,
+      paternity_leave_balance:
+        Number(employee?.paternity_leave_balance ?? 15) - totalDays,
+    };
+  }
+
+  if (leaveType === "Maternity Leave") {
+    balanceUpdate = {
+      maternity_leave_used:
+        Number(employee?.maternity_leave_used || 0) + totalDays,
+      maternity_leave_balance:
+        Number(employee?.maternity_leave_balance ?? 45) - totalDays,
+    };
+  }
+
+  if (leaveType === "Holiday Credit Leave") {
+    balanceUpdate = {
+      credit_leave_used:
+        Number(employee?.credit_leave_used || 0) + totalDays,
+      credit_leave_balance:
+        Number(employee?.credit_leave_balance || 0) - totalDays,
+    };
+  }
+
+  if (leaveType === "Unpaid Leave") {
+    balanceUpdate = {
+      unpaid_leave_used:
+        Number(employee?.unpaid_leave_used || 0) + totalDays,
+    };
+  }
+
+  if (balanceUpdate) {
+    const { error: separateBalanceError } = await supabase
+      .from("employees")
+      .update(balanceUpdate)
+      .eq("id", existingRequest.employee_id);
+
+    if (separateBalanceError) {
+      return NextResponse.json(
+        { error: separateBalanceError.message },
+        { status: 500 }
+      );
+    }
+  }
+}
     if ((newStatus === "Approved" || newStatus === "Rejected") && oldStatus !== newStatus && employee) {
       const name = employeeName(employee);
       const title = `Leave Request ${newStatus}`;
