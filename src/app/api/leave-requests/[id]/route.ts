@@ -119,6 +119,7 @@ if (
   existingRequest.employee_id
 ) {
   let balanceUpdate: Record<string, number> | null = null;
+  let holidayTransactionId: string | null = null;
 
   if (leaveType === "Paternity Leave") {
     balanceUpdate = {
@@ -139,11 +140,82 @@ if (
   }
 
   if (leaveType === "Holiday Credit Leave") {
+    const { data: creditTransactions, error: creditFetchError } =
+      await supabase
+        .from("holiday_credit_transactions")
+        .select("earned_days, used_days")
+        .eq("employee_id", existingRequest.employee_id);
+
+    if (creditFetchError) {
+      return NextResponse.json(
+        { error: creditFetchError.message },
+        { status: 500 }
+      );
+    }
+
+    const totalEarned = (creditTransactions || []).reduce(
+      (sum, transaction) =>
+        sum + Number(transaction.earned_days || 0),
+      0
+    );
+
+    const currentUsed = (creditTransactions || []).reduce(
+      (sum, transaction) =>
+        sum + Number(transaction.used_days || 0),
+      0
+    );
+
+    const newUsed = currentUsed + totalDays;
+    const newBalance = totalEarned - newUsed;
+
+    if (newBalance < 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Holiday Credit balance is insufficient for this leave request.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const transactionDate = new Date()
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: usedTransaction, error: usedTransactionError } =
+      await supabase
+        .from("holiday_credit_transactions")
+        .insert({
+          employee_id: existingRequest.employee_id,
+          transaction_date: transactionDate,
+          remarks:
+            existingRequest.reason ||
+            "Holiday Credit Leave Approved",
+          from_date: existingRequest.start_date || null,
+          to_date: existingRequest.end_date || null,
+          earned_days: 0,
+          used_days: totalDays,
+          balance_after: newBalance,
+          entry_type: "Used",
+          leave_request_id: existingRequest.id,
+          created_by: "Admin Approval",
+        })
+        .select("id")
+        .single();
+
+    if (usedTransactionError) {
+      return NextResponse.json(
+        { error: usedTransactionError.message },
+        { status: 500 }
+      );
+    }
+
+    holidayTransactionId = usedTransaction.id;
+
     balanceUpdate = {
-      credit_leave_used:
-        Number(employee?.credit_leave_used || 0) + totalDays,
-      credit_leave_balance:
-        Number(employee?.credit_leave_balance || 0) - totalDays,
+      credit_leave_earned: totalEarned,
+      credit_leave_used: newUsed,
+      credit_leave_balance: newBalance,
     };
   }
 
@@ -161,6 +233,13 @@ if (
       .eq("id", existingRequest.employee_id);
 
     if (separateBalanceError) {
+      if (holidayTransactionId) {
+        await supabase
+          .from("holiday_credit_transactions")
+          .delete()
+          .eq("id", holidayTransactionId);
+      }
+
       return NextResponse.json(
         { error: separateBalanceError.message },
         { status: 500 }
