@@ -238,13 +238,21 @@ function employeeDisplayName(leave: any) {
   return fullName || emp.email || leave.employee_name || "-";
 }
 
-function LeaveTable({ title, leaves, showActions = false, approveLeave, rejectLeave }: any) {
+function LeaveTable({
+  title,
+  leaves,
+  showActions = false,
+  approveLeave,
+  rejectLeave,
+}: any) {
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-      <h2 className="text-xl font-bold text-[#3f4447] mb-5">{title}</h2>
+      <h2 className="text-xl font-bold text-[#3f4447] mb-5">
+        {title}
+      </h2>
 
       <div className="overflow-x-auto border rounded-xl">
-        <table className="min-w-[1200px] w-full text-sm border-collapse">
+        <table className="min-w-[1250px] w-full text-sm border-collapse">
           <thead>
             <tr className="bg-[#d2b241] text-white">
               <th className="p-3 text-left">Employee</th>
@@ -255,41 +263,85 @@ function LeaveTable({ title, leaves, showActions = false, approveLeave, rejectLe
               <th className="p-3 text-left">Reason</th>
               <th className="p-3 text-left">Balance Leaves</th>
               <th className="p-3 text-left">Status</th>
-              {showActions && <th className="p-3 text-left">Action</th>}
+              {showActions ? (
+                <th className="p-3 text-left">Action</th>
+              ) : null}
             </tr>
           </thead>
 
           <tbody>
             {leaves.length === 0 ? (
               <tr>
-                <td colSpan={showActions ? 9 : 8} className="p-6 text-center text-gray-500">
+                <td
+                  colSpan={showActions ? 9 : 8}
+                  className="p-6 text-center text-gray-500"
+                >
                   No leave requests found.
                 </td>
               </tr>
             ) : (
               leaves.map((leave: any) => (
                 <tr key={leave.id} className="border-b">
-                  <td className="p-3 font-medium">{employeeDisplayName(leave)}</td>
-                  <td className="p-3">{leave.leave_type}</td>
-                  <td className="p-3">{leave.start_date}</td>
-                  <td className="p-3">{leave.end_date}</td>
-                  <td className="p-3">{leave.total_days}</td>
-                  <td className="p-3">{leave.reason || "-"}</td>
-                  <td className="p-3">
-                    {leave.employee?.balance_leaves ?? leave.employees?.balance_leaves ?? "-"}
+                  <td className="p-3 font-medium">
+                    {employeeDisplayName(leave)}
                   </td>
-                  <td className="p-3 font-semibold">{leave.status}</td>
 
-                  {showActions && (
-                    <td className="p-3">
-                      <button onClick={() => approveLeave(leave)} className="text-green-700 font-bold mr-4">
+                  <td className="p-3">
+                    {leave.leave_type}
+                  </td>
+
+                  <td className="p-3">
+                    {leave.start_date}
+                  </td>
+
+                  <td className="p-3">
+                    {leave.end_date}
+                  </td>
+
+                  <td className="p-3">
+                    {leave.total_days}
+                  </td>
+
+                  <td className="p-3">
+                    {leave.reason || "-"}
+                  </td>
+
+                  <td className="p-3">
+                    {leave.employee?.balance_leaves ??
+                      leave.employees?.balance_leaves ??
+                      "-"}
+                  </td>
+
+                  <td className="p-3 font-semibold">
+                    {leave.status}
+                  </td>
+
+                  {showActions ? (
+                    <td className="p-3 whitespace-nowrap">
+                      <a
+                        href={`/leave-requests/${leave.id}`}
+                        className="inline-block text-blue-700 font-bold mr-4 hover:underline"
+                      >
+                        Edit
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => approveLeave(leave)}
+                        className="text-green-700 font-bold mr-4 hover:underline"
+                      >
                         Approve
                       </button>
-                      <button onClick={() => rejectLeave(leave)} className="text-red-700 font-bold">
+
+                      <button
+                        type="button"
+                        onClick={() => rejectLeave(leave)}
+                        className="text-red-700 font-bold hover:underline"
+                      >
                         Reject
                       </button>
                     </td>
-                  )}
+                  ) : null}
                 </tr>
               ))
             )}
@@ -297,10 +349,13 @@ function LeaveTable({ title, leaves, showActions = false, approveLeave, rejectLe
         </table>
       </div>
 
-      <p className="text-xs text-gray-400 mt-2">Scroll left/right if table is wider than screen.</p>
+      <p className="text-xs text-gray-400 mt-2">
+        Scroll left/right if table is wider than screen.
+      </p>
     </section>
   );
 }
+
 
 function Kpi({ title, value }: { title: string; value: string | number }) {
   return (
