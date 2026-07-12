@@ -345,48 +345,108 @@ export default function EmployeeProfilePage({
         </section>
 
         {activeTab === "Personal Information" &&
-          (editMode ? (
-            <EditSection title="Personal Information">
-              <EditInput label="Employee ID" field="employee_code" value={employee.employee_code} update={update} />
-              <EditInput label="First Name" field="first_name" value={employee.first_name} update={update} />
-              <EditInput label="Middle Name" field="middle_name" value={employee.middle_name} update={update} />
-              <EditInput label="Last Name" field="last_name" value={employee.last_name} update={update} />
-              <EditInput label="Date of Birth" field="date_of_birth" type="date" value={employee.date_of_birth} update={update} />
-              <EditSelect label="Gender" field="gender" value={employee.gender} options={["Male", "Female"]} update={update} />
-              <EditInput label="Nationality" field="nationality" value={employee.nationality} update={update} />
-              <EditInput label="Mobile Number" field="mobile_number" value={employee.mobile_number} update={update} />
-              <EditInput label="Email Address" field="email" value={employee.email} update={update} />
-              <EditInput label="UAE Address" field="uae_address" value={employee.uae_address} update={update} />
+  (editMode ? (
+    <EditSection title="Personal Information">
+      <EditInput
+        label="Employee ID"
+        field="employee_code"
+        value={employee.employee_code}
+        update={update}
+      />
+      <EditInput
+        label="First Name"
+        field="first_name"
+        value={employee.first_name}
+        update={update}
+      />
+      <EditInput
+        label="Middle Name"
+        field="middle_name"
+        value={employee.middle_name}
+        update={update}
+      />
+      <EditInput
+        label="Last Name"
+        field="last_name"
+        value={employee.last_name}
+        update={update}
+      />
+      <EditInput
+        label="Date of Birth"
+        field="date_of_birth"
+        type="date"
+        value={employee.date_of_birth}
+        update={update}
+      />
+      <EditSelect
+        label="Gender"
+        field="gender"
+        value={employee.gender}
+        options={["Male", "Female"]}
+        update={update}
+      />
+      <EditInput
+        label="Nationality"
+        field="nationality"
+        value={employee.nationality}
+        update={update}
+      />
+      <EditInput
+        label="Mobile Number"
+        field="mobile_number"
+        value={employee.mobile_number}
+        update={update}
+      />
+      <EditInput
+        label="Email Address"
+        field="email"
+        value={employee.email}
+        update={update}
+      />
+      <EditInput
+        label="UAE Address"
+        field="uae_address"
+        value={employee.uae_address}
+        update={update}
+      />
+    </EditSection>
+  ) : (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-xl font-bold text-[#3f4447] mb-5">
+        Personal Information
+      </h2>
 
-              <EditInput label="Emergency Contact Name" field="emergency_contact_name" value={employee.emergency_contact_name} update={update} />
-              <EditInput label="Emergency Contact Number" field="emergency_contact_number" value={employee.emergency_contact_number} update={update} />
-              <EditInput label="Emergency Contact Address" field="emergency_contact_address" value={employee.emergency_contact_address} update={update} />
-              <EditInput label="Home Country Contact Person" field="home_country_contact_person" value={employee.home_country_contact_person} update={update} />
-              <EditInput label="Home Country Address" field="home_country_address" value={employee.home_country_address} update={update} />
-              <EditInput label="Home Country Phone Number" field="home_country_phone_number" value={employee.home_country_phone_number} update={update} />
-            </EditSection>
-          ) : (
-            <InfoWide
-              title="Personal Information"
-              rows={[
-                ["Photo", employee.profile_photo ? "Uploaded" : "-"],
-                ["Employee ID", employee.employee_code || "-"],
-                ["Full Name", fullName || "-"],
-                ["Mobile Number", employee.mobile_number || "-"],
-                ["Email", employee.email || "-"],
-                ["Date of Birth", employee.date_of_birth || "-"],
-                ["Nationality", employee.nationality || "-"],
-                ["Gender", employee.gender || "-"],
-                ["UAE Residence Address", employee.uae_address || "-"],
-                ["Emergency Contact Name", employee.emergency_contact_name || "-"],
-                ["Emergency Contact Number", employee.emergency_contact_number || "-"],
-                ["Emergency Contact Address", employee.emergency_contact_address || "-"],
-                ["Home Country Contact Person", employee.home_country_contact_person || "-"],
-                ["Home Country Address", employee.home_country_address || "-"],
-                ["Home Country Phone Number", employee.home_country_phone_number || "-"],
-              ]}
-            />
-          ))}
+      <div className="overflow-x-auto">
+        <table className="min-w-[1200px] w-full border border-gray-200">
+          <thead className="bg-[#d2b241] text-white">
+            <tr>
+              <th className="p-3 text-left">Employee ID</th>
+              <th className="p-3 text-left">Full Name</th>
+              <th className="p-3 text-left">Mobile Number</th>
+              <th className="p-3 text-left">Email</th>
+              <th className="p-3 text-left">Date of Birth</th>
+              <th className="p-3 text-left">Nationality</th>
+              <th className="p-3 text-left">Gender</th>
+              <th className="p-3 text-left">Resident Address</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr className="border-t">
+              <td className="p-3">{employee.employee_code || "-"}</td>
+              <td className="p-3">{fullName || "-"}</td>
+              <td className="p-3">{employee.mobile_number || "-"}</td>
+              <td className="p-3">{employee.email || "-"}</td>
+              <td className="p-3">{employee.date_of_birth || "-"}</td>
+              <td className="p-3">{employee.nationality || "-"}</td>
+              <td className="p-3">{employee.gender || "-"}</td>
+              <td className="p-3">{employee.uae_address || "-"}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ))}
 
         {activeTab === "Employment Detail" &&
           (editMode ? (
