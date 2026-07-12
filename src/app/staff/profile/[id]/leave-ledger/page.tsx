@@ -501,6 +501,10 @@ export default function LeaveLedgerPage({
                     Days Used
                   </th>
 
+                  <th className="p-3 text-center">
+                    Period
+                  </th>
+
                   <th className="p-3 text-left">
                     Reason
                   </th>
@@ -515,7 +519,7 @@ export default function LeaveLedgerPage({
                 {filteredRequests.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="p-8 text-center text-gray-500"
                     >
                       No approved leave records found for the selected filters.
@@ -555,6 +559,10 @@ export default function LeaveLedgerPage({
                         {Number(
                           request.total_days || 0
                         )}
+                      </td>
+
+                      <td className="p-3 text-center font-semibold">
+                        {request.annual_period_year || "-"}
                       </td>
 
                       <td className="p-3 max-w-[320px]">
