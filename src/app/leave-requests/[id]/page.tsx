@@ -12,6 +12,16 @@ const LEAVE_TYPES = [
   "Paternity Leave",
 ];
 
+const PERIOD_DEDUCTING_LEAVE_TYPES = [
+  "Annual Leave",
+  "Sick Leave",
+  "Emergency Leave",
+];
+
+function requiresAnnualPeriod(leaveType: string) {
+  return PERIOD_DEDUCTING_LEAVE_TYPES.includes(leaveType);
+}
+
 type LeaveRequest = {
   id: string;
   employee_id: string;
@@ -21,6 +31,20 @@ type LeaveRequest = {
   total_days: number | string;
   reason?: string;
   status: string;
+  annual_period_year?: number | null;
+};
+
+type AnnualTransaction = {
+  period_year: number;
+  total_leaves: number | string;
+  used_leaves: number | string;
+};
+
+type AnnualPeriod = {
+  year: number;
+  total: number;
+  used: number;
+  balance: number;
 };
 
 export default function LeaveRequestEditorPage({
@@ -31,6 +55,7 @@ export default function LeaveRequestEditorPage({
   const [requestId, setRequestId] = useState("");
   const [leave, setLeave] = useState<LeaveRequest | null>(null);
   const [employee, setEmployee] = useState<any>(null);
+  const [annualPeriods, setAnnualPeriods] = useState<AnnualPeriod[]>([]);
 
   const [form, setForm] = useState({
     leave_type: "",
@@ -38,6 +63,7 @@ export default function LeaveRequestEditorPage({
     end_date: "",
     total_days: "",
     reason: "",
+    annual_period_year: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -73,12 +99,20 @@ export default function LeaveRequestEditorPage({
           );
         }
 
-        const employeeResponse = await fetch(
-          `/api/employees/${leaveData.employee_id}`,
-          { cache: "no-store" }
-        );
+        const [employeeResponse, periodsResponse] = await Promise.all([
+          fetch(`/api/employees/${leaveData.employee_id}`, {
+            cache: "no-store",
+          }),
+          fetch(
+            `/api/annual-leave-transactions?employee_id=${encodeURIComponent(
+              leaveData.employee_id
+            )}`,
+            { cache: "no-store" }
+          ),
+        ]);
 
         const employeeData = await employeeResponse.json();
+        const periodData = await periodsResponse.json();
 
         if (!employeeResponse.ok) {
           throw new Error(
@@ -86,10 +120,45 @@ export default function LeaveRequestEditorPage({
           );
         }
 
+        if (!periodsResponse.ok) {
+          throw new Error(
+            periodData?.error ||
+              "Unable to load Annual Leave periods."
+          );
+        }
+
         if (!active) return;
+
+        const periodMap = new Map<number, AnnualPeriod>();
+
+        (Array.isArray(periodData) ? periodData : []).forEach(
+          (transaction: AnnualTransaction) => {
+            const year = Number(transaction.period_year);
+
+            if (!Number.isInteger(year)) return;
+
+            const current = periodMap.get(year) || {
+              year,
+              total: 0,
+              used: 0,
+              balance: 0,
+            };
+
+            current.total += Number(transaction.total_leaves || 0);
+            current.used += Number(transaction.used_leaves || 0);
+            current.balance = current.total - current.used;
+
+            periodMap.set(year, current);
+          }
+        );
+
+        const availablePeriods = Array.from(periodMap.values())
+          .filter((period) => period.balance > 0)
+          .sort((a, b) => a.year - b.year);
 
         setLeave(leaveData);
         setEmployee(employeeData);
+        setAnnualPeriods(availablePeriods);
 
         setForm({
           leave_type: leaveData.leave_type || "",
@@ -97,6 +166,9 @@ export default function LeaveRequestEditorPage({
           end_date: leaveData.end_date || "",
           total_days: String(leaveData.total_days || ""),
           reason: leaveData.reason || "",
+          annual_period_year: leaveData.annual_period_year
+            ? String(leaveData.annual_period_year)
+            : "",
         });
       } catch (error) {
         if (!active) return;
@@ -107,9 +179,7 @@ export default function LeaveRequestEditorPage({
             : "Unable to load Leave Request Editor."
         );
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
@@ -130,6 +200,13 @@ export default function LeaveRequestEditorPage({
       .trim();
   }, [employee]);
 
+  const selectedPeriod = useMemo(() => {
+    return annualPeriods.find(
+      (period) =>
+        String(period.year) === String(form.annual_period_year)
+    );
+  }, [annualPeriods, form.annual_period_year]);
+
   function calculateDays(startDate: string, endDate: string) {
     if (!startDate || !endDate) return "";
 
@@ -144,11 +221,11 @@ export default function LeaveRequestEditorPage({
       return "";
     }
 
-    const difference =
-      end.getTime() - start.getTime();
-
     return String(
-      Math.floor(difference / (1000 * 60 * 60 * 24)) + 1
+      Math.floor(
+        (end.getTime() - start.getTime()) /
+          (1000 * 60 * 60 * 24)
+      ) + 1
     );
   }
 
@@ -169,14 +246,7 @@ export default function LeaveRequestEditorPage({
     setForm(updated);
   }
 
-  async function saveChanges() {
-    if (leave?.status !== "Pending") {
-      setErrorMessage(
-        "Only pending leave requests can be edited."
-      );
-      return false;
-    }
-
+  function validateForm(forApproval = false) {
     if (
       !form.leave_type ||
       !form.start_date ||
@@ -188,6 +258,49 @@ export default function LeaveRequestEditorPage({
       );
       return false;
     }
+
+    const days = Number(form.total_days);
+
+    if (!Number.isFinite(days) || days <= 0) {
+      setErrorMessage("Total Days must be greater than zero.");
+      return false;
+    }
+
+    if (
+      forApproval &&
+      requiresAnnualPeriod(form.leave_type) &&
+      !form.annual_period_year
+    ) {
+      setErrorMessage(
+        "Please select the leave period before approval."
+      );
+      return false;
+    }
+
+    if (
+      forApproval &&
+      requiresAnnualPeriod(form.leave_type) &&
+      selectedPeriod &&
+      days > selectedPeriod.balance
+    ) {
+      setErrorMessage(
+        `Period ${selectedPeriod.year} has only ${selectedPeriod.balance} day(s) available.`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  async function saveChanges(showSuccess = true) {
+    if (leave?.status !== "Pending") {
+      setErrorMessage(
+        "Only pending leave requests can be edited."
+      );
+      return false;
+    }
+
+    if (!validateForm(false)) return false;
 
     try {
       setSaving(true);
@@ -207,6 +320,11 @@ export default function LeaveRequestEditorPage({
             end_date: form.end_date,
             total_days: Number(form.total_days),
             reason: form.reason,
+            annual_period_year:
+              requiresAnnualPeriod(form.leave_type) &&
+              form.annual_period_year
+                ? Number(form.annual_period_year)
+                : null,
           }),
         }
       );
@@ -220,7 +338,10 @@ export default function LeaveRequestEditorPage({
       }
 
       setLeave(data);
-      setMessage("Leave request changes saved successfully.");
+
+      if (showSuccess) {
+        setMessage("Leave request changes saved successfully.");
+      }
 
       return true;
     } catch (error) {
@@ -246,12 +367,16 @@ export default function LeaveRequestEditorPage({
       return;
     }
 
+    if (status === "Approved" && !validateForm(true)) {
+      return;
+    }
+
     try {
       setActionLoading(true);
       setMessage("");
       setErrorMessage("");
 
-      const saved = await saveChanges();
+      const saved = await saveChanges(false);
 
       if (!saved) return;
 
@@ -262,7 +387,14 @@ export default function LeaveRequestEditorPage({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ status }),
+          body: JSON.stringify({
+            status,
+            annual_period_year:
+              requiresAnnualPeriod(form.leave_type) &&
+              form.annual_period_year
+                ? Number(form.annual_period_year)
+                : null,
+          }),
         }
       );
 
@@ -276,6 +408,23 @@ export default function LeaveRequestEditorPage({
       }
 
       setLeave(data);
+      setEmployee((current: any) =>
+        current
+          ? {
+              ...current,
+              total_leaves:
+                data.employee_totals?.total_leaves ??
+                current.total_leaves,
+              leaves_used:
+                data.employee_totals?.leaves_used ??
+                current.leaves_used,
+              balance_leaves:
+                data.employee_totals?.balance_leaves ??
+                current.balance_leaves,
+            }
+          : current
+      );
+
       setMessage(
         `Leave request ${status.toLowerCase()} successfully.`
       );
@@ -386,6 +535,10 @@ export default function LeaveRequestEditorPage({
                   setForm({
                     ...form,
                     leave_type: event.target.value,
+                    annual_period_year:
+                      requiresAnnualPeriod(event.target.value)
+                        ? form.annual_period_year
+                        : "",
                   })
                 }
                 className="mt-2 w-full border rounded-xl px-4 py-3 bg-white disabled:bg-gray-100"
@@ -395,6 +548,45 @@ export default function LeaveRequestEditorPage({
                 ))}
               </select>
             </div>
+
+            {requiresAnnualPeriod(form.leave_type) ? (
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Deduct From Leave Period
+                </label>
+
+                <select
+                  value={form.annual_period_year}
+                  disabled={leave?.status !== "Pending"}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      annual_period_year: event.target.value,
+                    })
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3 bg-white disabled:bg-gray-100"
+                >
+                  <option value="">
+                    Select Leave Period
+                  </option>
+
+                  {annualPeriods.map((period) => (
+                    <option
+                      key={period.year}
+                      value={period.year}
+                    >
+                      {period.year} — {period.balance} Days Available
+                    </option>
+                  ))}
+                </select>
+
+                {annualPeriods.length === 0 ? (
+                  <p className="mt-2 text-sm text-red-600">
+                    No leave period with an available balance was found.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <Field
               label="From"
@@ -452,46 +644,51 @@ export default function LeaveRequestEditorPage({
           </div>
 
           {leave?.status === "Pending" ? (
-            <div className="flex justify-end mt-6">
-              <button
-                type="button"
-                onClick={saveChanges}
-                disabled={saving}
-                className="bg-[#3f4447] text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-60"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
+            <div className="mt-6">
+              {requiresAnnualPeriod(form.leave_type) ? (
+                <div className="mb-5 rounded-xl bg-[#f7f4ec] p-4 text-sm text-[#3f4447]">
+                  <strong>{form.leave_type}</strong> will deduct{" "}
+                  <strong>{form.total_days || 0} Days</strong>{" "}
+                  from period{" "}
+                  <strong>
+                    {form.annual_period_year || "Not Selected"}
+                  </strong>.
+                </div>
+              ) : null}
+
+              <div className="flex flex-col sm:flex-row justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => saveChanges(true)}
+                  disabled={saving || actionLoading}
+                  className="bg-[#3f4447] text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={actionLoading || saving}
+                  onClick={() => updateStatus("Approved")}
+                  className="bg-green-700 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-60"
+                >
+                  {actionLoading
+                    ? "Processing..."
+                    : "Approve and Submit"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={actionLoading || saving}
+                  onClick={() => updateStatus("Rejected")}
+                  className="bg-red-700 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-60"
+                >
+                  Reject Request
+                </button>
+              </div>
             </div>
           ) : null}
         </section>
-
-        {leave?.status === "Pending" ? (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-              Approval
-            </h2>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                type="button"
-                disabled={actionLoading || saving}
-                onClick={() => updateStatus("Approved")}
-                className="bg-green-700 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-60"
-              >
-                Approve Leave
-              </button>
-
-              <button
-                type="button"
-                disabled={actionLoading || saving}
-                onClick={() => updateStatus("Rejected")}
-                className="bg-red-700 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-60"
-              >
-                Reject Leave
-              </button>
-            </div>
-          </section>
-        ) : null}
       </div>
     </div>
   );
@@ -521,18 +718,18 @@ function Field({
   label,
   type,
   value,
-  onChange,
-  disabled = false,
+  disabled,
   min,
   step,
+  onChange,
 }: {
   label: string;
   type: string;
   value: string;
-  onChange: (value: string) => void;
   disabled?: boolean;
   min?: string;
   step?: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div>
@@ -547,7 +744,7 @@ function Field({
         min={min}
         step={step}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full border rounded-xl px-4 py-3 outline-none disabled:bg-gray-100"
+        className="mt-2 w-full border rounded-xl px-4 py-3 disabled:bg-gray-100"
       />
     </div>
   );

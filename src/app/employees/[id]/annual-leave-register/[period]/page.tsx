@@ -2,13 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Employee = {
-  employee_id?: string;
-  first_name?: string;
-  middle_name?: string;
-  last_name?: string;
-};
-
 type Transaction = {
   id: string;
   period_year: number;
@@ -16,32 +9,26 @@ type Transaction = {
   detail: string;
   total_leaves: number | string;
   used_leaves: number | string;
+  entry_type?: string;
+  created_at?: string;
 };
 
-type PeriodSummary = {
-  periodYear: number;
-  total: number;
-  used: number;
-  balance: number;
-};
+type FormMode = "usage" | "encash" | null;
 
-type FormMode = "add" | "encash" | null;
-
-export default function AnnualLeaveRegisterPage({
+export default function AnnualLeavePeriodPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; period: string }>;
 }) {
   const [employeeId, setEmployeeId] = useState("");
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [period, setPeriod] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [formMode, setFormMode] = useState<FormMode>(null);
 
+  const [formMode, setFormMode] = useState<FormMode>(null);
   const [form, setForm] = useState({
-    period_year: String(new Date().getFullYear()),
     transaction_date: new Date().toISOString().slice(0, 10),
     days: "",
-    detail: "",
+    remarks: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -49,52 +36,41 @@ export default function AnnualLeaveRegisterPage({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  async function loadRegister(id: string) {
+  async function loadPeriod(id: string, selectedPeriod: string) {
     try {
       setLoading(true);
       setErrorMessage("");
 
-      const [employeeResponse, registerResponse] =
-        await Promise.all([
-          fetch(`/api/employees/${id}`, {
-            cache: "no-store",
-          }),
-          fetch(
-            `/api/annual-leave-transactions?employee_id=${encodeURIComponent(
-              id
-            )}`,
-            {
-              cache: "no-store",
-            }
-          ),
-        ]);
-
-      const employeeData = await employeeResponse.json();
-      const registerData = await registerResponse.json();
-
-      if (!employeeResponse.ok) {
-        throw new Error(
-          employeeData?.error ||
-            "Unable to load employee information."
-        );
-      }
-
-      if (!registerResponse.ok) {
-        throw new Error(
-          registerData?.error ||
-            "Unable to load Annual Leave Register."
-        );
-      }
-
-      setEmployee(employeeData);
-      setTransactions(
-        Array.isArray(registerData) ? registerData : []
+      const response = await fetch(
+        `/api/annual-leave-transactions?employee_id=${encodeURIComponent(
+          id
+        )}`,
+        {
+          cache: "no-store",
+        }
       );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to load Annual Leave Period."
+        );
+      }
+
+      const filtered = Array.isArray(data)
+        ? data.filter(
+            (item: Transaction) =>
+              String(item.period_year) === String(selectedPeriod)
+          )
+        : [];
+
+      setTransactions(filtered);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Unable to load Annual Leave Register."
+          : "Unable to load Annual Leave Period."
       );
     } finally {
       setLoading(false);
@@ -102,56 +78,59 @@ export default function AnnualLeaveRegisterPage({
   }
 
   useEffect(() => {
-    params.then(({ id }) => {
+    params.then(({ id, period }) => {
       setEmployeeId(id);
-      loadRegister(id);
+      setPeriod(period);
+      loadPeriod(id, period);
     });
   }, [params]);
 
-  const periods = useMemo<PeriodSummary[]>(() => {
-    const map = new Map<number, PeriodSummary>();
+  const rows = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => {
+      const dateA = new Date(
+        a.transaction_date || a.created_at || 0
+      ).getTime();
 
-    transactions.forEach((transaction) => {
-      const year = Number(transaction.period_year);
+      const dateB = new Date(
+        b.transaction_date || b.created_at || 0
+      ).getTime();
 
-      const current = map.get(year) || {
-        periodYear: year,
-        total: 0,
-        used: 0,
-        balance: 0,
-      };
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
 
-      current.total += Number(transaction.total_leaves || 0);
-      current.used += Number(transaction.used_leaves || 0);
-      current.balance = current.total - current.used;
-
-      map.set(year, current);
+      return new Date(a.created_at || 0).getTime() -
+        new Date(b.created_at || 0).getTime();
     });
 
-    return Array.from(map.values()).sort(
-      (a, b) => b.periodYear - a.periodYear
-    );
+    let runningBalance = 0;
+
+    return sorted.map((transaction) => {
+      const added = Number(transaction.total_leaves || 0);
+      const used = Number(transaction.used_leaves || 0);
+
+      runningBalance = runningBalance + added - used;
+
+      return {
+        ...transaction,
+        added,
+        used,
+        runningBalance,
+      };
+    });
   }, [transactions]);
 
-  const total = periods.reduce(
-    (sum, period) => sum + period.total,
+  const totalLeaves = rows.reduce(
+    (sum, transaction) => sum + transaction.added,
     0
   );
 
-  const used = periods.reduce(
-    (sum, period) => sum + period.used,
+  const totalUsed = rows.reduce(
+    (sum, transaction) => sum + transaction.used,
     0
   );
 
-  const balance = total - used;
-
-  const employeeName = employee
-    ? `${employee.first_name || ""} ${
-        employee.middle_name || ""
-      } ${employee.last_name || ""}`
-        .replace(/\s+/g, " ")
-        .trim()
-    : "";
+  const balance = totalLeaves - totalUsed;
 
   function openForm(mode: Exclude<FormMode, null>) {
     setFormMode(mode);
@@ -159,24 +138,17 @@ export default function AnnualLeaveRegisterPage({
     setSuccessMessage("");
 
     setForm({
-      period_year: String(new Date().getFullYear()),
       transaction_date: new Date().toISOString().slice(0, 10),
       days: "",
-      detail:
-        mode === "add"
-          ? "Annual Leave Entitlement"
+      remarks:
+        mode === "usage"
+          ? "Annual Leave Used"
           : "Annual Leave Encashment",
     });
   }
 
   async function saveTransaction() {
-    const year = Number(form.period_year);
     const days = Number(form.days);
-
-    if (!Number.isInteger(year) || year < 1900) {
-      setErrorMessage("Please enter a valid period year.");
-      return;
-    }
 
     if (!form.transaction_date) {
       setErrorMessage("Please select the transaction date.");
@@ -188,12 +160,19 @@ export default function AnnualLeaveRegisterPage({
       return;
     }
 
+    if (days > balance) {
+      setErrorMessage(
+        `Period ${period} has only ${balance} day(s) available.`
+      );
+      return;
+    }
+
     try {
       setSaving(true);
       setErrorMessage("");
       setSuccessMessage("");
 
-      const isAdd = formMode === "add";
+      const isUsage = formMode === "usage";
 
       const response = await fetch(
         "/api/annual-leave-transactions",
@@ -204,19 +183,19 @@ export default function AnnualLeaveRegisterPage({
           },
           body: JSON.stringify({
             employee_id: employeeId,
-            period_year: year,
+            period_year: Number(period),
             transaction_date: form.transaction_date,
             detail:
-              form.detail ||
-              (isAdd
-                ? `Annual Leave Entitlement - ${year}`
-                : `Annual Leave Encashment - ${year}`),
-            total_leaves: isAdd ? days : 0,
-            used_leaves: isAdd ? 0 : days,
-            entry_type: isAdd
-              ? "ENTITLEMENT"
+              form.remarks ||
+              (isUsage
+                ? "Annual Leave Used"
+                : "Annual Leave Encashment"),
+            total_leaves: 0,
+            used_leaves: days,
+            entry_type: isUsage
+              ? "LEAVE_USED"
               : "ENCASHMENT",
-            remarks: form.detail || null,
+            remarks: form.remarks || null,
           }),
         }
       );
@@ -230,12 +209,12 @@ export default function AnnualLeaveRegisterPage({
         );
       }
 
-      await loadRegister(employeeId);
+      await loadPeriod(employeeId, period);
 
       setSuccessMessage(
-        isAdd
-          ? `Annual Leave period ${year} added successfully.`
-          : `${days} Annual Leave day(s) encashed from period ${year}.`
+        isUsage
+          ? `${days} Annual Leave day(s) recorded as used from period ${period}.`
+          : `${days} Annual Leave day(s) encashed from period ${period}.`
       );
 
       setFormMode(null);
@@ -253,7 +232,7 @@ export default function AnnualLeaveRegisterPage({
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f4ec] p-8">
-        Loading Annual Leave Register...
+        Loading Annual Leave Period...
       </div>
     );
   }
@@ -262,33 +241,30 @@ export default function AnnualLeaveRegisterPage({
     <div className="min-h-screen bg-[#f7f4ec] p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <a
-          href={`/employees/${employeeId}`}
+          href={`/employees/${employeeId}/annual-leave-register`}
           className="text-[#b59628] font-bold hover:underline"
         >
-          ← Back to Employee Profile
+          ← Back to Annual Leave Register
         </a>
 
         <div className="mt-6 mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
           <div>
             <h1 className="text-3xl font-bold text-[#3f4447]">
-              Annual Leave Register
+              Annual Leave Register — Period {period}
             </h1>
 
             <p className="text-gray-500 mt-2">
-              {employeeName || "Employee"}
-              {employee?.employee_id
-                ? ` — ${employee.employee_id}`
-                : ""}
+              Complete Annual Leave history for this period.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
-              onClick={() => openForm("add")}
+              onClick={() => openForm("usage")}
               className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold"
             >
-              + Add Leave Period
+              + Record Leave Usage
             </button>
 
             <button
@@ -316,24 +292,12 @@ export default function AnnualLeaveRegisterPage({
         {formMode ? (
           <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
             <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-              {formMode === "add"
-                ? "Add Annual Leave Period"
+              {formMode === "usage"
+                ? "Record Annual Leave Usage"
                 : "Encash Annual Leave"}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-              <Field
-                label="Period"
-                type="number"
-                value={form.period_year}
-                onChange={(value) =>
-                  setForm({
-                    ...form,
-                    period_year: value,
-                  })
-                }
-              />
-
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <Field
                 label="Date"
                 type="date"
@@ -348,8 +312,8 @@ export default function AnnualLeaveRegisterPage({
 
               <Field
                 label={
-                  formMode === "add"
-                    ? "Total Leaves"
+                  formMode === "usage"
+                    ? "Days Used"
                     : "Days Encashed"
                 }
                 type="number"
@@ -363,16 +327,21 @@ export default function AnnualLeaveRegisterPage({
               />
 
               <Field
-                label="Detail"
+                label="Remarks"
                 type="text"
-                value={form.detail}
+                value={form.remarks}
                 onChange={(value) =>
                   setForm({
                     ...form,
-                    detail: value,
+                    remarks: value,
                   })
                 }
               />
+            </div>
+
+            <div className="mt-4 rounded-xl bg-[#f7f4ec] p-4 text-sm text-[#3f4447]">
+              Available balance for period {period}:{" "}
+              <strong>{balance} Days</strong>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -390,7 +359,7 @@ export default function AnnualLeaveRegisterPage({
                 disabled={saving}
                 className="bg-[#3f4447] text-white px-6 py-3 rounded-xl font-bold disabled:opacity-60"
               >
-                {saving ? "Saving..." : "Save"}
+                {saving ? "Saving..." : "Save Transaction"}
               </button>
             </div>
           </section>
@@ -398,77 +367,72 @@ export default function AnnualLeaveRegisterPage({
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <SummaryCard
-            title="Total Annual Leaves"
-            value={`${total} Days`}
+            title="Period Total"
+            value={`${totalLeaves} Days`}
           />
 
           <SummaryCard
-            title="Total Used"
-            value={`${used} Days`}
+            title="Period Used"
+            value={`${totalUsed} Days`}
           />
 
           <SummaryCard
-            title="Current Balance"
+            title="Period Balance"
             value={`${balance} Days`}
           />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-            Annual Leave Period Summary
-          </h2>
-
           <div className="overflow-x-auto border rounded-xl">
-            <table className="min-w-[800px] w-full text-sm">
+            <table className="min-w-[900px] w-full text-sm">
               <thead>
                 <tr className="bg-[#d2b241] text-white">
-                  <th className="p-4 text-left">Period</th>
-                  <th className="p-4 text-center">Total</th>
+                  <th className="p-4 text-left">Date</th>
+                  <th className="p-4 text-left">Detail</th>
+                  <th className="p-4 text-center">
+                    Total Leaves
+                  </th>
                   <th className="p-4 text-center">Used</th>
                   <th className="p-4 text-center">Balance</th>
-                  <th className="p-4 text-center">Action</th>
                 </tr>
               </thead>
 
               <tbody>
-                {periods.length === 0 ? (
+                {rows.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
                       className="p-8 text-center text-gray-500"
                     >
-                      No Annual Leave periods have been added.
+                      No transactions found for period {period}.
                     </td>
                   </tr>
                 ) : (
-                  periods.map((period) => (
+                  rows.map((transaction) => (
                     <tr
-                      key={period.periodYear}
+                      key={transaction.id}
                       className="border-b"
                     >
-                      <td className="p-4 font-bold">
-                        {period.periodYear}
+                      <td className="p-4">
+                        {formatDate(
+                          transaction.transaction_date
+                        )}
                       </td>
 
-                      <td className="p-4 text-center">
-                        {period.total} Days
+                      <td className="p-4 font-medium">
+                        {transaction.detail}
                       </td>
 
-                      <td className="p-4 text-center">
-                        {period.used} Days
+                      <td className="p-4 text-center text-green-700 font-bold">
+                        {transaction.added}
+                      </td>
+
+                      <td className="p-4 text-center text-red-700 font-bold">
+                        {transaction.used}
                       </td>
 
                       <td className="p-4 text-center font-bold">
-                        {period.balance} Days
-                      </td>
-
-                      <td className="p-4 text-center">
-                        <a
-                          href={`/employees/${employeeId}/annual-leave-register/${period.periodYear}`}
-                          className="text-[#b59628] font-bold hover:underline"
-                        >
-                          View
-                        </a>
+                        {transaction.runningBalance}
                       </td>
                     </tr>
                   ))
@@ -519,11 +483,23 @@ function Field({
       <input
         type={type}
         value={value}
-        min={type === "number" ? "0" : undefined}
+        min={type === "number" ? "0.5" : undefined}
         step={type === "number" ? "0.5" : undefined}
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full border rounded-xl px-4 py-3"
       />
     </div>
   );
+}
+
+function formatDate(value: string) {
+  if (!value) return "-";
+
+  const date = new Date(`${value}T00:00:00`);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
