@@ -38,6 +38,7 @@ type LeaveRequest = {
   status?: string;
   created_at?: string;
   approved_at?: string;
+  annual_period_year?: number | string | null;
 };
 
 export default function LeaveLedgerPage({
