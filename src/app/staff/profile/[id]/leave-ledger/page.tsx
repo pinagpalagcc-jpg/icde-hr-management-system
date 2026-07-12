@@ -21,6 +21,10 @@ type Employee = {
   total_leaves?: number | string;
   leaves_used?: number | string;
   balance_leaves?: number | string;
+  paternity_leave_used?: number | string;
+  paternity_leave_balance?: number | string;
+  maternity_leave_used?: number | string;
+  maternity_leave_balance?: number | string;
 };
 
 type LeaveRequest = {
