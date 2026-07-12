@@ -29,9 +29,9 @@ export default function AddEmployeePage() {
       annual_ticket_due: String(fd.get("annual_ticket_due") || "") || null,
       basic_salary: Number(fd.get("basic_salary") || 0),
       other_benefits: Number(fd.get("other_benefits") || 0),
-      total_leaves: Number(fd.get("total_leaves") || 30),
-      leaves_used: Number(fd.get("leaves_used") || 0),
-      balance_leaves: Number(fd.get("balance_leaves") || 30),
+      total_leaves: 0,
+      leaves_used: 0,
+      balance_leaves: 0,
       login_username: String(fd.get("login_username") || "").trim(),
       login_password: String(fd.get("login_password") || "").trim(),
       user_role: String(fd.get("user_role") || "Staff"),
@@ -122,9 +122,7 @@ export default function AddEmployeePage() {
             <Field label="Annual Ticket Due Date" name="annual_ticket_due" type="date" />
             <Field label="Basic Salary" name="basic_salary" />
             <Field label="Other Benefits" name="other_benefits" />
-            <Field label="Total Leaves" name="total_leaves" defaultValue="30" />
-            <Field label="Leaves Used" name="leaves_used" defaultValue="0" />
-            <Field label="Balance Leaves" name="balance_leaves" defaultValue="30" />
+
           </FormSection>
 
           <FormSection title="Contact Information">
