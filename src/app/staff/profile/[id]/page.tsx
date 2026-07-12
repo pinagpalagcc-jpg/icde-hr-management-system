@@ -182,7 +182,11 @@ export default function StaffProfilePage({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MiniKpi
             title="Total"
-            value={`${employee.total_leaves ?? 30} Days`}
+            value={`${employee.total_leaves ?? 0} Days`}
+            onClick={() =>
+              window.location.href =
+                `/staff/profile/${id}/annual-leave-register?portal=staff`
+            }
           />
           <MiniKpi
             title="Used"

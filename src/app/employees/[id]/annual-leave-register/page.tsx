@@ -282,23 +282,33 @@ export default function AnnualLeaveRegisterPage({
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={() => openForm("add")}
-              className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold"
-            >
-              + Add Leave Period
-            </button>
+          {!(
+            typeof window !== "undefined" &&
+            new URLSearchParams(window.location.search).get("portal") ===
+              "staff"
+          ) ? (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => openForm("add")}
+                className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold"
+              >
+                + Add Leave Period
+              </button>
 
-            <button
-              type="button"
-              onClick={() => openForm("encash")}
-              className="bg-[#3f4447] text-white px-5 py-3 rounded-xl font-bold"
-            >
-              − Encash Leave
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => openForm("encash")}
+                className="bg-[#3f4447] text-white px-5 py-3 rounded-xl font-bold"
+              >
+                − Encash Leave
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-blue-50 border border-blue-200 px-5 py-3 text-blue-700 font-semibold">
+              Read-only Annual Leave Register
+            </div>
+          )}
         </div>
 
         {errorMessage ? (
@@ -313,7 +323,12 @@ export default function AnnualLeaveRegisterPage({
           </div>
         ) : null}
 
-        {formMode ? (
+        {formMode &&
+        !(
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("portal") ===
+            "staff"
+        ) ? (
           <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
             <h2 className="text-xl font-bold text-[#3f4447] mb-5">
               {formMode === "add"
@@ -464,7 +479,13 @@ export default function AnnualLeaveRegisterPage({
 
                       <td className="p-4 text-center">
                         <a
-                          href={`/employees/${employeeId}/annual-leave-register/${period.periodYear}`}
+                          href={
+                          typeof window !== "undefined" &&
+                          new URLSearchParams(window.location.search).get("portal") ===
+                            "staff"
+                            ? `/staff/profile/${employeeId}/annual-leave-register/${period.periodYear}?portal=staff`
+                            : `/employees/${employeeId}/annual-leave-register/${period.periodYear}`
+                        }
                           className="text-[#b59628] font-bold hover:underline"
                         >
                           View
