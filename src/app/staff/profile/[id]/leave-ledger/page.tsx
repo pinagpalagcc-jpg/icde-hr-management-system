@@ -101,10 +101,7 @@ export default function LeaveLedgerPage({
           new URLSearchParams(window.location.search).get("type") || "annual";
 
         setLedgerType(currentLedgerType);
-        setIsStaffView(
-          new URLSearchParams(window.location.search).get("portal") ===
-            "staff"
-        );
+        setIsStaffView(true);
         setEmployeeId(id);
 
         const selectedLeaveTypes =
@@ -323,14 +320,10 @@ export default function LeaveLedgerPage({
     <div className="min-h-screen bg-[#f7f4ec] p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <a
-          href={
-            isStaffView
-              ? `/staff/profile/${employeeId}`
-              : `/employees/${employeeId}`
-          }
+          href={`/staff/profile/${employeeId}`}
           className="inline-flex items-center text-[#b59628] font-bold hover:underline"
         >
-          ← Back to Profile
+          ← Back to My Profile
         </a>
 
         <div className="mt-6 mb-8">

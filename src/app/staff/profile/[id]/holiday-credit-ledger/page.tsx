@@ -51,10 +51,7 @@ export default function HolidayCreditLedgerPage({
 
   useEffect(() => {
     params.then(({ id }) => {
-      setIsStaffView(
-        new URLSearchParams(window.location.search).get("portal") ===
-          "staff"
-      );
+      setIsStaffView(true);
       setEmployeeId(id);
       loadTransactions(id);
     });
@@ -229,14 +226,10 @@ export default function HolidayCreditLedgerPage({
     <div className="min-h-screen bg-[#f7f4ec] p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <a
-          href={
-            isStaffView
-              ? `/staff/profile/${employeeId}`
-              : `/employees/${employeeId}`
-          }
+          href={`/staff/profile/${employeeId}`}
           className="inline-flex items-center text-[#b59628] font-bold hover:underline"
         >
-          ← Back to Profile
+          ← Back to My Profile
         </a>
 
         <div className="mt-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
