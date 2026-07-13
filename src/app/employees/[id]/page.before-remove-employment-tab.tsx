@@ -8,6 +8,7 @@ const ADMIN_DELETE_PASSWORD = "admin123";
 
 const TABS = [
   "Personal Information",
+  "Employment Detail",
   "Salary and Benefits",
   "Leave Details",
   "Office Documents",
@@ -265,14 +266,11 @@ export default function EmployeeProfilePage({
 
               <div>
                 <h1 className="text-3xl font-bold text-[#3f4447]">{fullName}</h1>
+                <p className="text-gray-500">Employee ID: {employee.employee_code}</p>
+                <p className="text-gray-500">
+                  Department: {employee.department || "-"} | Position: {employee.position || "-"}
+                </p>
 
-<p className="text-gray-500">
-  Employee ID: {employee.employee_code}
-</p>
-
-<p className="text-gray-500">
-  Date of Joining: {employee.joining_date || "-"}
-</p>
                 <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${
                   (employee.status || "Available") === "On Leave"
                     ? "bg-red-100 text-red-700"
@@ -415,7 +413,7 @@ export default function EmployeeProfilePage({
   ) : (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-        Personal Information (1 of 2)
+        Personal Information
       </h2>
 
       <div className="overflow-x-auto">
@@ -448,10 +446,44 @@ export default function EmployeeProfilePage({
         </table>
       </div>
     </div>
- 
   ))}
 
-               {activeTab === "Salary and Benefits" &&
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+  <h2 className="text-xl font-bold text-[#3f4447] mb-5">
+    Employment Detail
+  </h2>
+
+  <div className="overflow-x-auto">
+    <table className="min-w-[1500px] w-full border border-gray-200">
+      <thead className="bg-[#d2b241] text-white">
+        <tr>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Department</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Position</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Employment Type</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Joining Date</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Contract End</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Annual Ticket Due</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Username / Email</th>
+          <th className="px-2 py-2 text-left whitespace-nowrap text-sm">User Role</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr className="border-t">
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.department || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.position || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.employment_type || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.joining_date || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.contract_end_date || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.annual_ticket_due || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.login_username || "-"}</td>
+          <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.user_role || "-"}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+        {activeTab === "Salary and Benefits" &&
           (editMode ? (
             <EditSection title="Salary and Benefits">
               <EditInput label="Basic Salary" field="basic_salary" value={employee.basic_salary} update={update} />

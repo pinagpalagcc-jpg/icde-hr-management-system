@@ -415,7 +415,7 @@ export default function EmployeeProfilePage({
   ) : (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-        Personal Information (1 of 2)
+        Personal Information
       </h2>
 
       <div className="overflow-x-auto">
@@ -448,7 +448,6 @@ export default function EmployeeProfilePage({
         </table>
       </div>
     </div>
- 
   ))}
 
                {activeTab === "Salary and Benefits" &&
