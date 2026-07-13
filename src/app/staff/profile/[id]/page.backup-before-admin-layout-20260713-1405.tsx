@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 const TABS = [
   "Personal Information",
+  "Employment Details",
   "Salary & Benefits",
   "Leave Details",
   "Office Documents",
@@ -102,6 +103,8 @@ export default function StaffProfilePage({
                     ? "bg-[#d2b241] text-white border-[#b99316] scale-[1.03]"
                     : tab === "Personal Information"
                     ? "bg-[#efe7ff] text-[#5b21b6] border-[#c4b5fd] hover:bg-[#ddd6fe]"
+                    : tab === "Employment Details"
+                    ? "bg-[#dbeafe] text-[#1d4ed8] border-[#93c5fd] hover:bg-[#bfdbfe]"
                     : tab === "Salary & Benefits"
                     ? "bg-[#fef3c7] text-[#92400e] border-[#fbbf24] hover:bg-[#fde68a]"
                     : tab === "Leave Details"
@@ -120,41 +123,35 @@ export default function StaffProfilePage({
         </section>
 
         {activeTab === "Personal Information" && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-[#3f4447] mb-5">
-              Personal Information
-            </h2>
+          <InfoWide
+            title="Personal Information"
+            rows={[
+              ["Employee ID", employee.employee_code || "-"],
+              ["Full Name", fullName || "-"],
+              ["Mobile Number", employee.mobile_number || "-"],
+              ["Email", employee.email || "-"],
+              ["Date of Birth", employee.date_of_birth || "-"],
+              ["Nationality", employee.nationality || "-"],
+              ["Gender", employee.gender || "-"],
+              ["UAE Residence Address", employee.uae_address || "-"],
+            ]}
+          />
+        )}
 
-            <div className="overflow-x-auto">
-              <table className="min-w-[1500px] w-full border border-gray-200">
-                <thead className="bg-[#d2b241] text-white">
-                  <tr>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Employee ID</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Full Name</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Mobile Number</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Email</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Date of Birth</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Nationality</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Gender</th>
-                    <th className="px-2 py-2 text-left whitespace-nowrap text-sm">Resident Address</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr className="border-t">
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.employee_code || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{fullName || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.mobile_number || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.email || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.date_of_birth || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.nationality || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.gender || "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{employee.uae_address || "-"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {activeTab === "Employment Details" && (
+          <InfoWide
+            title="Employment Details"
+            rows={[
+              ["Department", employee.department || "-"],
+              ["Position", employee.position || "-"],
+              ["Employment Type", employee.employment_type || "-"],
+              ["Joining Date", employee.joining_date || "-"],
+              ["Contract End", employee.contract_end_date || "-"],
+              ["Annual Ticket Due", employee.annual_ticket_due || "-"],
+              ["Username / Email", employee.login_username || "-"],
+              ["User Role", employee.user_role || "-"],
+            ]}
+          />
         )}
 
         {activeTab === "Salary & Benefits" && (
@@ -212,28 +209,19 @@ export default function StaffProfilePage({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniKpi
-  title="Total"
-  value={`${employee.paternity_leave_total ?? 0} Days`}
-  onClick={() =>
-    (window.location.href = `/staff/profile/${id}/paternity-leave-register?portal=staff`)
-  }
-/>
+          <MiniKpi title="Total" value="15 Days" />
           <MiniKpi
             title="Used"
             value={`${employee.paternity_leave_used ?? 0} Days`}
               onClick={() =>
                 window.location.href =
-                  `/staff/profile/${id}/paternity-leave-register?portal=staff`
+                  `/staff/profile/${id}/leave-ledger?type=paternity`
               }
           />
           <MiniKpi
-  title="Balance"
-  value={`${employee.paternity_leave_total ?? 0} Days`}
-  onClick={() =>
-    (window.location.href = `/staff/profile/${id}/paternity-leave-register?portal=staff`)
-  }
-/>
+            title="Balance"
+            value={`${employee.paternity_leave_balance ?? 15} Days`}
+          />
         </div>
       </div>
 
@@ -243,28 +231,19 @@ export default function StaffProfilePage({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniKpi
-  title="Balance"
-  value={`${employee.maternity_leave_total ?? 0} Days`}
-  onClick={() =>
-    (window.location.href = `/staff/profile/${id}/maternity-leave-register?portal=staff`)
-  }
-/>
+          <MiniKpi title="Total" value="45 Days" />
           <MiniKpi
             title="Used"
             value={`${employee.maternity_leave_used ?? 0} Days`}
               onClick={() =>
                 window.location.href =
-                  `/staff/profile/${id}/maternity-leave-register?portal=staff`
+                  `/staff/profile/${id}/leave-ledger?type=maternity`
               }
           />
           <MiniKpi
-  title="Total"
-  value={`${employee.maternity_leave_total ?? 0} Days`}
-  onClick={() =>
-    (window.location.href = `/staff/profile/${id}/maternity-leave-register?portal=staff`)
-  }
-/>
+            title="Balance"
+            value={`${employee.maternity_leave_balance ?? 45} Days`}
+          />
         </div>
       </div>
 
