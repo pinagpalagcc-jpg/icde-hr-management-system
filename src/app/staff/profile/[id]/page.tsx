@@ -158,16 +158,70 @@ export default function StaffProfilePage({
         )}
 
         {activeTab === "Salary & Benefits" && (
-          <InfoWide
-            title="Salary & Benefits"
-            rows={[
-              ["Basic Salary", `AED ${employee.basic_salary || 0}`],
-              ["Other Benefits", `AED ${employee.other_benefits || 0}`],
-              ["Annual Leave", `${employee.total_leaves ?? 0} Days`],
-              ["Leave Used", `${employee.leaves_used || 0} Days`],
-              ["Leave Balance", `${employee.balance_leaves ?? 0} Days`],
-            ]}
-          />
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h2 className="text-xl font-bold text-[#3f4447] mb-5">
+              Salary & Benefits
+            </h2>
+
+            <div className="overflow-x-auto border rounded-xl">
+              <table className="min-w-[1100px] w-full text-sm">
+                <thead>
+                  <tr className="bg-[#d2b241] text-white">
+                    <th className="p-4 text-left">ID</th>
+                    <th className="p-4 text-left">Name</th>
+                    <th className="p-4 text-left">Department</th>
+                    <th className="p-4 text-left">Basic Salary</th>
+                    <th className="p-4 text-left">Accommodation</th>
+                    <th className="p-4 text-left">Transportation</th>
+                    <th className="p-4 text-left">Total</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr className="border-t">
+                    <td className="p-4 whitespace-nowrap">
+                      {employee.employee_code || "-"}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      {fullName || "-"}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      {employee.department || "-"}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      AED {Number(employee.basic_salary || 0).toLocaleString()}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      AED{" "}
+                      {Number(
+                        employee.accommodation_allowance || 0
+                      ).toLocaleString()}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      AED{" "}
+                      {Number(
+                        employee.transportation_allowance || 0
+                      ).toLocaleString()}
+                    </td>
+
+                    <td className="p-4 font-bold text-[#3f4447] whitespace-nowrap">
+                      AED{" "}
+                      {(
+                        Number(employee.basic_salary || 0) +
+                        Number(employee.accommodation_allowance || 0) +
+                        Number(employee.transportation_allowance || 0)
+                      ).toLocaleString()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
 
         {activeTab === "Leave Details" && (

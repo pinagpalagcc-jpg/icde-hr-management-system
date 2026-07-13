@@ -16,8 +16,6 @@ export default function DocumentsPage() {
       ...basic,
       ...employment,
       ...contact,
-      basic_salary: employment.basic_salary ? Number(employment.basic_salary) : 0,
-      other_benefits: employment.other_benefits ? Number(employment.other_benefits) : 0,
       status: "Active",
     };
 

@@ -27,8 +27,6 @@ export default function AddEmployeePage() {
       joining_date: String(fd.get("joining_date") || "") || null,
       contract_end_date: String(fd.get("contract_end_date") || "") || null,
       annual_ticket_due: String(fd.get("annual_ticket_due") || "") || null,
-      basic_salary: Number(fd.get("basic_salary") || 0),
-      other_benefits: Number(fd.get("other_benefits") || 0),
       total_leaves: 0,
       leaves_used: 0,
       balance_leaves: 0,
@@ -120,9 +118,6 @@ export default function AddEmployeePage() {
             <Field label="Joining Date" name="joining_date" type="date" />
             <Field label="Contract End Date" name="contract_end_date" type="date" />
             <Field label="Annual Ticket Due Date" name="annual_ticket_due" type="date" />
-            <Field label="Basic Salary" name="basic_salary" />
-            <Field label="Other Benefits" name="other_benefits" />
-
           </FormSection>
 
           <FormSection title="Contact Information">

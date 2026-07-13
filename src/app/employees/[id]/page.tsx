@@ -85,6 +85,45 @@ export default function EmployeeProfilePage({
     alert("Employee profile updated successfully");
   }
 
+  async function deleteSalary() {
+    const confirmed = window.confirm(
+      "Delete this employee salary information?"
+    );
+
+    if (!confirmed) return;
+
+    setSaving(true);
+
+    const salaryReset = {
+      basic_salary: 0,
+      accommodation_allowance: 0,
+      transportation_allowance: 0,
+    };
+
+    const response = await fetch(`/api/employees/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(salaryReset),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error || "Failed to delete salary information.");
+      setSaving(false);
+      return;
+    }
+
+    setEmployee((current: any) => ({
+      ...current,
+      ...salaryReset,
+    }));
+
+    setEditMode(false);
+    setSaving(false);
+    alert("Salary information deleted successfully.");
+  }
+
   async function toggleStatus() {
     const nextStatus = (employee.status || "Available") === "On Leave" ? "Available" : "On Leave";
 
@@ -449,21 +488,166 @@ export default function EmployeeProfilePage({
  
   ))}
 
-               {activeTab === "Salary and Benefits" &&
-          (editMode ? (
-            <EditSection title="Salary and Benefits">
-              <EditInput label="Basic Salary" field="basic_salary" value={employee.basic_salary} update={update} />
-              <EditInput label="Other Benefits" field="other_benefits" value={employee.other_benefits} update={update} />
-            </EditSection>
-          ) : (
-            <InfoWide
-              title="Salary and Benefits"
-              rows={[
-                ["Basic Salary", `AED ${employee.basic_salary || 0}`],
-                ["Other Benefits", `AED ${employee.other_benefits || 0}`],
-              ]}
-            />
-          ))}
+        {activeTab === "Salary and Benefits" && (
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+              <h2 className="text-xl font-bold text-[#3f4447]">
+                Salary & Benefits
+              </h2>
+
+              <div className="flex flex-wrap gap-3">
+                {editMode ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={saveChanges}
+                      disabled={saving}
+                      className="bg-[#d2b241] text-white px-4 py-2 rounded-lg font-bold disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save Salary"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditMode(false);
+                        loadEmployee(id);
+                      }}
+                      className="bg-gray-200 text-[#3f4447] px-4 py-2 rounded-lg font-bold"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(true)}
+                      className="bg-[#d2b241] text-white px-4 py-2 rounded-lg font-bold"
+                    >
+                      {Number(employee.basic_salary || 0) === 0 &&
+                      Number(employee.accommodation_allowance || 0) === 0 &&
+                      Number(employee.transportation_allowance || 0) === 0
+                        ? "+ Add Salary"
+                        : "Edit Salary"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={deleteSalary}
+                      disabled={saving}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold disabled:opacity-50"
+                    >
+                      Delete Salary
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto border rounded-xl">
+              <table className="min-w-[1100px] w-full text-sm">
+                <thead>
+                  <tr className="bg-[#d2b241] text-white">
+                    <th className="p-4 text-left">ID</th>
+                    <th className="p-4 text-left">Name</th>
+                    <th className="p-4 text-left">Department</th>
+                    <th className="p-4 text-left">Basic Salary</th>
+                    <th className="p-4 text-left">Accommodation</th>
+                    <th className="p-4 text-left">Transportation</th>
+                    <th className="p-4 text-left">Total</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr className="border-t">
+                    <td className="p-4 whitespace-nowrap">
+                      {employee.employee_code || "-"}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      {fullName || "-"}
+                    </td>
+
+                    <td className="p-4 whitespace-nowrap">
+                      {employee.department || "-"}
+                    </td>
+
+                    <td className="p-4">
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={employee.basic_salary || ""}
+                          onChange={(event) =>
+                            update("basic_salary", event.target.value)
+                          }
+                          className="w-full min-w-[140px] border rounded-lg px-3 py-2"
+                        />
+                      ) : (
+                        `AED ${Number(employee.basic_salary || 0).toLocaleString()}`
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={employee.accommodation_allowance || ""}
+                          onChange={(event) =>
+                            update(
+                              "accommodation_allowance",
+                              event.target.value
+                            )
+                          }
+                          className="w-full min-w-[140px] border rounded-lg px-3 py-2"
+                        />
+                      ) : (
+                        `AED ${Number(
+                          employee.accommodation_allowance || 0
+                        ).toLocaleString()}`
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={employee.transportation_allowance || ""}
+                          onChange={(event) =>
+                            update(
+                              "transportation_allowance",
+                              event.target.value
+                            )
+                          }
+                          className="w-full min-w-[140px] border rounded-lg px-3 py-2"
+                        />
+                      ) : (
+                        `AED ${Number(
+                          employee.transportation_allowance || 0
+                        ).toLocaleString()}`
+                      )}
+                    </td>
+
+                    <td className="p-4 font-bold text-[#3f4447] whitespace-nowrap">
+                      AED{" "}
+                      {(
+                        Number(employee.basic_salary || 0) +
+                        Number(employee.accommodation_allowance || 0) +
+                        Number(employee.transportation_allowance || 0)
+                      ).toLocaleString()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {activeTab === "Leave Details" && (
   <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">

@@ -13,8 +13,6 @@ export default function EmploymentPage() {
     contract_start_date: "",
     contract_end_date: "",
     annual_ticket_due: "",
-    basic_salary: "",
-    other_benefits: "",
   });
 
   useEffect(() => {
@@ -45,8 +43,6 @@ export default function EmploymentPage() {
           <Input label="Contract Start Date" type="date" value={form.contract_start_date} onChange={(v: string) => setForm({ ...form, contract_start_date: v })} />
           <Input label="Contract End Date" type="date" value={form.contract_end_date} onChange={(v: string) => setForm({ ...form, contract_end_date: v })} />
           <Input label="Annual Ticket Due Date" type="date" value={form.annual_ticket_due} onChange={(v: string) => setForm({ ...form, annual_ticket_due: v })} />
-          <Input label="Basic Salary" value={form.basic_salary} onChange={(v: string) => setForm({ ...form, basic_salary: v })} />
-          <Input label="Other Benefits" value={form.other_benefits} onChange={(v: string) => setForm({ ...form, other_benefits: v })} />
         </div>
 
         <div className="flex justify-between mt-8">
