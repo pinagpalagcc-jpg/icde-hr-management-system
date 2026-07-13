@@ -33,9 +33,9 @@ async function updateEmployeeTotals(employeeId: string) {
   const { error: employeeError } = await supabase
     .from("employees")
     .update({
-      total_leaves: totalLeaves,
-      leaves_used: usedLeaves,
-      balance_leaves: balanceLeaves,
+      maternity_leave_total: totalLeaves,
+      maternity_leave_used: usedLeaves,
+      maternity_leave_balance: balanceLeaves,
     })
     .eq("id", employeeId);
 
@@ -44,9 +44,9 @@ async function updateEmployeeTotals(employeeId: string) {
   }
 
   return {
-    total_leaves: totalLeaves,
-    leaves_used: usedLeaves,
-    balance_leaves: balanceLeaves,
+    maternity_leave_total: totalLeaves,
+    maternity_leave_used: usedLeaves,
+    maternity_leave_balance: balanceLeaves,
   };
 }
 
@@ -270,7 +270,6 @@ export async function POST(request: NextRequest) {
           detail,
           total_leaves: totalLeaves,
           used_leaves: usedLeaves,
-          balance_after: newPeriodBalance,
           entry_type: entryType,
           leave_request_id:
             body.leave_request_id || null,

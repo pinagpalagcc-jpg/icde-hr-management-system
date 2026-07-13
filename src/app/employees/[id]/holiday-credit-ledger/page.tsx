@@ -209,6 +209,58 @@ export default function HolidayCreditLedgerPage({
     }
   }
 
+  async function deleteTransaction(
+    transactionId: string
+  ) {
+    const confirmed = window.confirm(
+      "Delete this Holiday Credit transaction?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        `/api/holiday-credit-transactions?employee_id=${encodeURIComponent(
+          employeeId
+        )}&transaction_id=${encodeURIComponent(
+          transactionId
+        )}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "Failed to delete Holiday Credit transaction."
+        );
+      }
+
+      await loadTransactions(employeeId);
+
+      setSuccessMessage(
+        "Holiday Credit transaction deleted successfully."
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete Holiday Credit transaction."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function formatDate(value?: string | null) {
     if (!value) return "-";
 
@@ -416,6 +468,9 @@ export default function HolidayCreditLedgerPage({
                   <th className="p-3 text-center">Earned</th>
                   <th className="p-3 text-center">Used</th>
                   <th className="p-3 text-center">Balance</th>
+                  {!isStaffView ? (
+                    <th className="p-3 text-center">Action</th>
+                  ) : null}
                 </tr>
               </thead>
 
@@ -423,7 +478,7 @@ export default function HolidayCreditLedgerPage({
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={isStaffView ? 7 : 8}
                       className="p-8 text-center text-gray-500"
                     >
                       Loading Holiday Credit transactions...
@@ -432,7 +487,7 @@ export default function HolidayCreditLedgerPage({
                 ) : transactions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={isStaffView ? 7 : 8}
                       className="p-8 text-center text-gray-500"
                     >
                       No Holiday Credit transactions found.
@@ -471,6 +526,21 @@ export default function HolidayCreditLedgerPage({
                       <td className="p-3 text-center font-bold text-[#3f4447]">
                         {Number(transaction.calculated_balance || 0)}
                       </td>
+
+                      {!isStaffView ? (
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deleteTransaction(transaction.id)
+                            }
+                            disabled={saving}
+                            className="text-red-600 font-bold hover:underline disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      ) : null}
                     </tr>
                   ))
                 )}

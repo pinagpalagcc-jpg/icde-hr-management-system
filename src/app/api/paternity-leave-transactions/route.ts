@@ -33,9 +33,9 @@ async function updateEmployeeTotals(employeeId: string) {
   const { error: employeeError } = await supabase
     .from("employees")
     .update({
-      total_leaves: totalLeaves,
-      leaves_used: usedLeaves,
-      balance_leaves: balanceLeaves,
+      paternity_leave_total: totalLeaves,
+      paternity_leave_used: usedLeaves,
+      paternity_leave_balance: balanceLeaves,
     })
     .eq("id", employeeId);
 
@@ -44,9 +44,9 @@ async function updateEmployeeTotals(employeeId: string) {
   }
 
   return {
-    total_leaves: totalLeaves,
-    leaves_used: usedLeaves,
-    balance_leaves: balanceLeaves,
+    paternity_leave_total: totalLeaves,
+    paternity_leave_used: usedLeaves,
+    paternity_leave_balance: balanceLeaves,
   };
 }
 
@@ -270,7 +270,6 @@ export async function POST(request: NextRequest) {
           detail,
           total_leaves: totalLeaves,
           used_leaves: usedLeaves,
-          balance_after: newPeriodBalance,
           entry_type: entryType,
           leave_request_id:
             body.leave_request_id || null,
@@ -308,3 +307,60 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const employeeId =
+      request.nextUrl.searchParams.get("employee_id");
+
+    const periodYear = Number(
+      request.nextUrl.searchParams.get("period_year")
+    );
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: "Employee ID is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(periodYear)) {
+      return NextResponse.json(
+        { error: "Valid leave period is required." },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("paternity_leave_transactions")
+      .delete()
+      .eq("employee_id", employeeId)
+      .eq("period_year", periodYear);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    const employeeTotals =
+      await updateEmployeeTotals(employeeId);
+
+    return NextResponse.json({
+      message: `Paternity Leave period ${periodYear} deleted successfully.`,
+      employee_totals: employeeTotals,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete Paternity Leave period.",
+      },
+      { status: 500 }
+    );
+  }
+}
+

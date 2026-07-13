@@ -6,6 +6,51 @@ function numberValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+
+async function updateEmployeeCreditTotals(employeeId: string) {
+  const { data, error } = await supabase
+    .from("holiday_credit_transactions")
+    .select("earned_days, used_days")
+    .eq("employee_id", employeeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const totalEarned = (data || []).reduce(
+    (sum, transaction) =>
+      sum + numberValue(transaction.earned_days),
+    0
+  );
+
+  const totalUsed = (data || []).reduce(
+    (sum, transaction) =>
+      sum + numberValue(transaction.used_days),
+    0
+  );
+
+  const balance = totalEarned - totalUsed;
+
+  const { error: employeeError } = await supabase
+    .from("employees")
+    .update({
+      credit_leave_earned: totalEarned,
+      credit_leave_used: totalUsed,
+      credit_leave_balance: balance,
+    })
+    .eq("id", employeeId);
+
+  if (employeeError) {
+    throw new Error(employeeError.message);
+  }
+
+  return {
+    credit_leave_earned: totalEarned,
+    credit_leave_used: totalUsed,
+    credit_leave_balance: balance,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const employeeId = request.nextUrl.searchParams.get("employee_id");
@@ -194,3 +239,59 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const employeeId =
+      request.nextUrl.searchParams.get("employee_id");
+
+    const transactionId =
+      request.nextUrl.searchParams.get("transaction_id");
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: "Employee ID is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!transactionId) {
+      return NextResponse.json(
+        { error: "Transaction ID is required." },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("holiday_credit_transactions")
+      .delete()
+      .eq("id", transactionId)
+      .eq("employee_id", employeeId);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    const employeeTotals =
+      await updateEmployeeCreditTotals(employeeId);
+
+    return NextResponse.json({
+      message:
+        "Holiday Credit transaction deleted successfully.",
+      employee_totals: employeeTotals,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        error:
+          error?.message ||
+          "Failed to delete Holiday Credit transaction.",
+      },
+      { status: 500 }
+    );
+  }
+}
+

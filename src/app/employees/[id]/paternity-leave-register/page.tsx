@@ -169,6 +169,53 @@ export default function AnnualLeaveRegisterPage({
     });
   }
 
+  async function deletePeriod(periodYear: number) {
+    const confirmed = window.confirm(
+      `Delete Paternity Leave period ${periodYear}? This will delete all transactions for this period.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      const response = await fetch(
+        `/api/paternity-leave-transactions?employee_id=${encodeURIComponent(
+          employeeId
+        )}&period_year=${periodYear}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to delete Paternity Leave period."
+        );
+      }
+
+      await loadRegister(employeeId);
+
+      setSuccessMessage(
+        `Paternity Leave period ${periodYear} deleted successfully.`
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete Paternity Leave period."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveTransaction() {
     const year = Number(form.period_year);
     const days = Number(form.days);
@@ -475,18 +522,37 @@ export default function AnnualLeaveRegisterPage({
                       </td>
 
                       <td className="p-4 text-center">
-                        <a
-                          href={
-                          typeof window !== "undefined" &&
-                          new URLSearchParams(window.location.search).get("portal") ===
-                            "staff"
-                            ? `/staff/profile/${employeeId}/paternity-leave-register/${period.periodYear}?portal=staff`
-                            : `/employees/${employeeId}/paternity-leave-register/${period.periodYear}`
-                        }
-                          className="text-[#b59628] font-bold hover:underline"
-                        >
-                          View
-                        </a>
+                        <div className="flex items-center justify-center gap-3">
+                          <a
+                            href={
+                              typeof window !== "undefined" &&
+                              new URLSearchParams(window.location.search).get("portal") ===
+                                "staff"
+                                ? `/staff/profile/${employeeId}/paternity-leave-register/${period.periodYear}?portal=staff`
+                                : `/employees/${employeeId}/paternity-leave-register/${period.periodYear}`
+                            }
+                            className="text-[#b59628] font-bold hover:underline"
+                          >
+                            View
+                          </a>
+
+                          {!(
+                            typeof window !== "undefined" &&
+                            new URLSearchParams(window.location.search).get("portal") ===
+                              "staff"
+                          ) ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deletePeriod(period.periodYear)
+                              }
+                              disabled={saving}
+                              className="text-red-600 font-bold hover:underline disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))
