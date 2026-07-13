@@ -308,3 +308,60 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const employeeId =
+      request.nextUrl.searchParams.get("employee_id");
+
+    const periodYear = Number(
+      request.nextUrl.searchParams.get("period_year")
+    );
+
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: "Employee ID is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(periodYear)) {
+      return NextResponse.json(
+        { error: "Valid leave period is required." },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("annual_leave_transactions")
+      .delete()
+      .eq("employee_id", employeeId)
+      .eq("period_year", periodYear);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    const employeeTotals =
+      await updateEmployeeTotals(employeeId);
+
+    return NextResponse.json({
+      message: `Annual Leave period ${periodYear} deleted successfully.`,
+      employee_totals: employeeTotals,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete Annual Leave period.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
