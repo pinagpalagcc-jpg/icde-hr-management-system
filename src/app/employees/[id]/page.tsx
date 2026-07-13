@@ -506,7 +506,13 @@ export default function EmployeeProfilePage({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniKpi title="Total" value="15 Days" />
+          <MiniKpi
+  title="Total"
+  value={`${employee.paternity_leave_total ?? 0} Days`}
+  onClick={() =>
+    window.location.href = `/employees/${id}/paternity-leave-register`
+  }
+/>
           <MiniKpi
             title="Used"
             value={`${employee.paternity_leave_used ?? 0} Days`}
@@ -516,7 +522,7 @@ export default function EmployeeProfilePage({
           />
           <MiniKpi
             title="Balance"
-            value={`${employee.paternity_leave_balance ?? 15} Days`}
+            value={`${employee.paternity_leave_balance ?? 0} Days`}
           />
         </div>
       </div>
@@ -527,7 +533,13 @@ export default function EmployeeProfilePage({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniKpi title="Total" value="45 Days" />
+          <MiniKpi
+  title="Total"
+  value={`${employee.maternity_leave_total ?? 0} Days`}
+  onClick={() =>
+    window.location.href = `/employees/${id}/maternity-leave-register`
+  }
+/>
           <MiniKpi
             title="Used"
             value={`${employee.maternity_leave_used ?? 0} Days`}
@@ -537,7 +549,7 @@ export default function EmployeeProfilePage({
           />
           <MiniKpi
             title="Balance"
-            value={`${employee.maternity_leave_balance ?? 45} Days`}
+            value={`${employee.maternity_leave_balance ?? 0} Days`}
           />
         </div>
       </div>
