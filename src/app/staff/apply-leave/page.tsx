@@ -94,9 +94,9 @@ export default function ApplyLeavePage() {
   form.leave_type === "Emergency Leave"
     ? Number(employee?.balance_leaves || 0)
     : form.leave_type === "Maternity Leave"
-    ? Number(employee?.maternity_leave_balance ?? 45)
+    ? Number(employee?.maternity_leave_balance ?? 0)
     : form.leave_type === "Paternity Leave"
-    ? Number(employee?.paternity_leave_balance ?? 15)
+    ? Number(employee?.paternity_leave_balance ?? 0)
     : form.leave_type === "Holiday Credit Leave"
     ? Number(employee?.credit_leave_balance || 0)
     : Number.MAX_SAFE_INTEGER;
@@ -181,9 +181,9 @@ if (
         </p>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Kpi title="Total Leaves" value={`${employee.total_leaves || 30} Days`} />
+          <Kpi title="Total Leaves" value={`${employee.total_leaves ?? 0} Days`} />
           <Kpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
-          <Kpi title="Balance Leaves" value={`${employee.balance_leaves || 30} Days`} />
+          <Kpi title="Balance Leaves" value={`${employee.balance_leaves ?? 0} Days`} />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

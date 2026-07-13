@@ -163,9 +163,9 @@ export default function StaffProfilePage({
             rows={[
               ["Basic Salary", `AED ${employee.basic_salary || 0}`],
               ["Other Benefits", `AED ${employee.other_benefits || 0}`],
-              ["Annual Leave", `${employee.total_leaves || 30} Days`],
+              ["Annual Leave", `${employee.total_leaves ?? 0} Days`],
               ["Leave Used", `${employee.leaves_used || 0} Days`],
-              ["Leave Balance", `${employee.balance_leaves || 30} Days`],
+              ["Leave Balance", `${employee.balance_leaves ?? 0} Days`],
             ]}
           />
         )}
@@ -201,7 +201,7 @@ export default function StaffProfilePage({
           />
           <MiniKpi
             title="Balance"
-            value={`${employee.balance_leaves ?? 30} Days`}
+            value={`${employee.balance_leaves ?? 0} Days`}
           />
         </div>
       </div>

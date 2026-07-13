@@ -495,7 +495,7 @@ export default function EmployeeProfilePage({
 />
           <MiniKpi
             title="Balance"
-            value={`${employee.balance_leaves ?? 30} Days`}
+            value={`${employee.balance_leaves ?? 0} Days`}
           />
         </div>
       </div>

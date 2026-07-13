@@ -68,26 +68,26 @@ export default function LeaveLedgerPage({
           title: "Paternity Leave Ledger",
           subtitle: "Approved Paternity Leave records",
           leaveTypes: ["Paternity Leave"],
-          entitlement: 15,
+          entitlement: 0,
           used: Number(employee?.paternity_leave_used ?? 0),
-          balance: Number(employee?.paternity_leave_balance ?? 15),
+          balance: Number(employee?.paternity_leave_balance ?? 0),
         }
       : ledgerType === "maternity"
       ? {
           title: "Maternity Leave Ledger",
           subtitle: "Approved Maternity Leave records",
           leaveTypes: ["Maternity Leave"],
-          entitlement: 45,
+          entitlement: 0,
           used: Number(employee?.maternity_leave_used ?? 0),
-          balance: Number(employee?.maternity_leave_balance ?? 45),
+          balance: Number(employee?.maternity_leave_balance ?? 0),
         }
       : {
           title: "Annual Leave Ledger",
           subtitle: "Approved Annual, Sick and Emergency Leave records",
           leaveTypes: ANNUAL_GROUP_TYPES,
-          entitlement: Number(employee?.total_leaves ?? 30),
+          entitlement: Number(employee?.total_leaves ?? 0),
           used: Number(employee?.leaves_used ?? 0),
-          balance: Number(employee?.balance_leaves ?? 30),
+          balance: Number(employee?.balance_leaves ?? 0),
         };
 
   useEffect(() => {

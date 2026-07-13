@@ -49,9 +49,9 @@ export default function StaffDashboardPage() {
         <p className="text-gray-500 mb-8">Welcome, {name}</p>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Kpi title="Total Leaves" value={`${employee.total_leaves || 30} Days`} />
+          <Kpi title="Total Leaves" value={`${employee.total_leaves ?? 0} Days`} />
           <Kpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
-          <Kpi title="Balance Leaves" value={`${employee.balance_leaves || 30} Days`} />
+          <Kpi title="Balance Leaves" value={`${employee.balance_leaves ?? 0} Days`} />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
