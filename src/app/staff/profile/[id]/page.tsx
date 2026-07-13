@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import SalaryIncrementTable from "@/components/SalaryIncrementTable";
+import EmployeeLoanLedger from "@/components/EmployeeLoanLedger";
 
 const TABS = [
   "Personal Information",
@@ -231,6 +232,13 @@ export default function StaffProfilePage({
             currentSalary={Number(employee.basic_salary || 0)}
             readOnly
             onSalaryChanged={() => loadEmployee(id)}
+          />
+        )}
+
+        {activeTab === "Salary & Benefits" && (
+          <EmployeeLoanLedger
+            employeeId={id}
+            readOnly
           />
         )}
 

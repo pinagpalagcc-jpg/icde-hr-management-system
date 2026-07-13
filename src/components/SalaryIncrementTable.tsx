@@ -42,6 +42,8 @@ export default function SalaryIncrementTable({
   const [editingId, setEditingId] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fromMonth, setFromMonth] = useState("");
+  const [toMonth, setToMonth] = useState("");
 
   async function loadRecords() {
     if (!employeeId) return;
@@ -181,6 +183,35 @@ export default function SalaryIncrementTable({
     Number(form.previous_salary || 0) +
     Number(form.increment_amount || 0);
 
+  const monthNumbers: Record<string, string> = {
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12",
+  };
+
+  const filteredRecords = records.filter((record) => {
+    const recordMonth = `${record.year}-${
+      monthNumbers[record.month] || "01"
+    }`;
+
+    const matchesFrom =
+      fromMonth ? recordMonth >= fromMonth : true;
+
+    const matchesTo =
+      toMonth ? recordMonth <= toMonth : true;
+
+    return matchesFrom && matchesTo;
+  });
+
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
@@ -307,7 +338,36 @@ export default function SalaryIncrementTable({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto border rounded-xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+        <Input
+          label="From Month"
+          type="month"
+          value={fromMonth}
+          onChange={setFromMonth}
+        />
+
+        <Input
+          label="To Month"
+          type="month"
+          value={toMonth}
+          onChange={setToMonth}
+        />
+
+        <div className="flex items-end">
+          <button
+            type="button"
+            onClick={() => {
+              setFromMonth("");
+              setToMonth("");
+            }}
+            className="w-full bg-gray-200 text-[#3f4447] px-5 py-3 rounded-xl font-bold"
+          >
+            Clear Filter
+          </button>
+        </div>
+      </div>
+
+      <div className="max-h-[420px] overflow-auto border rounded-xl">
         <table className="min-w-[1100px] w-full text-sm">
           <thead>
             <tr className="bg-[#d2b241] text-white">
@@ -325,7 +385,7 @@ export default function SalaryIncrementTable({
           </thead>
 
           <tbody>
-            {records.length === 0 ? (
+            {filteredRecords.length === 0 ? (
               <tr>
                 <td
                   colSpan={readOnly ? 7 : 8}
@@ -335,7 +395,7 @@ export default function SalaryIncrementTable({
                 </td>
               </tr>
             ) : (
-              records.map((record) => (
+              filteredRecords.map((record) => (
                 <tr key={record.id} className="border-b">
                   <td className="p-4">{record.year}</td>
                   <td className="p-4">{record.month}</td>
