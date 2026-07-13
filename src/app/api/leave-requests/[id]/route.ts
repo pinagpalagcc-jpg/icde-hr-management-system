@@ -76,6 +76,40 @@ async function updateAnnualEmployeeTotals(employeeId: string) {
   };
 }
 
+async function updateHolidayCreditEmployeeTotals(
+  employeeId: string
+) {
+  const { data, error } = await supabase
+    .from("holiday_credit_transactions")
+    .select("earned_days, used_days")
+    .eq("employee_id", employeeId);
+
+  if (error) throw new Error(error.message);
+
+  const earned = (data || []).reduce(
+    (sum, item) => sum + numberValue(item.earned_days),
+    0
+  );
+
+  const used = (data || []).reduce(
+    (sum, item) => sum + numberValue(item.used_days),
+    0
+  );
+
+  const balance = earned - used;
+
+  const { error: employeeError } = await supabase
+    .from("employees")
+    .update({
+      credit_leave_earned: earned,
+      credit_leave_used: used,
+      credit_leave_balance: balance,
+    })
+    .eq("id", employeeId);
+
+  if (employeeError) throw new Error(employeeError.message);
+}
+
 export async function GET(
   _req: Request,
   context: { params: Promise<{ id: string }> }
@@ -333,7 +367,7 @@ async function updateLeaveRequest(req: Request, id: string) {
         totalDays;
 
       const newBalance =
-        numberValue(employee?.paternity_leave_balance ?? 15) -
+        numberValue(employee?.paternity_leave_balance ?? 0) -
         totalDays;
 
       if (newBalance < 0) {
@@ -368,7 +402,7 @@ async function updateLeaveRequest(req: Request, id: string) {
         totalDays;
 
       const newBalance =
-        numberValue(employee?.maternity_leave_balance ?? 45) -
+        numberValue(employee?.maternity_leave_balance ?? 0) -
         totalDays;
 
       if (newBalance < 0) {
@@ -626,22 +660,212 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const { error } = await supabase
-      .from("leave_requests")
-      .delete()
-      .eq("id", id);
+    const { data: leaveRequest, error: fetchError } =
+      await supabase
+        .from("leave_requests")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    if (error) {
+    if (fetchError || !leaveRequest) {
       return NextResponse.json(
-        { error: error.message },
+        {
+          error:
+            fetchError?.message ||
+            "Leave request not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const employeeId = String(
+      leaveRequest.employee_id || ""
+    );
+
+    const leaveType = String(
+      leaveRequest.leave_type || ""
+    );
+
+    const status = String(
+      leaveRequest.status || ""
+    );
+
+    const totalDays = numberValue(
+      leaveRequest.total_days
+    );
+
+    const { error: annualDeleteError } = await supabase
+      .from("annual_leave_transactions")
+      .delete()
+      .eq("leave_request_id", id);
+
+    if (annualDeleteError) {
+      return NextResponse.json(
+        { error: annualDeleteError.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    const { error: holidayDeleteError } = await supabase
+      .from("holiday_credit_transactions")
+      .delete()
+      .eq("leave_request_id", id);
+
+    if (holidayDeleteError) {
+      return NextResponse.json(
+        { error: holidayDeleteError.message },
+        { status: 500 }
+      );
+    }
+
+    await supabase
+      .from("paternity_leave_transactions")
+      .delete()
+      .eq("leave_request_id", id);
+
+    await supabase
+      .from("maternity_leave_transactions")
+      .delete()
+      .eq("leave_request_id", id);
+
+    if (employeeId) {
+      if (requiresAnnualPeriod(leaveType)) {
+        await updateAnnualEmployeeTotals(employeeId);
+      }
+
+      if (leaveType === "Holiday Credit Leave") {
+        await updateHolidayCreditEmployeeTotals(employeeId);
+      }
+
+      if (
+        status === "Approved" &&
+        leaveType === "Paternity Leave"
+      ) {
+        const { data: employee, error } = await supabase
+          .from("employees")
+          .select(
+            "paternity_leave_total, paternity_leave_used"
+          )
+          .eq("id", employeeId)
+          .single();
+
+        if (error) throw new Error(error.message);
+
+        const total = numberValue(
+          employee?.paternity_leave_total
+        );
+
+        const used = Math.max(
+          0,
+          numberValue(employee?.paternity_leave_used) -
+            totalDays
+        );
+
+        const { error: updateError } = await supabase
+          .from("employees")
+          .update({
+            paternity_leave_used: used,
+            paternity_leave_balance: total - used,
+          })
+          .eq("id", employeeId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+
+      if (
+        status === "Approved" &&
+        leaveType === "Maternity Leave"
+      ) {
+        const { data: employee, error } = await supabase
+          .from("employees")
+          .select(
+            "maternity_leave_total, maternity_leave_used"
+          )
+          .eq("id", employeeId)
+          .single();
+
+        if (error) throw new Error(error.message);
+
+        const total = numberValue(
+          employee?.maternity_leave_total
+        );
+
+        const used = Math.max(
+          0,
+          numberValue(employee?.maternity_leave_used) -
+            totalDays
+        );
+
+        const { error: updateError } = await supabase
+          .from("employees")
+          .update({
+            maternity_leave_used: used,
+            maternity_leave_balance: total - used,
+          })
+          .eq("id", employeeId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+
+      if (
+        status === "Approved" &&
+        leaveType === "Unpaid Leave"
+      ) {
+        const { data: employee, error } = await supabase
+          .from("employees")
+          .select("unpaid_leave_used")
+          .eq("id", employeeId)
+          .single();
+
+        if (error) throw new Error(error.message);
+
+        const newUsed = Math.max(
+          0,
+          numberValue(employee?.unpaid_leave_used) -
+            totalDays
+        );
+
+        const { error: updateError } = await supabase
+          .from("employees")
+          .update({
+            unpaid_leave_used: newUsed,
+          })
+          .eq("id", employeeId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from("leave_requests")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: deleteError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message:
+        "Leave request and linked ledger entry deleted successfully.",
+    });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || "Failed to delete leave request." },
+      {
+        error:
+          error.message ||
+          "Failed to delete leave request.",
+      },
       { status: 500 }
     );
   }

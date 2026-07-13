@@ -62,6 +62,44 @@ export default function LeaveRequestsPage() {
     });
   }
 
+  async function deleteLeave(leave: any) {
+    if (!leave?.id) {
+      alert("Leave request ID missing.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete this ${leave.status} leave request? Its linked ledger entry will also be deleted.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/leave-requests/${leave.id}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(
+        result.error ||
+          "Failed to delete leave request."
+      );
+      return;
+    }
+
+    alert(
+      "Leave request and linked ledger entry deleted successfully."
+    );
+
+    await loadLeaves();
+  }
+
   async function approveLeave(leave: any) {
     if (!leave?.id) {
       alert("Leave request ID missing. Please refresh and try again.");
@@ -213,8 +251,19 @@ export default function LeaveRequestsPage() {
               approveLeave={approveLeave}
               rejectLeave={rejectLeave}
             />
-            <LeaveTable title="Approved Requests" leaves={approved} />
-            <LeaveTable title="Rejected Requests" leaves={rejected} />
+            <LeaveTable
+              title="Approved Requests"
+              leaves={approved}
+              showDelete
+              deleteLeave={deleteLeave}
+            />
+
+            <LeaveTable
+              title="Rejected Requests"
+              leaves={rejected}
+              showDelete
+              deleteLeave={deleteLeave}
+            />
           </>
         ) : (
           <div className="bg-white rounded-2xl p-8 shadow-sm text-center text-gray-500">
@@ -242,8 +291,10 @@ function LeaveTable({
   title,
   leaves,
   showActions = false,
+  showDelete = false,
   approveLeave,
   rejectLeave,
+  deleteLeave,
 }: any) {
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
@@ -263,7 +314,7 @@ function LeaveTable({
               <th className="p-3 text-left">Reason</th>
               <th className="p-3 text-left">Balance Leaves</th>
               <th className="p-3 text-left">Status</th>
-              {showActions ? (
+              {showActions || showDelete ? (
                 <th className="p-3 text-left">Action</th>
               ) : null}
             </tr>
@@ -273,7 +324,9 @@ function LeaveTable({
             {leaves.length === 0 ? (
               <tr>
                 <td
-                  colSpan={showActions ? 9 : 8}
+                  colSpan={
+                    showActions || showDelete ? 9 : 8
+                  }
                   className="p-6 text-center text-gray-500"
                 >
                   No leave requests found.
@@ -339,6 +392,16 @@ function LeaveTable({
                         className="text-red-700 font-bold hover:underline"
                       >
                         Reject
+                      </button>
+                    </td>
+                  ) : showDelete ? (
+                    <td className="p-3 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => deleteLeave(leave)}
+                        className="text-red-700 font-bold hover:underline"
+                      >
+                        Delete
                       </button>
                     </td>
                   ) : null}
