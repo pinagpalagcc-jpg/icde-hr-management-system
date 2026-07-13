@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState, type ReactNode } from "react";
+import SalaryIncrementTable from "@/components/SalaryIncrementTable";
 
 const ADMIN_DELETE_PASSWORD = "admin123";
 
@@ -647,6 +648,14 @@ export default function EmployeeProfilePage({
               </table>
             </div>
           </section>
+        )}
+
+        {activeTab === "Salary and Benefits" && (
+          <SalaryIncrementTable
+            employeeId={id}
+            currentSalary={Number(employee.basic_salary || 0)}
+            onSalaryChanged={() => loadEmployee(id)}
+          />
         )}
 
         {activeTab === "Leave Details" && (
