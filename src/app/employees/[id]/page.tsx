@@ -327,8 +327,6 @@ export default function EmployeeProfilePage({
                     ? "bg-[#d2b241] text-white border-[#b99316] scale-[1.03]"
                     : tab === "Personal Information"
                     ? "bg-[#efe7ff] text-[#5b21b6] border-[#c4b5fd] hover:bg-[#ddd6fe]"
-                    : tab === "Employment Detail"
-                    ? "bg-[#dbeafe] text-[#1d4ed8] border-[#93c5fd] hover:bg-[#bfdbfe]"
                     : tab === "Salary and Benefits"
                     ? "bg-[#fef3c7] text-[#92400e] border-[#fbbf24] hover:bg-[#fde68a]"
                     : tab === "Leave Details"
