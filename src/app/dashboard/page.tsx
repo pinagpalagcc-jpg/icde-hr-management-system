@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { departments, getEmployees, daysRemaining, fullName, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
 import { supabase } from "@/lib/supabase";
+import DocumentExpiryAccordion from "@/components/DocumentExpiryAccordion";
 
 export default async function DashboardPage() {
   const employees = await getEmployees();
@@ -38,17 +39,65 @@ export default async function DashboardPage() {
   const alerts = (documents || [])
     .map((doc: any) => {
       const remaining = daysRemaining(doc.expiry_date);
+
       return {
         employee_id: doc.employee_id,
         employee: fullName(doc.employees || {}),
-        department: doc.employees?.department || "-",
+        department:
+          doc.employees?.department || "-",
         document: doc.document_name || "-",
         expiry: doc.expiry_date,
         remaining,
       };
     })
-    .filter((a: any) => a.remaining !== null && a.remaining <= 90)
-    .sort((a: any, b: any) => a.remaining - b.remaining);
+    .filter(
+      (alert: any) =>
+        alert.remaining !== null &&
+        alert.remaining <= 90
+    )
+    .sort(
+      (first: any, second: any) =>
+        first.remaining - second.remaining
+    );
+
+  const groupedAlerts = Object.values(
+    alerts.reduce(
+      (groups: Record<string, any>, alert: any) => {
+        if (!groups[alert.employee_id]) {
+          groups[alert.employee_id] = {
+            employee_id: alert.employee_id,
+            employee: alert.employee,
+            department: alert.department,
+            nearestExpiry: alert.expiry,
+            nearestRemaining: alert.remaining,
+            documents: [],
+          };
+        }
+
+        groups[alert.employee_id].documents.push(
+          alert
+        );
+
+        if (
+          alert.remaining <
+          groups[alert.employee_id].nearestRemaining
+        ) {
+          groups[alert.employee_id].nearestRemaining =
+            alert.remaining;
+
+          groups[alert.employee_id].nearestExpiry =
+            alert.expiry;
+        }
+
+        return groups;
+      },
+      {}
+    )
+  ).sort(
+    (first: any, second: any) =>
+      first.nearestRemaining -
+      second.nearestRemaining
+  );
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -85,38 +134,19 @@ export default async function DashboardPage() {
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-[#3f4447] mb-5">Upcoming Document Expiry - 90 Days Alert</h2>
+          <div className="mb-5">
+            <h2 className="text-xl font-bold text-[#3f4447]">
+              Upcoming Document Expiry - 90 Days Alert
+            </h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#3f4447] text-white">
-                  {["Employee", "Department", "Document", "Expiry", "Remaining Days"].map((h) => <th key={h} className="p-3 text-left">{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.length ? alerts.map((a: any, i: number) => (
-                  <tr key={i} className="border-b">
-                    <td className="p-3">
-                      <a href={`/employees/${a.employee_id}`} className="text-[#d2b241] font-bold">
-                        {a.employee}
-                      </a>
-                    </td>
-                    <td className="p-3">{a.department}</td>
-                    <td className="p-3">{a.document}</td>
-                    <td className="p-3">{a.expiry}</td>
-                    <td className="p-3">
-                      <span className={`${expiryBadgeClass(a.remaining)} px-3 py-1 rounded-full font-semibold`}>
-                        {a.remaining < 0 ? `${Math.abs(a.remaining)} days expired` : `${a.remaining} days`}
-                      </span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan={5} className="p-6 text-center text-gray-500">No upcoming document expiry alerts.</td></tr>
-                )}
-              </tbody>
-            </table>
+            <p className="text-sm text-gray-500 mt-1">
+              Click an employee to view all expiring documents.
+            </p>
           </div>
+
+          <DocumentExpiryAccordion
+            groups={groupedAlerts as any[]}
+          />
         </section>
       </main>
     </div>
