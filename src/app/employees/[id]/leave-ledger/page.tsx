@@ -68,6 +68,8 @@ export default function LeaveLedgerPage({
     useState<LeaveRequest | null>(null);
 
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingRequestId, setDeletingRequestId] =
+    useState<string | null>(null);
 
   const ledgerConfig =
     ledgerType === "paternity"
@@ -329,6 +331,50 @@ export default function LeaveLedgerPage({
           }
         : current
     );
+  };
+
+  const deleteApprovedLeave = async (
+    request: LeaveRequest
+  ) => {
+    const confirmed = window.confirm(
+      `Delete this approved ${request.leave_type || "leave"} record?\n\nThis will also remove it from the employee's Staff Portal and recalculate all leave totals.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingRequestId(request.id);
+
+      const response = await fetch(
+        `/api/leave-requests/${request.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            "Unable to delete approved leave."
+        );
+      }
+
+      alert(
+        "Approved leave deleted successfully. Leave totals have been recalculated."
+      );
+
+      window.location.reload();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete approved leave."
+      );
+    } finally {
+      setDeletingRequestId(null);
+    }
   };
 
   const saveApprovedEdit = async () => {
@@ -876,32 +922,53 @@ export default function LeaveLedgerPage({
                       {!isStaffView &&
                       ledgerType === "annual" ? (
                         <td className="p-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingRequest({
-                                ...request,
-                                start_date:
-                                  request.start_date?.slice(
-                                    0,
-                                    10
-                                  ) || "",
-                                end_date:
-                                  request.end_date?.slice(
-                                    0,
-                                    10
-                                  ) || "",
-                              });
+                          <div className="flex items-center justify-center gap-4">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingRequest({
+                                  ...request,
+                                  start_date:
+                                    request.start_date?.slice(
+                                      0,
+                                      10
+                                    ) || "",
+                                  end_date:
+                                    request.end_date?.slice(
+                                      0,
+                                      10
+                                    ) || "",
+                                });
 
-                              window.scrollTo({
-                                top: 450,
-                                behavior: "smooth",
-                              });
-                            }}
-                            className="text-blue-700 font-bold hover:underline"
-                          >
-                            Edit
-                          </button>
+                                window.scrollTo({
+                                  top: 450,
+                                  behavior: "smooth",
+                                });
+                              }}
+                              className="text-blue-700 font-bold hover:underline"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteApprovedLeave(
+                                  request
+                                )
+                              }
+                              disabled={
+                                deletingRequestId ===
+                                request.id
+                              }
+                              className="text-red-700 font-bold hover:underline disabled:opacity-50"
+                            >
+                              {deletingRequestId ===
+                              request.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
+                          </div>
                         </td>
                       ) : null}
                     </tr>
