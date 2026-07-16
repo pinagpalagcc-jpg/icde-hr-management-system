@@ -64,6 +64,11 @@ export default function LeaveLedgerPage({
   const [appliedToDate, setAppliedToDate] = useState("");
   const [appliedLeaveType, setAppliedLeaveType] = useState("All");
 
+  const [editingRequest, setEditingRequest] =
+    useState<LeaveRequest | null>(null);
+
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const ledgerConfig =
     ledgerType === "paternity"
       ? {
@@ -312,6 +317,92 @@ export default function LeaveLedgerPage({
     setAppliedLeaveType("All");
   };
 
+  const updateEditingRequest = (
+    field: keyof LeaveRequest,
+    value: string
+  ) => {
+    setEditingRequest((current) =>
+      current
+        ? {
+            ...current,
+            [field]: value,
+          }
+        : current
+    );
+  };
+
+  const saveApprovedEdit = async () => {
+    if (!editingRequest?.id) return;
+
+    const days = Number(
+      editingRequest.total_days || 0
+    );
+
+    if (
+      !editingRequest.start_date ||
+      !editingRequest.end_date
+    ) {
+      alert("From Date and To Date are required.");
+      return;
+    }
+
+    if (days <= 0) {
+      alert("Days Used must be greater than zero.");
+      return;
+    }
+
+    try {
+      setSavingEdit(true);
+
+      const response = await fetch(
+        `/api/leave-requests/${editingRequest.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            leave_type:
+              editingRequest.leave_type,
+            start_date:
+              editingRequest.start_date,
+            end_date:
+              editingRequest.end_date,
+            total_days: days,
+            annual_period_year:
+              editingRequest.annual_period_year,
+            reason:
+              editingRequest.reason || "",
+            status: "Approved",
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            "Unable to update approved leave."
+        );
+      }
+
+      alert(
+        "Approved leave updated successfully."
+      );
+
+      window.location.reload();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update approved leave."
+      );
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f4ec] p-8">
@@ -469,7 +560,190 @@ export default function LeaveLedgerPage({
           </div>
         </section>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                {!isStaffView &&
+        ledgerType === "annual" &&
+        editingRequest ? (
+          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-xl font-bold text-[#3f4447]">
+                  Edit Approved Leave
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Updating this record will automatically update the linked leave register and totals.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingRequest(null)
+                }
+                className="px-5 py-3 rounded-xl bg-gray-200 text-[#3f4447] font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Leave Type
+                </label>
+
+                <select
+                  value={
+                    editingRequest.leave_type || ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "leave_type",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3 bg-white"
+                >
+                  <option value="Annual Leave">
+                    Annual Leave
+                  </option>
+
+                  <option value="Sick Leave">
+                    Sick Leave
+                  </option>
+
+                  <option value="Emergency Leave">
+                    Emergency Leave
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  From Date
+                </label>
+
+                <input
+                  type="date"
+                  value={
+                    editingRequest.start_date?.slice(
+                      0,
+                      10
+                    ) || ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "start_date",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  To Date
+                </label>
+
+                <input
+                  type="date"
+                  value={
+                    editingRequest.end_date?.slice(
+                      0,
+                      10
+                    ) || ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "end_date",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Days Used
+                </label>
+
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={
+                    editingRequest.total_days || ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "total_days",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Leave Period
+                </label>
+
+                <input
+                  type="number"
+                  value={
+                    editingRequest.annual_period_year ||
+                    ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "annual_period_year",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Reason
+                </label>
+
+                <input
+                  type="text"
+                  value={
+                    editingRequest.reason || ""
+                  }
+                  onChange={(event) =>
+                    updateEditingRequest(
+                      "reason",
+                      event.target.value
+                    )
+                  }
+                  className="mt-2 w-full border rounded-xl px-4 py-3"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-5">
+              <button
+                type="button"
+                onClick={saveApprovedEdit}
+                disabled={savingEdit}
+                className="px-6 py-3 rounded-xl bg-[#3f4447] text-white font-bold disabled:opacity-50"
+              >
+                {savingEdit
+                  ? "Saving..."
+                  : "Save Changes"}
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+<section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
             <div>
               <h2 className="text-xl font-bold text-[#3f4447]">
@@ -522,6 +796,13 @@ export default function LeaveLedgerPage({
                   <th className="p-3 text-left">
                     Status
                   </th>
+
+                  {!isStaffView &&
+                  ledgerType === "annual" ? (
+                    <th className="p-3 text-center">
+                      Action
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
 
@@ -529,7 +810,12 @@ export default function LeaveLedgerPage({
                 {filteredRequests.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={
+                        !isStaffView &&
+                        ledgerType === "annual"
+                          ? 9
+                          : 8
+                      }
                       className="p-8 text-center text-gray-500"
                     >
                       No approved leave records found for the selected filters.
@@ -586,6 +872,38 @@ export default function LeaveLedgerPage({
                           {request.status || "Approved"}
                         </span>
                       </td>
+
+                      {!isStaffView &&
+                      ledgerType === "annual" ? (
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRequest({
+                                ...request,
+                                start_date:
+                                  request.start_date?.slice(
+                                    0,
+                                    10
+                                  ) || "",
+                                end_date:
+                                  request.end_date?.slice(
+                                    0,
+                                    10
+                                  ) || "",
+                              });
+
+                              window.scrollTo({
+                                top: 450,
+                                behavior: "smooth",
+                              });
+                            }}
+                            className="text-blue-700 font-bold hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      ) : null}
                     </tr>
                   ))
                 )}

@@ -542,6 +542,173 @@ async function updateLeaveRequest(req: Request, id: string) {
       }
     }
 
+    const isApprovedAnnualEdit =
+      oldStatus === "Approved" &&
+      newStatus === "Approved" &&
+      requiresAnnualPeriod(leaveType);
+
+    if (isApprovedAnnualEdit) {
+      if (!annualPeriodYear) {
+        return NextResponse.json(
+          {
+            error:
+              "Please select the leave period.",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (totalDays <= 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Approved leave days must be greater than zero.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const {
+        data: linkedTransaction,
+        error: linkedTransactionError,
+      } = await supabase
+        .from("annual_leave_transactions")
+        .select("id")
+        .eq("leave_request_id", id)
+        .maybeSingle();
+
+      if (linkedTransactionError) {
+        return NextResponse.json(
+          {
+            error:
+              linkedTransactionError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      if (!linkedTransaction) {
+        return NextResponse.json(
+          {
+            error:
+              "Linked Annual Leave Register entry was not found.",
+          },
+          { status: 404 }
+        );
+      }
+
+      const {
+        data: periodTransactions,
+        error: periodError,
+      } = await supabase
+        .from("annual_leave_transactions")
+        .select(
+          "id, total_leaves, used_leaves, leave_request_id"
+        )
+        .eq("employee_id", employeeId)
+        .eq("period_year", annualPeriodYear);
+
+      if (periodError) {
+        return NextResponse.json(
+          { error: periodError.message },
+          { status: 500 }
+        );
+      }
+
+      const periodTotal = (
+        periodTransactions || []
+      ).reduce(
+        (sum, item) =>
+          sum + numberValue(item.total_leaves),
+        0
+      );
+
+      const otherUsed = (
+        periodTransactions || []
+      )
+        .filter(
+          (item) =>
+            String(item.leave_request_id || "") !==
+            String(id)
+        )
+        .reduce(
+          (sum, item) =>
+            sum + numberValue(item.used_leaves),
+          0
+        );
+
+      const availableBalance =
+        periodTotal - otherUsed;
+
+      if (totalDays > availableBalance) {
+        return NextResponse.json(
+          {
+            error:
+              `Period ${annualPeriodYear} has only ${availableBalance} day(s) available.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      const newPeriodBalance =
+        availableBalance - totalDays;
+
+      const {
+        error: transactionUpdateError,
+      } = await supabase
+        .from("annual_leave_transactions")
+        .update({
+          period_year: annualPeriodYear,
+          transaction_date:
+            effectiveRequest.start_date ||
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+          detail:
+            effectiveRequest.reason
+              ? `${leaveType} Approved — ${effectiveRequest.reason}`
+              : `${leaveType} Approved`,
+          total_leaves: 0,
+          used_leaves: totalDays,
+          balance_after: newPeriodBalance,
+          entry_type: "LEAVE_USED",
+          leave_category: leaveType,
+          remarks:
+            `${leaveType} from ${
+              effectiveRequest.start_date || "-"
+            } to ${
+              effectiveRequest.end_date || "-"
+            }`,
+        })
+        .eq("id", linkedTransaction.id);
+
+      if (transactionUpdateError) {
+        return NextResponse.json(
+          {
+            error:
+              transactionUpdateError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      try {
+        employeeTotals =
+          await updateAnnualEmployeeTotals(
+            employeeId
+          );
+      } catch (error: any) {
+        return NextResponse.json(
+          {
+            error:
+              error.message ||
+              "Unable to recalculate Annual Leave totals.",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     const cleanBody = {
       ...body,
       annual_period_year:
