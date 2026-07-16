@@ -205,6 +205,7 @@ export default function LeaveRequestsPage() {
                 "Annual Leave",
                 "Sick Leave",
                 "Emergency Leave",
+                "Encash Leave",
                 "Unpaid Leave",
                 "Holiday Credit Leave",
                 "Maternity Leave",

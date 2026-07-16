@@ -6,6 +6,7 @@ const LEAVE_TYPES = [
   "Annual Leave",
   "Sick Leave",
   "Emergency Leave",
+  "Encash Leave",
   "Unpaid Leave",
   "Holiday Credit Leave",
   "Maternity Leave",
@@ -16,6 +17,7 @@ const PERIOD_DEDUCTING_LEAVE_TYPES = [
   "Annual Leave",
   "Sick Leave",
   "Emergency Leave",
+  "Encash Leave",
 ];
 
 function requiresAnnualPeriod(leaveType: string) {

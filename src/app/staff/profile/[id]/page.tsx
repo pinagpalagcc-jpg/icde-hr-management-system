@@ -55,6 +55,7 @@ export default function StaffProfilePage({
       "Annual Leave",
       "Sick Leave",
       "Emergency Leave",
+  "Encash Leave",
     ];
 
     const approvedAnnualRequests = Array.isArray(leaveData)

@@ -13,6 +13,7 @@ const LEAVE_TYPES = [
   "Annual Leave",
   "Sick Leave",
   "Emergency Leave",
+  "Encash Leave",
   "Unpaid Leave",
   "Holiday Credit Leave",
   "Maternity Leave",
@@ -91,7 +92,8 @@ export default function ApplyLeavePage() {
     const availableBalance =
   form.leave_type === "Annual Leave" ||
   form.leave_type === "Sick Leave" ||
-  form.leave_type === "Emergency Leave"
+  form.leave_type === "Emergency Leave" ||
+  form.leave_type === "Encash Leave"
     ? Number(employee?.balance_leaves || 0)
     : form.leave_type === "Maternity Leave"
     ? Number(employee?.maternity_leave_balance ?? 0)

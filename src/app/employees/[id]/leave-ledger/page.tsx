@@ -6,6 +6,7 @@ const ANNUAL_GROUP_TYPES = [
   "Annual Leave",
   "Sick Leave",
   "Emergency Leave",
+  "Encash Leave",
 ];
 
 type Employee = {
@@ -258,7 +259,8 @@ export default function LeaveLedgerPage({
   const annualLeaveUsed = requests
     .filter(
       (request) =>
-        request.leave_type === "Annual Leave"
+        request.leave_type === "Annual Leave" ||
+        request.leave_type === "Encash Leave"
     )
     .reduce(
       (total, request) =>
@@ -669,6 +671,10 @@ export default function LeaveLedgerPage({
 
                   <option value="Emergency Leave">
                     Emergency Leave
+                  </option>
+
+                  <option value="Encash Leave">
+                    Encash Leave
                   </option>
 
                 </select>
