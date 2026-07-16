@@ -22,6 +22,10 @@ export default function StaffProfilePage({
   const [id, setId] = useState("");
   const [employee, setEmployee] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [annualLeaveSummary, setAnnualLeaveSummary] = useState({
+    used: 0,
+    balance: 0,
+  });
   const [activeTab, setActiveTab] = useState<TabName>("Personal Information");
 
   useEffect(() => {
@@ -33,8 +37,52 @@ export default function StaffProfilePage({
   }, [params]);
 
   async function loadEmployee(employeeId: string) {
-    const data = await fetch(`/api/employees/${employeeId}`).then((r) => r.json());
-    setEmployee(data);
+    const [employeeResponse, leaveResponse] = await Promise.all([
+      fetch(`/api/employees/${employeeId}`, {
+        cache: "no-store",
+      }),
+      fetch("/api/leave-requests", {
+        cache: "no-store",
+      }),
+    ]);
+
+    const employeeData = await employeeResponse.json();
+    const leaveData = await leaveResponse.json();
+
+    setEmployee(employeeData);
+
+    const annualGroupTypes = [
+      "Annual Leave",
+      "Sick Leave",
+      "Emergency Leave",
+    ];
+
+    const approvedAnnualRequests = Array.isArray(leaveData)
+      ? leaveData.filter((request: any) => {
+          return (
+            String(request.employee_id) === String(employeeId) &&
+            String(request.status).toLowerCase() === "approved" &&
+            annualGroupTypes.includes(
+              String(request.leave_type)
+            )
+          );
+        })
+      : [];
+
+    const used = approvedAnnualRequests.reduce(
+      (total: number, request: any) =>
+        total + Number(request.total_days || 0),
+      0
+    );
+
+    const entitlement = Number(
+      employeeData.total_leaves ?? 0
+    );
+
+    setAnnualLeaveSummary({
+      used,
+      balance: Math.max(entitlement - used, 0),
+    });
   }
 
   async function loadDocuments(employeeId: string) {
@@ -265,7 +313,7 @@ export default function StaffProfilePage({
           />
           <MiniKpi
             title="Used"
-            value={`${employee.leaves_used ?? 0} Days`}
+            value={`${annualLeaveSummary.used} Days`}
               onClick={() =>
                 window.location.href =
                   `/staff/profile/${id}/leave-ledger?type=annual`
@@ -273,7 +321,7 @@ export default function StaffProfilePage({
           />
           <MiniKpi
             title="Balance"
-            value={`${employee.balance_leaves ?? 0} Days`}
+            value={`${annualLeaveSummary.balance} Days`}
           />
         </div>
       </div>

@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 export default function StaffDashboardPage() {
   const [employee, setEmployee] = useState<any>(null);
   const [expiryAlerts, setExpiryAlerts] = useState<any[]>([]);
+  const [annualLeaveSummary, setAnnualLeaveSummary] = useState({
+    used: 0,
+    balance: 0,
+  });
 
   useEffect(() => {
     const id = localStorage.getItem("icde_user_id");
@@ -19,10 +23,59 @@ export default function StaffDashboardPage() {
   }, []);
 
   async function loadStaff(id: string) {
-    const emp = await fetch(`/api/employees/${id}`).then((r) => r.json());
+    const [employeeResponse, documentsResponse, leaveResponse] =
+      await Promise.all([
+        fetch(`/api/employees/${id}`, {
+          cache: "no-store",
+        }),
+        fetch(
+          `/api/employee-documents?employee_id=${id}`,
+          {
+            cache: "no-store",
+          }
+        ),
+        fetch("/api/leave-requests", {
+          cache: "no-store",
+        }),
+      ]);
+
+    const emp = await employeeResponse.json();
+    const docs = await documentsResponse.json();
+    const leaveData = await leaveResponse.json();
+
     setEmployee(emp);
 
-    const docs = await fetch(`/api/employee-documents?employee_id=${id}`).then((r) => r.json());
+    const annualGroupTypes = [
+      "Annual Leave",
+      "Sick Leave",
+      "Emergency Leave",
+    ];
+
+    const approvedAnnualRequests = Array.isArray(leaveData)
+      ? leaveData.filter((request: any) => {
+          return (
+            String(request.employee_id) === String(id) &&
+            String(request.status).toLowerCase() ===
+              "approved" &&
+            annualGroupTypes.includes(
+              String(request.leave_type)
+            )
+          );
+        })
+      : [];
+
+    const used = approvedAnnualRequests.reduce(
+      (total: number, request: any) =>
+        total + Number(request.total_days || 0),
+      0
+    );
+
+    const entitlement = Number(emp.total_leaves ?? 0);
+
+    setAnnualLeaveSummary({
+      used,
+      balance: Math.max(entitlement - used, 0),
+    });
 
     const alerts = (docs || [])
       .filter((d: any) => d.expiry_date)
@@ -50,8 +103,14 @@ export default function StaffDashboardPage() {
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Kpi title="Total Leaves" value={`${employee.total_leaves ?? 0} Days`} />
-          <Kpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
-          <Kpi title="Balance Leaves" value={`${employee.balance_leaves ?? 0} Days`} />
+          <Kpi
+            title="Leaves Used"
+            value={`${annualLeaveSummary.used} Days`}
+          />
+          <Kpi
+            title="Balance Leaves"
+            value={`${annualLeaveSummary.balance} Days`}
+          />
         </section>
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
