@@ -13,7 +13,7 @@ type Transaction = {
   created_at?: string;
 };
 
-type FormMode = "usage" | "encash" | null;
+type FormMode = "usage" | null;
 
 export default function AnnualLeavePeriodPage({
   params,
@@ -266,14 +266,6 @@ export default function AnnualLeavePeriodPage({
             >
               + Record Leave Usage
             </button>
-
-            <button
-              type="button"
-              onClick={() => openForm("encash")}
-              className="bg-[#3f4447] text-white px-5 py-3 rounded-xl font-bold"
-            >
-              − Encash Leave
-            </button>
           </div>
         </div>
 
@@ -312,9 +304,7 @@ export default function AnnualLeavePeriodPage({
 
               <Field
                 label={
-                  formMode === "usage"
-                    ? "Days Used"
-                    : "Days Encashed"
+                  "Days Used"
                 }
                 type="number"
                 value={form.days}

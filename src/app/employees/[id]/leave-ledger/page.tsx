@@ -41,6 +41,8 @@ type LeaveRequest = {
   created_at?: string;
   approved_at?: string;
   annual_period_year?: number | string | null;
+  record_source?: "leave_request" | "encashment";
+  transaction_id?: string;
 };
 
 export default function LeaveLedgerPage({
@@ -128,13 +130,27 @@ export default function LeaveLedgerPage({
             ? ["Maternity Leave"]
             : ANNUAL_GROUP_TYPES;
 
-        const [employeeRes, leaveRes] = await Promise.all([
+        const [
+          employeeRes,
+          leaveRes,
+          annualTransactionsRes,
+        ] = await Promise.all([
           fetch(`/api/employees/${id}`, {
             cache: "no-store",
           }),
           fetch("/api/leave-requests", {
             cache: "no-store",
           }),
+          currentLedgerType === "annual"
+            ? fetch(
+                `/api/annual-leave-transactions?employee_id=${encodeURIComponent(
+                  id
+                )}`,
+                {
+                  cache: "no-store",
+                }
+              )
+            : Promise.resolve(null),
         ]);
 
         if (!employeeRes.ok) {
@@ -145,22 +161,96 @@ export default function LeaveLedgerPage({
           throw new Error("Unable to load employee leave records.");
         }
 
+        if (
+          annualTransactionsRes &&
+          !annualTransactionsRes.ok
+        ) {
+          throw new Error(
+            "Unable to load Annual Leave encashment records."
+          );
+        }
+
         const employeeData = await employeeRes.json();
         const leaveData = await leaveRes.json();
+
+        const annualTransactionsData =
+          annualTransactionsRes
+            ? await annualTransactionsRes.json()
+            : [];
 
         if (!active) return;
 
         setEmployee(employeeData);
 
-        const approvedRequests = Array.isArray(leaveData)
-          ? leaveData.filter((request: LeaveRequest) => {
-              return (
-                String(request.employee_id) === String(id) &&
-                String(request.status).toLowerCase() === "approved" &&
-                selectedLeaveTypes.includes(String(request.leave_type))
-              );
-            })
-          : [];
+        const approvedRequests: LeaveRequest[] =
+          Array.isArray(leaveData)
+            ? leaveData
+                .filter((request: LeaveRequest) => {
+                  return (
+                    String(request.employee_id) ===
+                      String(id) &&
+                    String(
+                      request.status
+                    ).toLowerCase() === "approved" &&
+                    selectedLeaveTypes.includes(
+                      String(request.leave_type)
+                    )
+                  );
+                })
+                .map((request: LeaveRequest) => ({
+                  ...request,
+                  record_source: "leave_request",
+                }))
+            : [];
+
+        const encashmentRequests: LeaveRequest[] =
+          currentLedgerType === "annual" &&
+          Array.isArray(annualTransactionsData)
+            ? annualTransactionsData
+                .filter(
+                  (transaction: any) =>
+                    String(
+                      transaction.entry_type || ""
+                    ).toUpperCase() ===
+                      "ENCASHMENT" &&
+                    Number(
+                      transaction.used_leaves || 0
+                    ) > 0
+                )
+                .map((transaction: any) => ({
+                  id: `encashment-${transaction.id}`,
+                  transaction_id: String(
+                    transaction.id
+                  ),
+                  employee_id: String(id),
+                  leave_type:
+                    "Annual Leave Encashment",
+                  start_date:
+                    transaction.transaction_date,
+                  end_date:
+                    transaction.transaction_date,
+                  total_days: Number(
+                    transaction.used_leaves || 0
+                  ),
+                  reason:
+                    transaction.detail ||
+                    transaction.remarks ||
+                    "Annual Leave Encashment",
+                  status: "Approved",
+                  created_at:
+                    transaction.created_at ||
+                    transaction.transaction_date,
+                  approved_at:
+                    transaction.transaction_date,
+                  annual_period_year:
+                    transaction.period_year,
+                  record_source: "encashment",
+                }))
+            : [];
+
+        approvedRequests.push(
+          ...encashmentRequests
+        );
 
         approvedRequests.sort((a: LeaveRequest, b: LeaveRequest) => {
           const dateA = new Date(
@@ -249,7 +339,9 @@ export default function LeaveLedgerPage({
   const annualLeaveUsed = requests
     .filter(
       (request) =>
-        request.leave_type === "Annual Leave"
+        request.leave_type === "Annual Leave" ||
+        request.leave_type ===
+          "Annual Leave Encashment"
     )
     .reduce(
       (total, request) =>
@@ -661,6 +753,10 @@ export default function LeaveLedgerPage({
                   <option value="Emergency Leave">
                     Emergency Leave
                   </option>
+
+                  <option value="Annual Leave Encashment">
+                    Annual Leave Encashment
+                  </option>
                 </select>
               </div>
 
@@ -922,6 +1018,12 @@ export default function LeaveLedgerPage({
                       {!isStaffView &&
                       ledgerType === "annual" ? (
                         <td className="p-3 text-center">
+                          {request.record_source ===
+                          "encashment" ? (
+                            <span className="text-xs font-semibold text-gray-500">
+                              Register Entry
+                            </span>
+                          ) : (
                           <div className="flex items-center justify-center gap-4">
                             <button
                               type="button"
@@ -969,6 +1071,7 @@ export default function LeaveLedgerPage({
                                 : "Delete"}
                             </button>
                           </div>
+                          )}
                         </td>
                       ) : null}
                     </tr>

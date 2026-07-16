@@ -25,7 +25,7 @@ type PeriodSummary = {
   balance: number;
 };
 
-type FormMode = "add" | "encash" | null;
+type FormMode = "add" | null;
 
 export default function AnnualLeaveRegisterPage({
   params,
@@ -163,9 +163,7 @@ export default function AnnualLeaveRegisterPage({
       transaction_date: new Date().toISOString().slice(0, 10),
       days: "",
       detail:
-        mode === "add"
-          ? "Annual Leave Entitlement"
-          : "Annual Leave Encashment",
+        "Annual Leave Entitlement",
     });
   }
 
@@ -341,14 +339,6 @@ export default function AnnualLeaveRegisterPage({
                 className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold"
               >
                 + Add Leave Period
-              </button>
-
-              <button
-                type="button"
-                onClick={() => openForm("encash")}
-                className="bg-[#3f4447] text-white px-5 py-3 rounded-xl font-bold"
-              >
-                − Encash Leave
               </button>
             </div>
           ) : (
