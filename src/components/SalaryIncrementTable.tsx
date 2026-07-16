@@ -42,8 +42,6 @@ export default function SalaryIncrementTable({
   const [editingId, setEditingId] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fromMonth, setFromMonth] = useState("");
-  const [toMonth, setToMonth] = useState("");
 
   async function loadRecords() {
     if (!employeeId) return;
@@ -58,12 +56,14 @@ export default function SalaryIncrementTable({
     const data = await response.json();
 
     if (!response.ok) {
-      alert(data?.error || "Unable to load salary increments.");
+      alert(
+        data?.error ||
+          "Unable to load salary increments."
+      );
       return;
     }
 
     setRecords(Array.isArray(data) ? data : []);
-    onSalaryChanged?.();
   }
 
   useEffect(() => {
@@ -72,28 +72,53 @@ export default function SalaryIncrementTable({
 
   function openAddForm() {
     setEditingId("");
+
     setForm({
       ...EMPTY_FORM,
       previous_salary: String(currentSalary || 0),
     });
+
     setShowForm(true);
   }
 
   function openEditForm(record: Increment) {
     setEditingId(record.id);
+
     setForm({
       year: String(record.year),
       month: record.month,
-      previous_salary: String(record.previous_salary || 0),
-      increment_amount: String(record.increment_amount || 0),
-      increment_type: record.increment_type || "Annual",
+      previous_salary: String(
+        record.previous_salary || 0
+      ),
+      increment_amount: String(
+        record.increment_amount || 0
+      ),
+      increment_type:
+        record.increment_type || "Annual",
       notes: record.notes || "",
     });
+
     setShowForm(true);
   }
 
   async function saveRecord() {
     try {
+      const incrementAmount = Number(
+        form.increment_amount || 0
+      );
+
+      if (!form.month) {
+        alert("Please select the increment month.");
+        return;
+      }
+
+      if (incrementAmount <= 0) {
+        alert(
+          "Increment amount must be greater than zero."
+        );
+        return;
+      }
+
       setSaving(true);
 
       const response = await fetch(
@@ -111,10 +136,9 @@ export default function SalaryIncrementTable({
             previous_salary: Number(
               form.previous_salary || 0
             ),
-            increment_amount: Number(
-              form.increment_amount || 0
-            ),
-            increment_type: form.increment_type,
+            increment_amount: incrementAmount,
+            increment_type:
+              form.increment_type,
             notes: form.notes,
           }),
         }
@@ -131,6 +155,7 @@ export default function SalaryIncrementTable({
 
       setShowForm(false);
       setEditingId("");
+
       await loadRecords();
       onSalaryChanged?.();
 
@@ -152,7 +177,7 @@ export default function SalaryIncrementTable({
 
   async function deleteRecord(record: Increment) {
     const confirmed = window.confirm(
-      `Delete salary increment for ${record.month} ${record.year}?`
+      `Delete salary increment for ${record.month} ${record.year}?\n\nThe Accommodation and Transportation amounts will also be adjusted.`
     );
 
     if (!confirmed) return;
@@ -160,8 +185,12 @@ export default function SalaryIncrementTable({
     const response = await fetch(
       `/api/salary-increments?id=${encodeURIComponent(
         record.id
-      )}&employee_id=${encodeURIComponent(employeeId)}`,
-      { method: "DELETE" }
+      )}&employee_id=${encodeURIComponent(
+        employeeId
+      )}`,
+      {
+        method: "DELETE",
+      }
     );
 
     const data = await response.json();
@@ -176,48 +205,38 @@ export default function SalaryIncrementTable({
 
     await loadRecords();
     onSalaryChanged?.();
-    alert("Salary increment deleted successfully.");
+
+    alert(
+      "Salary increment deleted successfully."
+    );
   }
+
+  const incrementAmount = Number(
+    form.increment_amount || 0
+  );
 
   const calculatedNewSalary =
     Number(form.previous_salary || 0) +
-    Number(form.increment_amount || 0);
+    incrementAmount;
 
-  const monthNumbers: Record<string, string> = {
-    Jan: "01",
-    Feb: "02",
-    Mar: "03",
-    Apr: "04",
-    May: "05",
-    Jun: "06",
-    Jul: "07",
-    Aug: "08",
-    Sep: "09",
-    Oct: "10",
-    Nov: "11",
-    Dec: "12",
-  };
+  const accommodationAdded =
+    incrementAmount / 2;
 
-  const filteredRecords = records.filter((record) => {
-    const recordMonth = `${record.year}-${
-      monthNumbers[record.month] || "01"
-    }`;
-
-    const matchesFrom =
-      fromMonth ? recordMonth >= fromMonth : true;
-
-    const matchesTo =
-      toMonth ? recordMonth <= toMonth : true;
-
-    return matchesFrom && matchesTo;
-  });
+  const transportationAdded =
+    incrementAmount / 2;
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-        <h2 className="text-xl font-bold text-[#3f4447]">
-          Salary Increment History
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold text-[#3f4447]">
+            Salary Increment History
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Basic Salary remains fixed. Each increment is divided equally between Accommodation and Transportation.
+          </p>
+        </div>
 
         {!readOnly ? (
           <button
@@ -238,7 +257,10 @@ export default function SalaryIncrementTable({
               type="number"
               value={form.year}
               onChange={(value) =>
-                setForm({ ...form, year: value })
+                setForm({
+                  ...form,
+                  year: value,
+                })
               }
             />
 
@@ -246,25 +268,33 @@ export default function SalaryIncrementTable({
               label="Month"
               value={form.month}
               options={[
-                "Jan", "Feb", "Mar", "Apr",
-                "May", "Jun", "Jul", "Aug",
-                "Sep", "Oct", "Nov", "Dec",
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
               ]}
               onChange={(value) =>
-                setForm({ ...form, month: value })
+                setForm({
+                  ...form,
+                  month: value,
+                })
               }
             />
 
             <Input
-              label="Previous Salary"
+              label="Previous Gross"
               type="number"
               value={form.previous_salary}
-              onChange={(value) =>
-                setForm({
-                  ...form,
-                  previous_salary: value,
-                })
-              }
+              disabled
+              onChange={() => {}}
             />
 
             <Input
@@ -280,7 +310,23 @@ export default function SalaryIncrementTable({
             />
 
             <Input
-              label="New Salary"
+              label="Accommodation Added"
+              type="number"
+              value={String(accommodationAdded)}
+              disabled
+              onChange={() => {}}
+            />
+
+            <Input
+              label="Transportation Added"
+              type="number"
+              value={String(transportationAdded)}
+              disabled
+              onChange={() => {}}
+            />
+
+            <Input
+              label="New Gross"
               type="number"
               value={String(calculatedNewSalary)}
               disabled
@@ -308,7 +354,10 @@ export default function SalaryIncrementTable({
               label="Notes"
               value={form.notes}
               onChange={(value) =>
-                setForm({ ...form, notes: value })
+                setForm({
+                  ...form,
+                  notes: value,
+                })
               }
             />
           </div>
@@ -316,7 +365,9 @@ export default function SalaryIncrementTable({
           <div className="flex justify-end gap-3 mt-5">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() =>
+                setShowForm(false)
+              }
               className="bg-gray-200 px-5 py-3 rounded-xl font-bold"
             >
               Cancel
@@ -338,104 +389,146 @@ export default function SalaryIncrementTable({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-        <Input
-          label="From Month"
-          type="month"
-          value={fromMonth}
-          onChange={setFromMonth}
-        />
-
-        <Input
-          label="To Month"
-          type="month"
-          value={toMonth}
-          onChange={setToMonth}
-        />
-
-        <div className="flex items-end">
-          <button
-            type="button"
-            onClick={() => {
-              setFromMonth("");
-              setToMonth("");
-            }}
-            className="w-full bg-gray-200 text-[#3f4447] px-5 py-3 rounded-xl font-bold"
-          >
-            Clear Filter
-          </button>
-        </div>
-      </div>
-
       <div className="max-h-[420px] overflow-auto border rounded-xl">
-        <table className="min-w-[1100px] w-full text-sm">
+        <table className="min-w-[1450px] w-full text-sm">
           <thead>
             <tr className="bg-[#d2b241] text-white">
-              <th className="p-4 text-left">Year</th>
-              <th className="p-4 text-left">Month</th>
-              <th className="p-4 text-left">Previous Salary</th>
-              <th className="p-4 text-left">Increment</th>
-              <th className="p-4 text-left">New Salary</th>
-              <th className="p-4 text-left">Type</th>
-              <th className="p-4 text-left">Notes</th>
+              <th className="p-4 text-left">
+                Year
+              </th>
+
+              <th className="p-4 text-left">
+                Month
+              </th>
+
+              <th className="p-4 text-left">
+                Previous Gross
+              </th>
+
+              <th className="p-4 text-left">
+                Increment
+              </th>
+
+              <th className="p-4 text-left">
+                Accommodation Added
+              </th>
+
+              <th className="p-4 text-left">
+                Transportation Added
+              </th>
+
+              <th className="p-4 text-left">
+                New Gross
+              </th>
+
+              <th className="p-4 text-left">
+                Type
+              </th>
+
+              <th className="p-4 text-left">
+                Notes
+              </th>
+
               {!readOnly ? (
-                <th className="p-4 text-left">Action</th>
+                <th className="p-4 text-left">
+                  Action
+                </th>
               ) : null}
             </tr>
           </thead>
 
           <tbody>
-            {filteredRecords.length === 0 ? (
+            {records.length === 0 ? (
               <tr>
                 <td
-                  colSpan={readOnly ? 7 : 8}
+                  colSpan={readOnly ? 9 : 10}
                   className="p-8 text-center text-gray-500"
                 >
                   No salary increment history found.
                 </td>
               </tr>
             ) : (
-              filteredRecords.map((record) => (
-                <tr key={record.id} className="border-b">
-                  <td className="p-4">{record.year}</td>
-                  <td className="p-4">{record.month}</td>
-                  <td className="p-4">
-                    AED {Number(record.previous_salary || 0).toLocaleString()}
-                  </td>
-                  <td className="p-4 text-green-700 font-bold">
-                    + AED {Number(record.increment_amount || 0).toLocaleString()}
-                  </td>
-                  <td className="p-4 font-bold">
-                    AED {Number(record.new_salary || 0).toLocaleString()}
-                  </td>
-                  <td className="p-4">
-                    {record.increment_type}
-                  </td>
-                  <td className="p-4">
-                    {record.notes || "-"}
-                  </td>
+              records.map((record) => {
+                const amount = Number(
+                  record.increment_amount || 0
+                );
 
-                  {!readOnly ? (
-                    <td className="p-4 whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => openEditForm(record)}
-                        className="text-blue-700 font-bold mr-4 hover:underline"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => deleteRecord(record)}
-                        className="text-red-700 font-bold hover:underline"
-                      >
-                        Delete
-                      </button>
+                return (
+                  <tr
+                    key={record.id}
+                    className="border-b"
+                  >
+                    <td className="p-4">
+                      {record.year}
                     </td>
-                  ) : null}
-                </tr>
-              ))
+
+                    <td className="p-4">
+                      {record.month}
+                    </td>
+
+                    <td className="p-4">
+                      AED{" "}
+                      {Number(
+                        record.previous_salary || 0
+                      ).toLocaleString()}
+                    </td>
+
+                    <td className="p-4 text-green-700 font-bold">
+                      + AED{" "}
+                      {amount.toLocaleString()}
+                    </td>
+
+                    <td className="p-4">
+                      + AED{" "}
+                      {(amount / 2).toLocaleString()}
+                    </td>
+
+                    <td className="p-4">
+                      + AED{" "}
+                      {(amount / 2).toLocaleString()}
+                    </td>
+
+                    <td className="p-4 font-bold">
+                      AED{" "}
+                      {Number(
+                        record.new_salary || 0
+                      ).toLocaleString()}
+                    </td>
+
+                    <td className="p-4">
+                      {record.increment_type}
+                    </td>
+
+                    <td className="p-4">
+                      {record.notes || "-"}
+                    </td>
+
+                    {!readOnly ? (
+                      <td className="p-4 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openEditForm(record)
+                          }
+                          className="text-blue-700 font-bold mr-4 hover:underline"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            deleteRecord(record)
+                          }
+                          className="text-red-700 font-bold hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    ) : null}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -467,7 +560,16 @@ function Input({
         type={type}
         value={value}
         disabled={disabled}
-        min={type === "number" ? "0" : undefined}
+        min={
+          type === "number"
+            ? "0"
+            : undefined
+        }
+        step={
+          type === "number"
+            ? "0.01"
+            : undefined
+        }
         onChange={(event) =>
           onChange(event.target.value)
         }
@@ -502,8 +604,12 @@ function Select({
         className="mt-2 w-full border rounded-xl px-4 py-3"
       >
         <option value="">Select</option>
+
         {options.map((option) => (
-          <option key={option} value={option}>
+          <option
+            key={option}
+            value={option}
+          >
             {option}
           </option>
         ))}

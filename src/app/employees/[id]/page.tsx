@@ -703,7 +703,11 @@ export default function EmployeeProfilePage({
         {activeTab === "Salary and Benefits" && (
           <SalaryIncrementTable
             employeeId={id}
-            currentSalary={Number(employee.basic_salary || 0)}
+            currentSalary={
+              Number(employee.basic_salary || 0) +
+              Number(employee.accommodation_allowance || 0) +
+              Number(employee.transportation_allowance || 0)
+            }
             onSalaryChanged={() => loadEmployee(id)}
           />
         )}
