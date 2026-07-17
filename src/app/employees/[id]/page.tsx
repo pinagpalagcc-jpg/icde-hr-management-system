@@ -15,6 +15,7 @@ const TABS = [
   "Office Documents",
   "Immigration Documents",
   "Personal Documents",
+  "ICDE Forms",
 ] as const;
 
 type TabName = (typeof TABS)[number];
@@ -34,6 +35,16 @@ export default function EmployeeProfilePage({
   const [activeTab, setActiveTab] = useState<TabName>("Personal Information");
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingFormDocument, setEditingFormDocument] =
+    useState<any>(null);
+  const [editingFormName, setEditingFormName] =
+    useState("");
+  const [editingFormFile, setEditingFormFile] =
+    useState({
+      file_name: "",
+      file_type: "",
+      file_data: "",
+    });
 
   const [docForm, setDocForm] = useState({
     document_name: "",
@@ -288,6 +299,94 @@ export default function EmployeeProfilePage({
 
     await loadDocuments(id);
     alert("Document uploaded successfully");
+  }
+
+  function openEditICDEForm(document: any) {
+    setEditingFormDocument(document);
+    setEditingFormName(
+      document.document_name || ""
+    );
+
+    setEditingFormFile({
+      file_name:
+        document.file_name || "",
+      file_type:
+        document.file_type || "",
+      file_data:
+        document.file_data || "",
+    });
+  }
+
+  function handleEditICDEFormFile(
+    file: File | null
+  ) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setEditingFormFile({
+        file_name: file.name,
+        file_type:
+          file.type ||
+          "application/octet-stream",
+        file_data:
+          String(reader.result || ""),
+      });
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  async function saveEditedICDEForm() {
+    if (!editingFormDocument?.id) return;
+
+    if (!editingFormName.trim()) {
+      alert("Please enter document name.");
+      return;
+    }
+
+    const res = await fetch(
+      `/api/employee-documents/${editingFormDocument.id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          document_name:
+            editingFormName.trim(),
+          file_name:
+            editingFormFile.file_name,
+          file_type:
+            editingFormFile.file_type,
+          file_data:
+            editingFormFile.file_data,
+        }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(
+        result.error ||
+          "Failed to update ICDE Form."
+      );
+      return;
+    }
+
+    setEditingFormDocument(null);
+    setEditingFormName("");
+    setEditingFormFile({
+      file_name: "",
+      file_type: "",
+      file_data: "",
+    });
+
+    await loadDocuments(id);
+
+    alert("ICDE Form updated successfully.");
   }
 
   async function deleteDocument(documentId: string) {
@@ -860,6 +959,45 @@ export default function EmployeeProfilePage({
           <DocumentCenter category="Personal Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument} />
         )}
 
+        {activeTab === "ICDE Forms" && (
+          <ICDEFormsCenter
+            docForm={docForm}
+            setDocForm={setDocForm}
+            handleFile={handleFile}
+            uploadDocument={uploadDocument}
+            documents={documents}
+            deleteDocument={deleteDocument}
+            openEditICDEForm={openEditICDEForm}
+            editingFormDocument={
+              editingFormDocument
+            }
+            editingFormName={
+              editingFormName
+            }
+            setEditingFormName={
+              setEditingFormName
+            }
+            editingFormFile={
+              editingFormFile
+            }
+            handleEditICDEFormFile={
+              handleEditICDEFormFile
+            }
+            saveEditedICDEForm={
+              saveEditedICDEForm
+            }
+            cancelEdit={() => {
+              setEditingFormDocument(null);
+              setEditingFormName("");
+              setEditingFormFile({
+                file_name: "",
+                file_type: "",
+                file_data: "",
+              });
+            }}
+          />
+        )}
+
         <AuditSection status={employee.status || "Available"} />
       </main>
     </div>
@@ -893,12 +1031,267 @@ function Sidebar() {
           localStorage.clear();
           document.cookie = "icde_auth=; path=/; max-age=0";
           window.location.href = "/login";
-        }}
+        }
+
+}
         className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"
       >
         Sign Out
       </button>
     </aside>
+  );
+}
+
+function ICDEFormsCenter({
+  docForm,
+  setDocForm,
+  handleFile,
+  uploadDocument,
+  documents,
+  deleteDocument,
+  openEditICDEForm,
+  editingFormDocument,
+  editingFormName,
+  setEditingFormName,
+  editingFormFile,
+  handleEditICDEFormFile,
+  saveEditedICDEForm,
+  cancelEdit,
+}: any) {
+  const rows = documents.filter(
+    (document: any) =>
+      document.category === "ICDE Forms"
+  );
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold text-[#3f4447]">
+          ICDE Forms
+        </h2>
+
+        <p className="text-gray-500 text-sm mt-1">
+          Admin-only employee forms and internal documents.
+        </p>
+      </div>
+
+      <div className="bg-[#f7f4ec] rounded-2xl p-5 mb-6">
+        <h3 className="font-bold text-[#3f4447] mb-4">
+          Upload New Form
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Document Name"
+            value={docForm.document_name}
+            onChange={(value: string) =>
+              setDocForm({
+                ...docForm,
+                document_name: value,
+                category: "ICDE Forms",
+              })
+            }
+          />
+
+          <div>
+            <label className="text-sm font-semibold text-gray-600">
+              Upload Picture or File
+            </label>
+
+            <input
+              type="file"
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={(event) =>
+                handleFile(
+                  event.target.files?.[0] ||
+                    null
+                )
+              }
+              className="mt-2 w-full border rounded-xl px-4 py-3 bg-white"
+            />
+
+            {docForm.file_name ? (
+              <p className="text-xs text-green-700 mt-1">
+                Selected: {docForm.file_name}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            uploadDocument("ICDE Forms")
+          }
+          className="mt-5 bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold"
+        >
+          Upload Form
+        </button>
+      </div>
+
+      {editingFormDocument ? (
+        <div className="border border-[#d2b241] rounded-2xl p-5 mb-6">
+          <h3 className="font-bold text-[#3f4447] mb-4">
+            Edit ICDE Form
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Document Name"
+              value={editingFormName}
+              onChange={
+                setEditingFormName
+              }
+            />
+
+            <div>
+              <label className="text-sm font-semibold text-gray-600">
+                Replace Picture or File
+              </label>
+
+              <input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                onChange={(event) =>
+                  handleEditICDEFormFile(
+                    event.target.files?.[0] ||
+                      null
+                  )
+                }
+                className="mt-2 w-full border rounded-xl px-4 py-3 bg-white"
+              />
+
+              {editingFormFile.file_name ? (
+                <p className="text-xs text-green-700 mt-1">
+                  Current:{" "}
+                  {editingFormFile.file_name}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-5">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="bg-gray-200 text-[#3f4447] px-5 py-3 rounded-xl font-bold"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                saveEditedICDEForm
+              }
+              className="bg-[#3f4447] text-white px-5 py-3 rounded-xl font-bold"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="overflow-x-auto border rounded-xl">
+        <table className="min-w-[760px] w-full text-sm">
+          <thead>
+            <tr className="bg-[#d2b241] text-white">
+              <th className="p-4 text-left">
+                Document Name
+              </th>
+
+              <th className="p-4 text-left">
+                Uploaded File
+              </th>
+
+              <th className="p-4 text-center">
+                View
+              </th>
+
+              <th className="p-4 text-center">
+                Edit
+              </th>
+
+              <th className="p-4 text-center">
+                Delete
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.length ? (
+              rows.map((document: any) => (
+                <tr
+                  key={document.id}
+                  className="border-b hover:bg-[#f7f4ec]"
+                >
+                  <td className="p-4 font-semibold">
+                    {document.document_name}
+                  </td>
+
+                  <td className="p-4">
+                    {document.file_name || "-"}
+                  </td>
+
+                  <td className="p-4 text-center">
+                    {document.file_data ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          previewDoc(document)
+                        }
+                        className="text-[#d2b241] font-bold hover:underline"
+                      >
+                        View
+                      </button>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+
+                  <td className="p-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openEditICDEForm(
+                          document
+                        )
+                      }
+                      className="text-blue-700 font-bold hover:underline"
+                    >
+                      Edit
+                    </button>
+                  </td>
+
+                  <td className="p-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        deleteDocument(
+                          document.id
+                        )
+                      }
+                      className="text-red-700 font-bold hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-8 text-center text-gray-500"
+                >
+                  No ICDE forms uploaded yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
