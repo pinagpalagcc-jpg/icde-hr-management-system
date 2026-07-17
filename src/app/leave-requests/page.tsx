@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useState,
+} from "react";
 
 export default function LeaveRequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
@@ -252,10 +256,8 @@ export default function LeaveRequestsPage() {
               approveLeave={approveLeave}
               rejectLeave={rejectLeave}
             />
-            <LeaveTable
-              title="Approved Requests"
+            <ApprovedEmployeeAccordion
               leaves={approved}
-              showDelete
               deleteLeave={deleteLeave}
             />
 
@@ -286,6 +288,290 @@ function employeeDisplayName(leave: any) {
     [emp.first_name, emp.last_name].filter(Boolean).join(" ");
 
   return fullName || emp.email || leave.employee_name || "-";
+}
+
+function ApprovedEmployeeAccordion({
+  leaves,
+  deleteLeave,
+}: {
+  leaves: any[];
+  deleteLeave: (leave: any) => void;
+}) {
+  const [expandedEmployeeId, setExpandedEmployeeId] =
+    useState<string | null>(null);
+
+  const employeeGroups = Object.values(
+    leaves.reduce(
+      (groups: Record<string, any>, leave: any) => {
+        const employee =
+          leave.employee ||
+          leave.employees ||
+          {};
+
+        const employeeId = String(
+          leave.employee_id ||
+            employee.id ||
+            employeeDisplayName(leave)
+        );
+
+        if (!groups[employeeId]) {
+          groups[employeeId] = {
+            employeeId,
+            employeeName:
+              employeeDisplayName(leave),
+            balance:
+              employee.balance_leaves ?? "-",
+            requests: [],
+            approvedDays: 0,
+          };
+        }
+
+        groups[employeeId].requests.push(leave);
+
+        groups[employeeId].approvedDays +=
+          Number(leave.total_days || 0);
+
+        groups[employeeId].balance =
+          employee.balance_leaves ??
+          groups[employeeId].balance;
+
+        return groups;
+      },
+      {}
+    )
+  ).sort((a: any, b: any) =>
+    a.employeeName.localeCompare(
+      b.employeeName
+    )
+  );
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold text-[#3f4447]">
+          Approved Requests
+        </h2>
+
+        <p className="text-sm text-gray-500 mt-1">
+          Click an employee to view their approved leave history.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto border rounded-xl">
+        <table className="min-w-[850px] w-full text-sm">
+          <thead>
+            <tr className="bg-[#d2b241] text-white">
+              <th className="p-4 text-left">
+                Employee
+              </th>
+
+              <th className="p-4 text-center">
+                Approved Requests
+              </th>
+
+              <th className="p-4 text-center">
+                Approved Days
+              </th>
+
+              <th className="p-4 text-center">
+                Balance Leaves
+              </th>
+
+              <th className="p-4 text-center">
+                View
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {employeeGroups.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-8 text-center text-gray-500"
+                >
+                  No approved leave requests found.
+                </td>
+              </tr>
+            ) : (
+              employeeGroups.map(
+                (group: any) => {
+                  const isExpanded =
+                    expandedEmployeeId ===
+                    group.employeeId;
+
+                  return (
+                    <Fragment
+                      key={group.employeeId}
+                    >
+                      <tr
+                        onClick={() =>
+                          setExpandedEmployeeId(
+                            isExpanded
+                              ? null
+                              : group.employeeId
+                          )
+                        }
+                        className="border-b cursor-pointer hover:bg-[#f7f4ec]"
+                      >
+                        <td className="p-4 font-bold text-[#3f4447]">
+                          {group.employeeName}
+                        </td>
+
+                        <td className="p-4 text-center">
+                          {group.requests.length}
+                        </td>
+
+                        <td className="p-4 text-center font-bold">
+                          {group.approvedDays}
+                        </td>
+
+                        <td className="p-4 text-center">
+                          {group.balance}
+                        </td>
+
+                        <td className="p-4 text-center font-bold text-[#d2b241]">
+                          {isExpanded
+                            ? "Hide ▲"
+                            : "View ▼"}
+                        </td>
+                      </tr>
+
+                      {isExpanded ? (
+                        <tr
+                          key={`${group.employeeId}-details`}
+                        >
+                          <td
+                            colSpan={5}
+                            className="p-4 bg-[#faf8f1]"
+                          >
+                            <div className="overflow-x-auto border rounded-xl bg-white">
+                              <table className="min-w-[1050px] w-full text-sm">
+                                <thead>
+                                  <tr className="bg-[#3f4447] text-white">
+                                    <th className="p-3 text-left">
+                                      Leave Type
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                      From
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                      To
+                                    </th>
+
+                                    <th className="p-3 text-center">
+                                      Days
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                      Reason
+                                    </th>
+
+                                    <th className="p-3 text-center">
+                                      Status
+                                    </th>
+
+                                    <th className="p-3 text-center">
+                                      Action
+                                    </th>
+                                  </tr>
+                                </thead>
+
+                                <tbody>
+                                  {group.requests
+                                    .slice()
+                                    .sort(
+                                      (
+                                        a: any,
+                                        b: any
+                                      ) =>
+                                        new Date(
+                                          b.start_date ||
+                                            0
+                                        ).getTime() -
+                                        new Date(
+                                          a.start_date ||
+                                            0
+                                        ).getTime()
+                                    )
+                                    .map(
+                                      (leave: any) => (
+                                        <tr
+                                          key={
+                                            leave.id
+                                          }
+                                          className="border-b"
+                                        >
+                                          <td className="p-3 font-semibold">
+                                            {
+                                              leave.leave_type
+                                            }
+                                          </td>
+
+                                          <td className="p-3">
+                                            {
+                                              leave.start_date
+                                            }
+                                          </td>
+
+                                          <td className="p-3">
+                                            {
+                                              leave.end_date
+                                            }
+                                          </td>
+
+                                          <td className="p-3 text-center font-bold">
+                                            {
+                                              leave.total_days
+                                            }
+                                          </td>
+
+                                          <td className="p-3">
+                                            {leave.reason ||
+                                              "-"}
+                                          </td>
+
+                                          <td className="p-3 text-center font-semibold text-green-700">
+                                            Approved
+                                          </td>
+
+                                          <td className="p-3 text-center">
+                                            <button
+                                              type="button"
+                                              onClick={(
+                                                event
+                                              ) => {
+                                                event.stopPropagation();
+                                                deleteLeave(
+                                                  leave
+                                                );
+                                              }}
+                                              className="text-red-700 font-bold hover:underline"
+                                            >
+                                              Delete
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                }
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function LeaveTable({
