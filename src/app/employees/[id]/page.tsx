@@ -852,6 +852,9 @@ export default function EmployeeProfilePage({
         </div>
       </div>
 
+      {String(employee.gender || "")
+        .trim()
+        .toLowerCase() === "male" && (
       <div className="rounded-2xl border border-gray-100 p-5">
         <h3 className="text-lg font-bold text-[#3f4447] mb-4">
           Paternity Leave
@@ -878,7 +881,11 @@ export default function EmployeeProfilePage({
           />
         </div>
       </div>
+      )}
 
+      {String(employee.gender || "")
+        .trim()
+        .toLowerCase() === "female" && (
       <div className="rounded-2xl border border-gray-100 p-5">
         <h3 className="text-lg font-bold text-[#3f4447] mb-4">
           Maternity Leave
@@ -905,6 +912,7 @@ export default function EmployeeProfilePage({
           />
         </div>
       </div>
+      )}
 
       <div className="rounded-2xl border border-gray-100 p-5">
         <h3 className="text-lg font-bold text-[#3f4447] mb-4">
