@@ -414,8 +414,16 @@ function ApprovedEmployeeAccordion({
                         }
                         className="border-b cursor-pointer hover:bg-[#f7f4ec]"
                       >
-                        <td className="p-4 font-bold text-[#3f4447]">
-                          {group.employeeName}
+                        <td className="p-4 font-bold">
+                          <a
+                            href={`/employees/${group.employeeId}?tab=${encodeURIComponent(
+                              "Leave Details"
+                            )}`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="text-[#d2b241] hover:underline"
+                          >
+                            {group.employeeName}
+                          </a>
                         </td>
 
                         <td className="p-4 text-center">
@@ -623,7 +631,18 @@ function LeaveTable({
               leaves.map((leave: any) => (
                 <tr key={leave.id} className="border-b">
                   <td className="p-3 font-medium">
-                    {employeeDisplayName(leave)}
+                    {leave.employee_id ? (
+                      <a
+                        href={`/employees/${leave.employee_id}?tab=${encodeURIComponent(
+                          "Leave Details"
+                        )}`}
+                        className="text-[#d2b241] font-bold hover:underline"
+                      >
+                        {employeeDisplayName(leave)}
+                      </a>
+                    ) : (
+                      employeeDisplayName(leave)
+                    )}
                   </td>
 
                   <td className="p-3">

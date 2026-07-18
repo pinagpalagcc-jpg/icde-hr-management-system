@@ -492,10 +492,24 @@ export default function LeaveRequestEditorPage({
               value={employee?.employee_id || "-"}
             />
 
-            <Info
-              label="Employee Name"
-              value={fullName || "-"}
-            />
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">Employee Name</p>
+
+              {leave?.employee_id ? (
+                <a
+                  href={`/employees/${leave.employee_id}?tab=${encodeURIComponent(
+                    "Leave Details"
+                  )}`}
+                  className="mt-1 inline-block font-bold text-[#d2b241] hover:underline"
+                >
+                  {fullName || "-"}
+                </a>
+              ) : (
+                <p className="mt-1 font-bold text-[#3f4447]">
+                  {fullName || "-"}
+                </p>
+              )}
+            </div>
 
             <Info
               label="Department"
