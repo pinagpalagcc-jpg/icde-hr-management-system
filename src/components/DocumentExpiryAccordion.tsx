@@ -7,6 +7,7 @@ type AlertItem = {
   employee: string;
   department: string;
   document: string;
+  category: string;
   expiry: string;
   remaining: number;
 };
@@ -172,13 +173,15 @@ export default function DocumentExpiryAccordion({
 
                                   <td className="p-3">
                                     <a
-                                      href={`/employees/${document.employee_id}`}
+                                      href={`/employees/${document.employee_id}?tab=${encodeURIComponent(
+                                        document.category || "Personal Documents"
+                                      )}`}
                                       onClick={(event) =>
                                         event.stopPropagation()
                                       }
                                       className="text-[#d2b241] font-bold hover:underline"
                                     >
-                                      View Employee
+                                      Open Document Tab
                                     </a>
                                   </td>
                                 </tr>

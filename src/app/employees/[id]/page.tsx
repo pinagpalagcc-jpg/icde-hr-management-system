@@ -33,6 +33,16 @@ export default function EmployeeProfilePage({
     balance: 0,
   });
   const [activeTab, setActiveTab] = useState<TabName>("Personal Information");
+
+  useEffect(() => {
+    const requestedTab = new URLSearchParams(
+      window.location.search
+    ).get("tab") as TabName | null;
+
+    if (requestedTab && TABS.includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, []);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingFormDocument, setEditingFormDocument] =

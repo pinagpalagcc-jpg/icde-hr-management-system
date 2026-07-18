@@ -14,16 +14,7 @@ export default async function DashboardPage() {
     .select("*")
     .eq("status", "Pending");
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  const { data: activeLeaves } = await supabase
-    .from("leave_requests")
-    .select("employee_id")
-    .eq("status", "Approved")
-    .lte("start_date", today)
-    .gte("end_date", today);
-
-  const onLeaveIds = new Set((activeLeaves || []).map((l: any) => l.employee_id));
+  const onLeaveIds = new Set(activeLeaveIds);
 
   const total = employees.length;
   const inactive = employees.filter((e: any) => onLeaveIds.has(e.id)).length;
@@ -46,6 +37,7 @@ export default async function DashboardPage() {
         department:
           doc.employees?.department || "-",
         document: doc.document_name || "-",
+        category: doc.category || "Personal Documents",
         expiry: doc.expiry_date,
         remaining,
       };
@@ -111,9 +103,9 @@ export default async function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <Kpi title="Total Employees" value={total} />
-            <Kpi title="Available Employees" value={active} />
-            <Kpi title="Employees On Leave" value={inactive} />
+            <Kpi title="Total Employees" value={total} href="/employees?view=all" />
+            <Kpi title="Available Employees" value={active} href="/employees?status=Available" />
+            <Kpi title="Employees On Leave" value={inactive} href="/employees?status=On%20Leave" />
           </div>
         </div>
 
@@ -128,7 +120,7 @@ export default async function DashboardPage() {
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Kpi title="Pending Leave Requests" value={(leaves || []).length} href="/leave-requests" />
-          <Kpi title="Employees On Leave" value={inactive} href="/reports?filter=on-leave" />
+          <Kpi title="Employees On Leave" value={inactive} href="/employees?status=On%20Leave" />
           <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" />
           <Kpi title="Annual Tickets Due" value={employees.filter((e: any) => daysRemaining(e.annual_ticket_due) !== null && daysRemaining(e.annual_ticket_due)! >= 0 && daysRemaining(e.annual_ticket_due)! <= 90).length} href="/document-expiry?type=annual-ticket" />
         </section>
@@ -160,8 +152,38 @@ function expiryBadgeClass(days: number) {
   return "bg-purple-100 text-purple-700";
 }
 
-function Kpi({ title, value, href }: { title: string; value: string | number; href?: string }) {
-  return <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center min-w-[140px]"><p className="text-gray-500 text-sm font-medium">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
+function Kpi({
+  title,
+  value,
+  href,
+}: {
+  title: string;
+  value: string | number;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <p className="text-gray-500 text-sm font-medium">{title}</p>
+      <h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        className="block bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center min-w-[140px] hover:shadow-lg hover:-translate-y-1 transition-all"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center min-w-[140px]">
+      {content}
+    </div>
+  );
 }
 
 function Sidebar({ active }: { active: string }) {

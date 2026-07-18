@@ -1,17 +1,32 @@
-import { departments, getEmployees } from "@/lib/hr";
+import { departments, getEmployees, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
 
 export default async function EmployeesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ department?: string }>;
+  searchParams: Promise<{ department?: string; status?: string; view?: string }>;
 }) {
   const params = await searchParams;
   const selectedDepartment = params.department || "";
-  const employees = await getEmployees();
+  const selectedStatus = params.status || "";
+  const showAll = params.view === "all";
 
-  const filteredEmployees = selectedDepartment
-    ? employees.filter((e) => e.department === selectedDepartment)
-    : [];
+  const employees = await getEmployees();
+  const activeLeaveIds = await getActiveLeaveEmployeeIds();
+
+  const filteredEmployees = employees.filter((employee: any) => {
+    const matchesDepartment =
+      !selectedDepartment || employee.department === selectedDepartment;
+
+    const currentStatus = displayStatus(employee, activeLeaveIds);
+
+    const matchesStatus =
+      !selectedStatus || currentStatus === selectedStatus;
+
+    return matchesDepartment && matchesStatus;
+  });
+
+  const shouldShowEmployees =
+    showAll || Boolean(selectedDepartment) || Boolean(selectedStatus);
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -19,7 +34,7 @@ export default async function EmployeesPage({
 
       <main className="flex-1 p-8 overflow-x-hidden">
         <h1 className="text-3xl font-bold text-[#3f4447]">Employees</h1>
-        <p className="text-gray-500 mb-8">Select a department to view employee records</p>
+        <p className="text-gray-500 mb-8">Select a department or use the dashboard cards to view employee records</p>
 
         <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-4 mb-8">
           {departments.map((department) => {
@@ -43,7 +58,7 @@ export default async function EmployeesPage({
           })}
         </section>
 
-        {!selectedDepartment ? (
+        {!shouldShowEmployees ? (
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
             <h2 className="text-xl font-bold text-[#3f4447]">Choose Department</h2>
             <p className="text-gray-500 mt-3">
@@ -57,7 +72,11 @@ export default async function EmployeesPage({
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-xl font-bold text-[#3f4447]">
-                {selectedDepartment} Employees
+                {selectedDepartment
+                  ? `${selectedDepartment} Employees`
+                  : selectedStatus
+                  ? `${selectedStatus} Employees`
+                  : "All Employees"}
               </h2>
               <a href="/employees/add" className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold">
                 Add Employee
@@ -96,9 +115,26 @@ export default async function EmployeesPage({
                           <td className="p-3">{e.mobile_number}</td>
                           <td className="p-3">{e.joining_date}</td>
                           <td className="p-3">
-                            <span className={`${e.status === "Inactive" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"} px-3 py-1 rounded-full font-semibold`}>
-                              {e.status || "Active"}
-                            </span>
+                            {(() => {
+                              const currentStatus = displayStatus(
+                                e,
+                                activeLeaveIds
+                              );
+
+                              return (
+                                <span
+                                  className={`${
+                                    currentStatus === "On Leave"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : currentStatus === "Inactive"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-green-100 text-green-700"
+                                  } px-3 py-1 rounded-full font-semibold`}
+                                >
+                                  {currentStatus}
+                                </span>
+                              );
+                            })()}
                           </td>
                         </tr>
                       );
@@ -106,7 +142,7 @@ export default async function EmployeesPage({
                   ) : (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-gray-500">
-                        No employees found in {selectedDepartment}.
+                        No employees found for the selected filter.
                       </td>
                     </tr>
                   )}
