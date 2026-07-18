@@ -1,4 +1,5 @@
 import { departments, getEmployees, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
+import ExportEmployeesButton from "@/components/ExportEmployeesButton";
 
 export default async function EmployeesPage({
   searchParams,
@@ -70,7 +71,7 @@ export default async function EmployeesPage({
           </section>
         ) : (
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex justify-between items-center mb-5">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-5">
               <h2 className="text-xl font-bold text-[#3f4447]">
                 {selectedDepartment
                   ? `${selectedDepartment} Employees`
@@ -78,22 +79,49 @@ export default async function EmployeesPage({
                   ? `${selectedStatus} Employees`
                   : "All Employees"}
               </h2>
-              <a href="/employees/add" className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold">
-                Add Employee
-              </a>
+
+              <div className="flex flex-wrap gap-3">
+                <ExportEmployeesButton
+                  fileName={
+                    selectedDepartment
+                      ? `${selectedDepartment}-employees`
+                      : selectedStatus
+                      ? `${selectedStatus}-employees`
+                      : "all-employees"
+                  }
+                  employees={filteredEmployees.map((employee: any) => ({
+                    employeeId: employee.employee_code || "",
+                    name: `${employee.first_name || ""} ${employee.middle_name || ""} ${employee.last_name || ""}`
+                      .replace(/\s+/g, " ")
+                      .trim(),
+                    department: employee.department || "",
+                    position: employee.position || "",
+                    phone: employee.mobile_number || "",
+                    joiningDate: employee.joining_date || "",
+                    status: displayStatus(employee, activeLeaveIds),
+                  }))}
+                />
+
+                <a
+                  href="/employees/add"
+                  className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-bold"
+                >
+                  Add Employee
+                </a>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[1250px] w-full text-sm">
                 <thead>
                   <tr className="bg-[#3f4447] text-white">
-                    <th className="p-3 text-left">Employee ID</th>
-                    <th className="p-3 text-left">Name</th>
-                    <th className="p-3 text-left">Department</th>
-                    <th className="p-3 text-left">Position</th>
-                    <th className="p-3 text-left">Phone</th>
-                    <th className="p-3 text-left">Joining Date</th>
-                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-left min-w-[130px]">Employee ID</th>
+                    <th className="p-3 text-left min-w-[260px]">Name</th>
+                    <th className="p-3 text-left min-w-[180px]">Department</th>
+                    <th className="p-3 text-left min-w-[200px]">Position</th>
+                    <th className="p-3 text-left min-w-[180px] whitespace-nowrap">Phone</th>
+                    <th className="p-3 text-left min-w-[150px] whitespace-nowrap">Joining Date</th>
+                    <th className="p-3 text-left min-w-[130px]">Status</th>
                   </tr>
                 </thead>
 
@@ -112,8 +140,8 @@ export default async function EmployeesPage({
                           </td>
                           <td className="p-3">{e.department}</td>
                           <td className="p-3">{e.position}</td>
-                          <td className="p-3">{e.mobile_number}</td>
-                          <td className="p-3">{e.joining_date}</td>
+                          <td className="p-3 whitespace-nowrap">{e.mobile_number}</td>
+                          <td className="p-3 whitespace-nowrap">{e.joining_date}</td>
                           <td className="p-3">
                             {(() => {
                               const currentStatus = displayStatus(

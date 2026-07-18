@@ -19,6 +19,7 @@
     "react-icons": "latest",
     "resend": "^6.17.1",
     "sonner": "latest",
+    "xlsx": "^0.18.5",
     "zod": "latest"
   },
   "devDependencies": {
