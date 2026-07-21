@@ -10,6 +10,7 @@ const TABS = [
   "Office Documents",
   "Immigration Documents",
   "Personal Documents",
+  "HAAD",
 ] as const;
 
 type TabName = (typeof TABS)[number];
@@ -144,7 +145,13 @@ export default function StaffProfilePage({
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-wrap gap-2">
-            {TABS.map((tab) => (
+            {TABS.filter(
+              (tab) =>
+                tab !== "HAAD" ||
+                ["Clinicians", "Dental Assistant"].includes(
+                  employee.department || ""
+                )
+            ).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -453,6 +460,16 @@ export default function StaffProfilePage({
         {activeTab === "Personal Documents" && (
           <DocumentCenter category="Personal Documents" documents={documents} />
         )}
+
+        {activeTab === "HAAD" &&
+          ["Clinicians", "Dental Assistant"].includes(
+            employee.department || ""
+          ) && (
+            <DocumentCenter
+              category="HAAD"
+              documents={documents}
+            />
+          )}
       </main>
     </div>
   );

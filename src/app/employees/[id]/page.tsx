@@ -16,6 +16,7 @@ const TABS = [
   "Immigration Documents",
   "Personal Documents",
   "ICDE Forms",
+  "HAAD",
 ] as const;
 
 type TabName = (typeof TABS)[number];
@@ -517,7 +518,13 @@ export default function EmployeeProfilePage({
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-wrap gap-2">
-            {TABS.map((tab) => (
+            {TABS.filter(
+              (tab) =>
+                tab !== "HAAD" ||
+                ["Clinicians", "Dental Assistant"].includes(
+                  employee.department || ""
+                )
+            ).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -979,6 +986,9 @@ export default function EmployeeProfilePage({
 
         {activeTab === "ICDE Forms" && (
           <ICDEFormsCenter
+            category="ICDE Forms"
+            title="ICDE Forms"
+            description="Admin-only employee forms and internal documents."
             docForm={docForm}
             setDocForm={setDocForm}
             handleFile={handleFile}
@@ -1015,6 +1025,39 @@ export default function EmployeeProfilePage({
             }}
           />
         )}
+
+        {activeTab === "HAAD" &&
+          ["Clinicians", "Dental Assistant"].includes(
+            employee.department || ""
+          ) && (
+            <ICDEFormsCenter
+              category="HAAD"
+              title="HAAD"
+              description="HAAD licensing, approval, credential, and related employee documents."
+              docForm={docForm}
+              setDocForm={setDocForm}
+              handleFile={handleFile}
+              uploadDocument={uploadDocument}
+              documents={documents}
+              deleteDocument={deleteDocument}
+              openEditICDEForm={openEditICDEForm}
+              editingFormDocument={editingFormDocument}
+              editingFormName={editingFormName}
+              setEditingFormName={setEditingFormName}
+              editingFormFile={editingFormFile}
+              handleEditICDEFormFile={handleEditICDEFormFile}
+              saveEditedICDEForm={saveEditedICDEForm}
+              cancelEdit={() => {
+                setEditingFormDocument(null);
+                setEditingFormName("");
+                setEditingFormFile({
+                  file_name: "",
+                  file_type: "",
+                  file_data: "",
+                });
+              }}
+            />
+          )}
 
         <AuditSection status={employee.status || "Available"} />
       </main>
@@ -1061,6 +1104,9 @@ function Sidebar() {
 }
 
 function ICDEFormsCenter({
+  category,
+  title,
+  description,
   docForm,
   setDocForm,
   handleFile,
@@ -1078,24 +1124,24 @@ function ICDEFormsCenter({
 }: any) {
   const rows = documents.filter(
     (document: any) =>
-      document.category === "ICDE Forms"
+      document.category === category
   );
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
       <div className="mb-5">
         <h2 className="text-xl font-bold text-[#3f4447]">
-          ICDE Forms
+          {title}
         </h2>
 
         <p className="text-gray-500 text-sm mt-1">
-          Admin-only employee forms and internal documents.
+          {description}
         </p>
       </div>
 
       <div className="bg-[#f7f4ec] rounded-2xl p-5 mb-6">
         <h3 className="font-bold text-[#3f4447] mb-4">
-          Upload New Form
+          Upload New Document
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1106,7 +1152,7 @@ function ICDEFormsCenter({
               setDocForm({
                 ...docForm,
                 document_name: value,
-                category: "ICDE Forms",
+                category,
               })
             }
           />
@@ -1139,18 +1185,18 @@ function ICDEFormsCenter({
         <button
           type="button"
           onClick={() =>
-            uploadDocument("ICDE Forms")
+            uploadDocument(category)
           }
           className="mt-5 bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold"
         >
-          Upload Form
+          Upload Document
         </button>
       </div>
 
       {editingFormDocument ? (
         <div className="border border-[#d2b241] rounded-2xl p-5 mb-6">
           <h3 className="font-bold text-[#3f4447] mb-4">
-            Edit ICDE Form
+            Edit Document
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
