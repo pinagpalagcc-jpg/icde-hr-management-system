@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LoanBulkImport from "@/components/LoanBulkImport";
 
 type LoanEntry = {
   id: string;
@@ -198,6 +199,31 @@ export default function EmployeeLoanLedger({
           </button>
         ) : null}
       </div>
+
+      {!readOnly ? (
+        <LoanBulkImport
+          employeeId={employeeId}
+          currentBalance={
+            entries.length
+              ? Number(
+                  entries[
+                    entries.length - 1
+                  ]?.balance_after || 0
+                )
+              : 0
+          }
+          latestDate={
+            entries.length
+              ? String(
+                  entries[
+                    entries.length - 1
+                  ]?.transaction_date || ""
+                ).slice(0, 10)
+              : ""
+          }
+          onImported={loadEntries}
+        />
+      ) : null}
 
       {!readOnly && showForm ? (
         <div className="border rounded-xl p-5 mb-6">
