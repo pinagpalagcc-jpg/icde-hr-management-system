@@ -180,27 +180,6 @@ export async function POST(request: NextRequest) {
           row.paid
       );
 
-      if (runningBalance < 0) {
-        errors.push(
-          `Row ${row.rowNumber}: Paid amount creates a negative balance.`
-        );
-        continue;
-      }
-
-      if (
-        Math.abs(
-          runningBalance -
-            row.suppliedBalance
-        ) > 0.01
-      ) {
-        errors.push(
-          `Row ${row.rowNumber}: Balance should be ${runningBalance.toFixed(
-            2
-          )}, not ${row.suppliedBalance.toFixed(2)}.`
-        );
-        continue;
-      }
-
       insertRows.push({
         employee_id: employeeId,
         transaction_date:
