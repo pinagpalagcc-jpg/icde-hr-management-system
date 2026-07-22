@@ -13,15 +13,18 @@ export async function GET() {
 
   return NextResponse.json({
     authenticated: true,
-
     userId: session.userId,
     role: session.role,
     username: session.username,
+    isImpersonating:
+      Boolean(session.isImpersonating),
 
     user: {
       userId: session.userId,
       role: session.role,
       username: session.username,
+      isImpersonating:
+        Boolean(session.isImpersonating),
     },
   });
 }

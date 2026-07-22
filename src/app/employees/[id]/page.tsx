@@ -126,6 +126,51 @@ export default function EmployeeProfilePage({
     });
   }
 
+  async function testAsEmployee() {
+    const confirmed = window.confirm(
+      `Open the Staff Portal for ${fullName || "this employee"}? Any submitted actions will create real records.`
+    );
+
+    if (!confirmed) return;
+
+    const response = await fetch(
+      "/api/auth/test-as-employee",
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          employee_id: id,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(
+        result.error ||
+          "Unable to start testing mode."
+      );
+      return;
+    }
+
+    localStorage.setItem(
+      "icde_user_id",
+      id
+    );
+
+    localStorage.setItem(
+      "icde_user_role",
+      "Staff"
+    );
+
+    window.location.href = "/staff";
+  }
+
   async function loadDocuments(employeeId: string) {
     const data = await fetch(`/api/employee-documents?employee_id=${employeeId}`).then((r) => r.json());
     setDocuments(Array.isArray(data) ? data : []);
@@ -498,6 +543,13 @@ export default function EmployeeProfilePage({
                   Edit Profile
                 </button>
               )}
+
+              <button
+                onClick={testAsEmployee}
+                className="bg-purple-100 text-purple-700 px-5 py-3 rounded-xl font-semibold"
+              >
+                Login as Employee for Testing
+              </button>
 
               <button
                 onClick={toggleStatus}

@@ -10,6 +10,9 @@ export type SessionPayload = {
   userId: string;
   role: SessionRole;
   username: string;
+  isImpersonating?: boolean;
+  originalAdminId?: string;
+  originalAdminUsername?: string;
 };
 
 function getSessionSecret() {
@@ -31,6 +34,12 @@ export async function createSession(
     userId: payload.userId,
     role: payload.role,
     username: payload.username,
+    isImpersonating:
+      Boolean(payload.isImpersonating),
+    originalAdminId:
+      payload.originalAdminId || "",
+    originalAdminUsername:
+      payload.originalAdminUsername || "",
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -100,6 +109,14 @@ export async function readSession(): Promise<
       userId,
       username,
       role,
+      isImpersonating:
+        payload.isImpersonating === true,
+      originalAdminId: String(
+        payload.originalAdminId || ""
+      ),
+      originalAdminUsername: String(
+        payload.originalAdminUsername || ""
+      ),
     };
   } catch {
     return null;
@@ -136,7 +153,10 @@ export async function requireSession() {
 export async function requireAdmin() {
   const session = await requireSession();
 
-  if (session.role !== "Admin") {
+  if (
+    session.role !== "Admin" ||
+    session.isImpersonating
+  ) {
     throw new Error("FORBIDDEN");
   }
 

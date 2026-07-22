@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 
 export default function StaffDashboardPage() {
   const [employee, setEmployee] = useState<any>(null);
+  const [
+    isImpersonating,
+    setIsImpersonating,
+  ] = useState(false);
+
   const [expiryAlerts, setExpiryAlerts] = useState<any[]>([]);
   const [annualLeaveSummary, setAnnualLeaveSummary] = useState({
     used: 0,
@@ -27,6 +32,11 @@ export default function StaffDashboardPage() {
         }
 
         const session = await response.json();
+
+        setIsImpersonating(
+          Boolean(session.isImpersonating)
+        );
+
         const id =
           session.userId || session.id || "";
 
@@ -52,6 +62,34 @@ export default function StaffDashboardPage() {
 
     initializeStaff();
   }, []);
+
+  async function returnToAdmin() {
+    const response = await fetch(
+      "/api/auth/return-to-admin",
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(
+        result.error ||
+          "Unable to return to Admin."
+      );
+      return;
+    }
+
+    localStorage.setItem(
+      "icde_user_role",
+      "Admin"
+    );
+
+    window.location.href =
+      "/dashboard";
+  }
 
   async function loadStaff(id: string) {
     const [employeeResponse, documentsResponse, leaveResponse] =
@@ -130,6 +168,26 @@ export default function StaffDashboardPage() {
       <StaffSidebar active="Dashboard" employeeId={employee.id} />
 
       <main className="flex-1 p-8 overflow-x-hidden">
+        {isImpersonating && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-purple-400 bg-purple-50 p-5">
+            <div>
+              <p className="font-bold text-purple-800">
+                Admin Testing Mode
+              </p>
+              <p className="text-sm text-purple-700">
+                You are testing the Staff Portal as {name}. Actions such as applying leave create real records.
+              </p>
+            </div>
+
+            <button
+              onClick={returnToAdmin}
+              className="rounded-xl bg-purple-700 px-5 py-3 font-semibold text-white"
+            >
+              Return to Admin
+            </button>
+          </div>
+        )}
+
         <h1 className="text-3xl font-bold text-[#3f4447]">Staff Dashboard</h1>
         <p className="text-gray-500 mb-8">Welcome, {name}</p>
 
