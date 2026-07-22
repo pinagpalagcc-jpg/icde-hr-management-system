@@ -21,17 +21,29 @@ export default function MyLeaveRequestsPage({
     });
   }, [searchParams]);
 
-  async function loadLeaves(id: string) {
-    const response = await fetch("/api/leave-requests", {
-      cache: "no-store",
-    });
+  async function loadLeaves(_id: string) {
+    const response = await fetch(
+      "/api/leave-requests",
+      {
+        credentials: "include",
+        cache: "no-store",
+      }
+    );
 
     const data = await response.json();
 
+    if (!response.ok) {
+      alert(
+        data.error ||
+          "Unable to load leave requests."
+      );
+
+      setLeaves([]);
+      return;
+    }
+
     setLeaves(
-      (Array.isArray(data) ? data : []).filter(
-        (leave: any) => leave.employee_id === id
-      )
+      Array.isArray(data) ? data : []
     );
   }
 
