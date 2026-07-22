@@ -566,98 +566,138 @@ export default function EmployeeProfilePage({
           ← Back to Employees
         </a>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-8 mb-6">
-          <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-5">
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="w-32 h-32 rounded-2xl bg-[#3f4447] text-white flex items-center justify-center text-4xl font-bold overflow-hidden">
+        <section className="mt-8 mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div className="shrink-0">
+                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-2xl bg-[#3f4447] text-4xl font-bold text-white">
                   {employee.profile_photo ? (
-                    <img src={employee.profile_photo} alt="Employee Photo" className="w-full h-full object-cover" />
+                    <img
+                      src={employee.profile_photo}
+                      alt="Employee Photo"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     initials
                   )}
                 </div>
 
-                <label className="mt-3 block text-center bg-[#d2b241] text-white px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer">
+                <label className="mt-3 block cursor-pointer rounded-xl bg-[#d2b241] px-3 py-2 text-center text-sm font-semibold text-white">
                   Upload Photo
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e.target.files?.[0] || null)} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) =>
+                      handlePhotoUpload(
+                        event.target.files?.[0] || null
+                      )
+                    }
+                  />
                 </label>
 
                 {employee.profile_photo && (
-                  <button onClick={removePhoto} className="mt-2 w-full text-sm bg-red-100 text-red-700 px-3 py-2 rounded-xl font-semibold">
+                  <button
+                    onClick={removePhoto}
+                    className="mt-2 w-full rounded-xl bg-red-100 px-3 py-2 text-sm font-semibold text-red-700"
+                  >
                     Remove Photo
                   </button>
                 )}
               </div>
 
-              <div>
-                <h1 className="text-3xl font-bold text-[#3f4447]">{fullName}</h1>
+              <div className="min-w-0">
+                <h1 className="text-3xl font-bold text-[#3f4447]">
+                  {fullName}
+                </h1>
 
-<p className="text-gray-500">
-  Employee ID: {employee.employee_code}
-</p>
+                <p className="mt-4 text-gray-500">
+                  Employee ID: {employee.employee_code}
+                </p>
 
-<p className="text-gray-500">
-  Date of Joining: {employee.joining_date || "-"}
-</p>
-                <span className={`inline-block mt-3 px-4 py-2 rounded-full font-semibold ${
-                  (employee.status || "Available") === "On Leave"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-green-100 text-green-700"
-                }`}>
+                <p className="mt-2 text-gray-500">
+                  Date of Joining: {employee.joining_date || "-"}
+                </p>
+
+                <span
+                  className={`mt-4 inline-block rounded-full px-4 py-2 font-semibold ${
+                    (employee.status || "Available") === "On Leave"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
                   {employee.status || "Available"}
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {editMode ? (
-                <>
-                  <button onClick={() => setEditMode(false)} className="bg-gray-100 text-gray-700 px-5 py-3 rounded-xl font-semibold">
-                    Cancel Edit
+            <div className="border-t border-gray-200 pt-6 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
+              <div className="grid gap-3">
+                {editMode ? (
+                  <>
+                    <button
+                      onClick={() => setEditMode(false)}
+                      className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 font-semibold text-gray-700"
+                    >
+                      Cancel Edit
+                    </button>
+
+                    <button
+                      onClick={saveChanges}
+                      disabled={saving}
+                      className="w-full rounded-xl border border-[#d2b241] bg-[#d2b241] px-4 py-3 font-semibold text-white"
+                    >
+                      {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="w-full rounded-xl border border-[#d2b241] bg-[#fffaf0] px-4 py-3 font-semibold text-[#9a7410]"
+                  >
+                    Edit Profile
                   </button>
-                  <button onClick={saveChanges} disabled={saving} className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
-                    {saving ? "Saving..." : "Save Changes"}
-                  </button>
-                </>
-              ) : (
-                <button onClick={() => setEditMode(true)} className="bg-[#d2b241] text-white px-5 py-3 rounded-xl font-semibold">
-                  Edit Profile
+                )}
+
+                <button
+                  onClick={resetEmployeePassword}
+                  className="w-full rounded-xl border border-blue-400 bg-blue-50 px-4 py-3 font-semibold text-blue-700"
+                >
+                  Reset Employee Password
                 </button>
-              )}
 
-              <button
-                onClick={resetEmployeePassword}
-                className="bg-blue-100 text-blue-700 px-5 py-3 rounded-xl font-semibold"
-              >
-                Reset Employee Password
-              </button>
+                <button
+                  onClick={testAsEmployee}
+                  className="w-full rounded-xl border border-purple-400 bg-purple-50 px-4 py-3 font-semibold text-purple-700"
+                >
+                  Login as Employee for Testing
+                </button>
 
-              <button
-                onClick={testAsEmployee}
-                className="bg-purple-100 text-purple-700 px-5 py-3 rounded-xl font-semibold"
-              >
-                Login as Employee for Testing
-              </button>
+                <button
+                  onClick={toggleStatus}
+                  className={`w-full rounded-xl border px-4 py-3 font-semibold ${
+                    (employee.status || "Available") === "On Leave"
+                      ? "border-green-400 bg-green-50 text-green-700"
+                      : "border-orange-400 bg-orange-50 text-orange-700"
+                  }`}
+                >
+                  {(employee.status || "Available") === "On Leave"
+                    ? "Activate"
+                    : "Deactivate"}
+                </button>
 
-              <button
-                onClick={toggleStatus}
-                className={(employee.status || "Available") === "On Leave"
-                  ? "bg-green-100 text-green-700 px-5 py-3 rounded-xl font-semibold"
-                  : "bg-orange-100 text-orange-700 px-5 py-3 rounded-xl font-semibold"
-                }
-              >
-                {(employee.status || "Available") === "On Leave" ? "Activate" : "Deactivate"}
-              </button>
-
-              <button onClick={deleteEmployee} className="bg-red-100 text-red-700 px-5 py-3 rounded-xl font-semibold">
-                Delete
-              </button>
+                <button
+                  onClick={deleteEmployee}
+                  className="w-full rounded-xl border border-red-400 bg-red-50 px-4 py-3 font-semibold text-red-700"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+        <section className="mb-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap gap-2">
             {TABS.filter(
               (tab) =>
@@ -669,9 +709,9 @@ export default function EmployeeProfilePage({
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-4 rounded-2xl font-bold text-sm shadow-md border-2 transition-all ${
+                className={`px-4 py-3 rounded-xl font-semibold text-sm border transition-all ${
                   activeTab === tab
-                    ? "bg-[#d2b241] text-white border-[#b99316] scale-[1.03]"
+                    ? "bg-[#d2b241] text-white border-[#b99316] shadow-sm"
                     : tab === "Personal Information"
                     ? "bg-[#efe7ff] text-[#5b21b6] border-[#c4b5fd] hover:bg-[#ddd6fe]"
                     : tab === "Salary and Benefits"
