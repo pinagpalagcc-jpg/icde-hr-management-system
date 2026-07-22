@@ -171,6 +171,88 @@ export default function EmployeeProfilePage({
     window.location.href = "/staff";
   }
 
+  async function resetEmployeePassword() {
+    const username =
+      employee.login_username ||
+      "No username assigned";
+
+    const newPassword =
+      window.prompt(
+        `Username: ${username}\n\nEnter a temporary password of at least 8 characters:`
+      );
+
+    if (newPassword === null) {
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      alert(
+        "Password must be at least 8 characters."
+      );
+      return;
+    }
+
+    const confirmPassword =
+      window.prompt(
+        "Confirm the temporary password:"
+      );
+
+    if (confirmPassword === null) {
+      return;
+    }
+
+    if (
+      newPassword !==
+      confirmPassword
+    ) {
+      alert(
+        "Passwords do not match."
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Reset the password for ${fullName || username}?\n\nThe employee will be required to change it after login.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch(
+      "/api/auth/admin-reset-password",
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          employeeId: id,
+          newPassword,
+          confirmPassword,
+        }),
+      }
+    );
+
+    const result =
+      await response.json();
+
+    if (!response.ok) {
+      alert(
+        result.error ||
+          "Unable to reset password."
+      );
+      return;
+    }
+
+    alert(
+      `Password reset successfully.\n\nUsername: ${username}\n\nGive the temporary password to the employee securely. The employee must change it after login.`
+    );
+  }
+
   async function loadDocuments(employeeId: string) {
     const data = await fetch(`/api/employee-documents?employee_id=${employeeId}`).then((r) => r.json());
     setDocuments(Array.isArray(data) ? data : []);
@@ -543,6 +625,13 @@ export default function EmployeeProfilePage({
                   Edit Profile
                 </button>
               )}
+
+              <button
+                onClick={resetEmployeePassword}
+                className="bg-blue-100 text-blue-700 px-5 py-3 rounded-xl font-semibold"
+              >
+                Reset Employee Password
+              </button>
 
               <button
                 onClick={testAsEmployee}
