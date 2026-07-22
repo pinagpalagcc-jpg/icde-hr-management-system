@@ -2,26 +2,51 @@
 
 import { useEffect, useState } from "react";
 
-export default function MyLeaveRequestsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ employee_id?: string }>;
-}) {
+export default function MyLeaveRequestsPage() {
   const [employeeId, setEmployeeId] = useState("");
   const [leaves, setLeaves] = useState<any[]>([]);
 
   useEffect(() => {
-    searchParams.then((params) => {
-      const id = params.employee_id || "";
-      setEmployeeId(id);
+    async function initializePage() {
+      try {
+        const sessionResponse = await fetch(
+          "/api/auth/session",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
 
-      if (id) {
-        loadLeaves(id);
+        if (!sessionResponse.ok) {
+          window.location.href = "/logout";
+          return;
+        }
+
+        const session = await sessionResponse.json();
+
+        const id =
+          session.userId ||
+          session.user?.userId ||
+          "";
+
+        if (!id || session.role !== "Staff") {
+          window.location.href = "/logout";
+          return;
+        }
+
+        setEmployeeId(id);
+        await loadLeaves();
+      } catch {
+        alert(
+          "Unable to verify your secure session."
+        );
       }
-    });
-  }, [searchParams]);
+    }
 
-  async function loadLeaves(_id: string) {
+    initializePage();
+  }, []);
+
+  async function loadLeaves() {
     const response = await fetch(
       "/api/leave-requests",
       {
