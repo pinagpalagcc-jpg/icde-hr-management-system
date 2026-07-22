@@ -102,9 +102,6 @@ export async function POST(request: Request) {
             ...body,
             employee_id: session.userId,
             status: "Pending",
-            approved_by: null,
-            approved_at: null,
-            rejection_reason: null,
           };
 
     const { data, error } = await supabase
