@@ -14,37 +14,62 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function login() {
+    if (loading) return;
+
     setLoading(true);
 
-    const res = await fetch("/api/employees");
-    const employees = await res.json();
+    try {
+      const response = await fetch(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: username.trim(),
+            password,
+          }),
+        }
+      );
 
-    const inputUsername = username.trim().toLowerCase();
-    const inputPassword = password.trim();
+      const result = await response.json();
 
-    const user = (employees || []).find((e: any) => {
-      const dbUsername = String(e.login_username || "").trim().toLowerCase();
-      const dbPassword = String(e.login_password || "").trim();
-      return dbUsername === inputUsername && dbPassword === inputPassword && e.status !== "Inactive";
-    });
+      if (!response.ok) {
+        alert(
+          result.error ||
+            "Invalid username or password."
+        );
+        return;
+      }
 
-    if (!user) {
-      alert("Invalid username or password.");
+      const user = result.user;
+
+      localStorage.setItem(
+        "icde_user_id",
+        user.id
+      );
+
+      localStorage.setItem(
+        "icde_user_role",
+        user.role
+      );
+
+      if (user.mustChangePassword) {
+        window.location.href =
+          `/change-password?employee_id=${user.id}`;
+        return;
+      }
+
+      window.location.href =
+        user.role === "Admin"
+          ? "/dashboard"
+          : "/staff";
+    } catch {
+      alert("Unable to complete login.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    localStorage.setItem("icde_user_id", user.id);
-    localStorage.setItem("icde_user_role", user.user_role || "Staff");
-    document.cookie = "icde_auth=" + user.id + "; path=/; max-age=86400; SameSite=Lax";
-
-    if (user.must_change_password) {
-      window.location.href = `/change-password?employee_id=${user.id}`;
-      return;
-    }
-
-    window.location.href =
-      String(user.user_role || "").toLowerCase() === "admin" ? "/dashboard" : "/staff";
   }
 
   return (

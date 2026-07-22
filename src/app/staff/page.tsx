@@ -11,15 +11,46 @@ export default function StaffDashboardPage() {
   });
 
   useEffect(() => {
-    const id = localStorage.getItem("icde_user_id");
-    const role = localStorage.getItem("icde_user_role");
+    async function initializeStaff() {
+      try {
+        const response = await fetch(
+          "/api/auth/session",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
 
-    if (!id || role !== "Staff") {
-      window.location.href = "/login";
-      return;
+        if (!response.ok) {
+          window.location.href = "/logout";
+          return;
+        }
+
+        const session = await response.json();
+        const id =
+          session.userId || session.id || "";
+
+        if (!id || session.role !== "Staff") {
+          window.location.href = "/logout";
+          return;
+        }
+
+        localStorage.setItem(
+          "icde_user_id",
+          id
+        );
+        localStorage.setItem(
+          "icde_user_role",
+          "Staff"
+        );
+
+        await loadStaff(id);
+      } catch {
+        window.location.href = "/logout";
+      }
     }
 
-    loadStaff(id);
+    initializeStaff();
   }, []);
 
   async function loadStaff(id: string) {
@@ -185,7 +216,7 @@ function StaffSidebar({ active, employeeId }: { active: string; employeeId: stri
       </div>
       <nav className="space-y-3">{items.map(([name, href]) => <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>)}</nav>
       </div>
-      <button onClick={() => { localStorage.clear(); document.cookie = "icde_auth=; path=/; max-age=0"; window.location.href="/login"; }} className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
+      <button onClick={() => { localStorage.clear(); document.cookie = "icde_auth=; path=/; max-age=0"; window.location.href="/logout"; }} className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
     </aside>
   );
 }

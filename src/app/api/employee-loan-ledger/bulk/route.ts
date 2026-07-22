@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/session";
 
 function numberValue(value: unknown) {
   const number = Number(value);
@@ -46,6 +47,8 @@ async function recalculateLedger(employeeId: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin();
+
     const body = await request.json();
 
     const employeeId = String(

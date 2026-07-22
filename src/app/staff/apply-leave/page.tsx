@@ -34,25 +34,60 @@ export default function ApplyLeavePage() {
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id =
-      params.get("employee_id") ||
-      localStorage.getItem("authUser") ||
-      localStorage.getItem("icde_user_id") ||
-      "";
+    async function initializePage() {
+      try {
+        const sessionResponse = await fetch(
+          "/api/auth/session",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
 
-    setEmployeeId(id);
+        if (!sessionResponse.ok) {
+          window.location.href = "/logout";
+          return;
+        }
 
-    if (!id) {
-      setLoading(false);
-      return;
+        const session =
+          await sessionResponse.json();
+
+        const id =
+          session.userId || session.id || "";
+
+        if (!id || session.role !== "Staff") {
+          window.location.href = "/logout";
+          return;
+        }
+
+        setEmployeeId(id);
+
+        const employeeResponse = await fetch(
+          `/api/employees/${id}`,
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        if (!employeeResponse.ok) {
+          throw new Error(
+            "Unable to load employee."
+          );
+        }
+
+        const employeeData =
+          await employeeResponse.json();
+
+        setEmployee(employeeData);
+      } catch {
+        setEmployee(null);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    fetch(`/api/employees/${id}`)
-      .then((res) => res.json())
-      .then((data) => setEmployee(data))
-      .catch(() => setEmployee(null))
-      .finally(() => setLoading(false));
+    initializePage();
   }, []);
 
   function totalDays() {
@@ -373,7 +408,7 @@ function StaffSidebar({
         onClick={() => {
           localStorage.clear();
           document.cookie = "icde_auth=; path=/; max-age=0";
-          window.location.href = "/login";
+          window.location.href = "/logout";
         }}
         className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"
       >

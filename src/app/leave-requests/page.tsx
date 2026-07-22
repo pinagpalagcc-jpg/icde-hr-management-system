@@ -800,7 +800,7 @@ function AdminSidebar({ active }: { active: string }) {
         onClick={() => {
           localStorage.clear();
           document.cookie = "icde_auth=; path=/; max-age=0";
-          window.location.href = "/login";
+          window.location.href = "/logout";
         }}
         className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10"
       >

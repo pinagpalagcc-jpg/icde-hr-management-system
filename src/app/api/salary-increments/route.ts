@@ -4,6 +4,10 @@ import {
 } from "next/server";
 
 import { supabase } from "@/lib/supabase";
+import {
+  requireAdmin,
+  requireSession,
+} from "@/lib/session";
 
 function numberValue(value: unknown) {
   const number = Number(value);
@@ -86,6 +90,8 @@ export async function GET(
   request: NextRequest
 ) {
   try {
+    const session = await requireSession();
+
     const employeeId =
       request.nextUrl.searchParams.get(
         "employee_id"
@@ -98,6 +104,20 @@ export async function GET(
             "Employee ID is required.",
         },
         { status: 400 }
+      );
+    }
+
+    if (
+      session.role !== "Admin" &&
+      String(session.userId) !==
+        String(employeeId)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You can only view your own salary increments.",
+        },
+        { status: 403 }
       );
     }
 
@@ -136,6 +156,8 @@ export async function POST(
   request: NextRequest
 ) {
   try {
+    await requireAdmin();
+
     const body = await request.json();
 
     const employeeId = String(
@@ -269,6 +291,8 @@ export async function PATCH(
   request: NextRequest
 ) {
   try {
+    await requireAdmin();
+
     const body = await request.json();
 
     const id = String(
@@ -433,6 +457,8 @@ export async function DELETE(
   request: NextRequest
 ) {
   try {
+    await requireAdmin();
+
     const id =
       request.nextUrl.searchParams.get(
         "id"

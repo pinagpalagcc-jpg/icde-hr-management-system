@@ -1091,7 +1091,7 @@ function Sidebar() {
         onClick={() => {
           localStorage.clear();
           document.cookie = "icde_auth=; path=/; max-age=0";
-          window.location.href = "/login";
+          window.location.href = "/logout";
         }
 
 }

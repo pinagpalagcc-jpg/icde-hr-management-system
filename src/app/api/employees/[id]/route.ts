@@ -1,51 +1,179 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
+import {
+  requireAdmin,
+  requireSession,
+} from "@/lib/session";
 
-export async function GET(_req: NextRequest, context: any) {
-  const { id } = await context.params;
+function removePassword(employee: any) {
+  if (!employee) return employee;
 
-  const { data, error } = await supabase
-    .from("employees")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const {
+    login_password: _loginPassword,
+    ...safeEmployee
+  } = employee;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
+  return safeEmployee;
 }
 
-export async function PATCH(req: NextRequest, context: any) {
-  const { id } = await context.params;
-  const body = await req.json();
+function securityError(error: unknown) {
+  const message =
+    error instanceof Error ? error.message : "";
 
-  const { data, error } = await supabase
-    .from("employees")
-    .update(body)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (message === "UNAUTHORIZED") {
+    return NextResponse.json(
+      { error: "Please log in." },
+      { status: 401 }
+    );
   }
 
-  return NextResponse.json(data);
+  if (message === "FORBIDDEN") {
+    return NextResponse.json(
+      { error: "Admin access is required." },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json(
+    { error: "Unable to complete request." },
+    { status: 500 }
+  );
 }
 
-export async function DELETE(_req: NextRequest, context: any) {
-  const { id } = await context.params;
+export async function GET(
+  _request: NextRequest,
+  context: any
+) {
+  try {
+    const session = await requireSession();
+    const { id } = await context.params;
 
-  const { error } = await supabase
-    .from("employees")
-    .delete()
-    .eq("id", id);
+    if (
+      session.role !== "Admin" &&
+      session.userId !== id
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You can only view your own employee profile.",
+        },
+        { status: 403 }
+      );
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data, error } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      removePassword(data)
+    );
+  } catch (error) {
+    return securityError(error);
   }
+}
 
-  return NextResponse.json({ success: true });
+export async function PATCH(
+  request: NextRequest,
+  context: any
+) {
+  try {
+    await requireAdmin();
+
+    const { id } = await context.params;
+    const body = await request.json();
+
+    const updatePayload = {
+      ...body,
+    };
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "login_password"
+      )
+    ) {
+      const newPassword = String(
+        body.login_password || ""
+      );
+
+      if (newPassword.length < 8) {
+        return NextResponse.json(
+          {
+            error:
+              "Password must be at least 8 characters.",
+          },
+          { status: 400 }
+        );
+      }
+
+      updatePayload.login_password =
+        await bcrypt.hash(newPassword, 12);
+
+      updatePayload.must_change_password =
+        true;
+    }
+
+    const { data, error } = await supabase
+      .from("employees")
+      .update(updatePayload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      removePassword(data)
+    );
+  } catch (error) {
+    return securityError(error);
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: any
+) {
+  try {
+    await requireAdmin();
+
+    const { id } = await context.params;
+
+    const { error } = await supabase
+      .from("employees")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+    });
+  } catch (error) {
+    return securityError(error);
+  }
 }

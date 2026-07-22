@@ -1,39 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 export default function ChangePasswordPage() {
-  const searchParams = useSearchParams();
-
-  const [employeeId, setEmployeeId] = useState("");
-  const [employee, setEmployee] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const id = searchParams.get("employee_id") || "";
-    setEmployeeId(id);
-
-    if (id) {
-      fetch(`/api/employees/${id}`)
-        .then((r) => r.json())
-        .then((data) => setEmployee(data))
-        .catch(() => setEmployee(null));
-    }
-  }, [searchParams]);
-
   async function changePassword() {
     if (saving) return;
 
-    if (!employeeId) {
-      alert("Employee account not found.");
-      return;
-    }
-
-    if (!newPassword || newPassword.length < 4) {
-      alert("Password must be at least 4 characters.");
+    if (newPassword.length < 8) {
+      alert(
+        "Password must be at least 8 characters."
+      );
       return;
     }
 
@@ -44,32 +24,47 @@ export default function ChangePasswordPage() {
 
     setSaving(true);
 
-    const res = await fetch(`/api/employees/${employeeId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        login_password: newPassword,
-        must_change_password: false,
-        status: employee?.status || "Available",
-      }),
-    });
+    try {
+      const response = await fetch(
+        "/api/auth/change-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            newPassword,
+            confirmPassword,
+          }),
+        }
+      );
 
-    const result = await res.json();
+      const result = await response.json();
 
-    if (!res.ok) {
-      alert(result.error || "Password change failed.");
+      if (!response.ok) {
+        alert(
+          result.error ||
+            "Password change failed."
+        );
+
+        if (response.status === 401) {
+          window.location.href = "/login";
+        }
+
+        return;
+      }
+
+      alert("Password changed successfully.");
+
+      window.location.href =
+        result.role === "Admin"
+          ? "/dashboard"
+          : "/staff";
+    } catch {
+      alert("Password change failed.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    const role = result.user_role || employee?.user_role || "Staff";
-
-    localStorage.setItem("icde_user_id", employeeId);
-    localStorage.setItem("icde_user_role", role);
-    document.cookie = "icde_auth=" + employeeId + "; path=/; max-age=86400; SameSite=Lax";
-
-    alert("Password changed successfully.");
-    window.location.href = String(role).toLowerCase() === "admin" ? "/dashboard" : "/staff";
   }
 
   return (

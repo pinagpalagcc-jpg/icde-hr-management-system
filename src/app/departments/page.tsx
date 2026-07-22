@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import {
+  useEffect,
+  useState,
+} from "react";
 
 type Department = {
   id: string;
@@ -15,17 +12,58 @@ type Department = {
 };
 
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [departmentName, setDepartmentName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [
+    departments,
+    setDepartments,
+  ] = useState<Department[]>([]);
+
+  const [
+    departmentName,
+    setDepartmentName,
+  ] = useState("");
+
+  const [
+    editingId,
+    setEditingId,
+  ] = useState<string | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   async function loadDepartments() {
-    const { data } = await supabase
-      .from("departments")
-      .select("*")
-      .order("name");
+    try {
+      const response = await fetch(
+        "/api/departments",
+        {
+          credentials: "include",
+          cache: "no-store",
+        }
+      );
 
-    setDepartments(data || []);
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Unable to load departments."
+        );
+      }
+
+      setDepartments(
+        Array.isArray(data)
+          ? data
+          : []
+      );
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to load departments."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -33,77 +71,128 @@ export default function DepartmentsPage() {
   }, []);
 
   async function saveDepartment() {
-    if (!departmentName.trim()) return;
+    const name =
+      departmentName.trim();
 
-    if (editingId) {
-      await supabase
-        .from("departments")
-        .update({ name: departmentName })
-        .eq("id", editingId);
+    if (!name) {
+      alert(
+        "Please enter a department name."
+      );
+      return;
+    }
 
-      setEditingId(null);
-    } else {
-      await supabase.from("departments").insert({
-        name: departmentName,
-        is_active: true,
-      });
+    const response = await fetch(
+      "/api/departments",
+      {
+        method: editingId
+          ? "PATCH"
+          : "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify(
+          editingId
+            ? {
+                id: editingId,
+                name,
+              }
+            : {
+                name,
+              }
+        ),
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      alert(
+        data.error ||
+          "Unable to save department."
+      );
+      return;
     }
 
     setDepartmentName("");
-    loadDepartments();
+    setEditingId(null);
+    await loadDepartments();
   }
 
-  async function toggleDepartment(id: string, active: boolean) {
-    await supabase
-      .from("departments")
-      .update({
-        is_active: !active,
-      })
-      .eq("id", id);
+  async function toggleDepartment(
+    id: string,
+    active: boolean
+  ) {
+    const response = await fetch(
+      "/api/departments",
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          is_active: !active,
+        }),
+      }
+    );
 
-    loadDepartments();
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      alert(
+        data.error ||
+          "Unable to update department."
+      );
+      return;
+    }
+
+    await loadDepartments();
   }
 
   return (
     <main className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-6xl mx-auto">
-
-        <div className="bg-white rounded-2xl shadow p-8">
-
+      <div className="mx-auto max-w-6xl">
+        <div className="rounded-2xl bg-white p-8 shadow">
           <h1 className="text-3xl font-bold text-[#1d3557]">
             Departments Management
           </h1>
 
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 text-gray-500">
             Create, rename, edit, activate or deactivate departments.
           </p>
 
           <div className="mt-8 flex gap-4">
-
             <input
               value={departmentName}
-              onChange={(e) => setDepartmentName(e.target.value)}
+              onChange={(event) =>
+                setDepartmentName(
+                  event.target.value
+                )
+              }
               placeholder="Department Name"
-              className="border rounded-xl px-4 py-3 w-80"
+              className="w-80 rounded-xl border px-4 py-3"
             />
 
             <button
               onClick={saveDepartment}
-              className="rounded-xl bg-[#1d3557] text-white px-6 py-3"
+              className="rounded-xl bg-[#1d3557] px-6 py-3 text-white"
             >
-              {editingId ? "Update Department" : "Add Department"}
+              {editingId
+                ? "Update Department"
+                : "Add Department"}
             </button>
-
           </div>
 
           <div className="mt-10 overflow-x-auto">
-
             <table className="w-full border">
-
               <thead className="bg-gray-100">
-
                 <tr>
-
                   <th className="p-3 text-left">
                     Department
                   </th>
@@ -115,72 +204,83 @@ export default function DepartmentsPage() {
                   <th className="p-3 text-left">
                     Action
                   </th>
-
                 </tr>
-
               </thead>
 
               <tbody>
-                {departments.map((dept) => (
-
-                  <tr key={dept.id} className="border-t">
-
-                    <td className="p-3">
-                      {dept.name}
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="p-6 text-center text-gray-500"
+                    >
+                      Loading departments...
                     </td>
-
-                    <td className="p-3">
-                      {dept.is_active ? "Active" : "Inactive"}
-                    </td>
-
-                    <td className="p-3 space-x-2">
-
-                      <button
-                        onClick={() => {
-                          setEditingId(dept.id);
-                          setDepartmentName(dept.name);
-                        }}
-                        className="px-3 py-1 rounded bg-blue-600 text-white"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          toggleDepartment(
-                            dept.id,
-                            dept.is_active
-                          )
-                        }
-                        className={`px-3 py-1 rounded text-white ${
-                          dept.is_active
-                            ? "bg-red-600"
-                            : "bg-green-600"
-                        }`}
-                      >
-                        {dept.is_active
-                          ? "Disable"
-                          : "Enable"}
-                      </button>
-
-                    </td>
-
                   </tr>
+                ) : (
+                  departments.map(
+                    (department) => (
+                      <tr
+                        key={
+                          department.id
+                        }
+                        className="border-t"
+                      >
+                        <td className="p-3">
+                          {
+                            department.name
+                          }
+                        </td>
 
-                ))}
+                        <td className="p-3">
+                          {department.is_active
+                            ? "Active"
+                            : "Inactive"}
+                        </td>
 
+                        <td className="space-x-2 p-3">
+                          <button
+                            onClick={() => {
+                              setEditingId(
+                                department.id
+                              );
+
+                              setDepartmentName(
+                                department.name
+                              );
+                            }}
+                            className="rounded bg-blue-600 px-3 py-1 text-white"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              toggleDepartment(
+                                department.id,
+                                department.is_active
+                              )
+                            }
+                            className={`rounded px-3 py-1 text-white ${
+                              department.is_active
+                                ? "bg-red-600"
+                                : "bg-green-600"
+                            }`}
+                          >
+                            {department.is_active
+                              ? "Disable"
+                              : "Enable"}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )
+                )}
               </tbody>
-
             </table>
-
           </div>
-
         </div>
-
       </div>
-
     </main>
-
   );
-
 }

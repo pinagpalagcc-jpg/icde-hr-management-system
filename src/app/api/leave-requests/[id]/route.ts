@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { sendEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import {
+  requireAdmin,
+  requireSession,
+} from "@/lib/session";
 
 const PERIOD_DEDUCTING_LEAVE_TYPES = [
   "Annual Leave",
@@ -116,6 +120,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireSession();
     const { id } = await context.params;
 
     const { data, error } = await supabase
@@ -128,6 +133,20 @@ export async function GET(
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
+      );
+    }
+
+    if (
+      session.role !== "Admin" &&
+      String(data.employee_id) !==
+        String(session.userId)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "You can only view your own leave request.",
+        },
+        { status: 403 }
       );
     }
 
@@ -144,16 +163,62 @@ export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;
-  return updateLeaveRequest(req, id);
+  try {
+    await requireAdmin();
+    const { id } = await context.params;
+    return updateLeaveRequest(req, id);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "";
+
+    return NextResponse.json(
+      {
+        error:
+          message === "UNAUTHORIZED"
+            ? "Please log in."
+            : "Admin access is required.",
+      },
+      {
+        status:
+          message === "UNAUTHORIZED"
+            ? 401
+            : 403,
+      }
+    );
+  }
 }
 
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;
-  return updateLeaveRequest(req, id);
+  try {
+    await requireAdmin();
+    const { id } = await context.params;
+    return updateLeaveRequest(req, id);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "";
+
+    return NextResponse.json(
+      {
+        error:
+          message === "UNAUTHORIZED"
+            ? "Please log in."
+            : "Admin access is required.",
+      },
+      {
+        status:
+          message === "UNAUTHORIZED"
+            ? 401
+            : 403,
+      }
+    );
+  }
 }
 
 async function updateLeaveRequest(req: Request, id: string) {
@@ -826,6 +891,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAdmin();
     const { id } = await context.params;
 
     const { data: leaveRequest, error: fetchError } =
