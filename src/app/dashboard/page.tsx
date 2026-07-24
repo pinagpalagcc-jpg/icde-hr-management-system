@@ -187,7 +187,7 @@ function Kpi({
 }
 
 function Sidebar({ active }: { active: string }) {
-  const items = [["Dashboard","/dashboard"],["Employees","/employees"],["Leave Requests","/leave-requests"],["Document Expiry","/document-expiry"],["Reports","/reports"]];
+  const items = [["Dashboard","/dashboard"],["Employees","/employees"],["Messenger","/messenger"],["Leave Requests","/leave-requests"],["Document Expiry","/document-expiry"],["Reports","/reports"]];
   return <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between"><div>
         
       <div className="mb-10">

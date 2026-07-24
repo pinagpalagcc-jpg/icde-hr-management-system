@@ -770,6 +770,7 @@ function AdminSidebar({ active }: { active: string }) {
   const items = [
     ["Dashboard", "/dashboard"],
     ["Employees", "/employees"],
+    ["Messenger", "/messenger"],
     ["Leave Requests", "/leave-requests"],
     ["Reports", "/reports"],
     ["Document Expiry", "/document-expiry"],

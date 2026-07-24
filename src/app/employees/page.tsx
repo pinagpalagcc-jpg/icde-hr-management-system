@@ -188,6 +188,7 @@ function Sidebar({ active }: { active: string }) {
   const items = [
     ["Dashboard", "/dashboard"],
     ["Employees", "/employees"],
+    ["Messenger", "/messenger"],
     ["Leave Requests", "/leave-requests"],
     ["Document Expiry", "/document-expiry"],
     ["Reports", "/reports"],

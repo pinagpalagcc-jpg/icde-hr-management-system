@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import StaffSidebar from "@/components/StaffSidebar";
 export default function StaffDashboardPage() {
   const [employee, setEmployee] = useState<any>(null);
   const [
@@ -248,33 +249,4 @@ function expiryBadgeClass(days: number) {
 
 function Kpi({ title, value }: { title: string; value: string | number }) {
   return <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-[#d2b241] text-center"><p className="text-gray-500 text-sm font-medium">{title}</p><h3 className="text-2xl font-bold text-[#3f4447] mt-2">{value}</h3></div>;
-}
-
-function StaffSidebar({ active, employeeId }: { active: string; employeeId: string }) {
-  const items = [
-    ["Dashboard", "/staff"],
-    ["My Profile", `/staff/profile/${employeeId}`],
-    ["Apply Leave", `/staff/apply-leave?employee_id=${employeeId}`],
-    ["My Leave Requests", `/staff/my-leave-requests?employee_id=${employeeId}`],
-  ];
-
-  return (
-    <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
-      <div>
-        
-        
-        
-      <div className="mb-10">
-        <div className="text-4xl font-black tracking-widest">
-          <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
-        </div>
-        <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
-        <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
-        <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
-      </div>
-      <nav className="space-y-3">{items.map(([name, href]) => <a key={name} href={href} className={`block px-4 py-3 rounded-xl ${active === name ? "bg-[#d2b241] font-semibold" : "hover:bg-white/10"}`}>{name}</a>)}</nav>
-      </div>
-      <button onClick={() => { localStorage.clear(); document.cookie = "icde_auth=; path=/; max-age=0"; window.location.href="/logout"; }} className="w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</button>
-    </aside>
-  );
 }
