@@ -1728,7 +1728,6 @@ function Sidebar() {
     ["Leave Requests", "/leave-requests"],
     ["Document Expiry", "/document-expiry"],
     ["Reports", "/reports"],
-    ["HR AI Assistant", "/hr-ai-assistant"],
   ];
 
   return (

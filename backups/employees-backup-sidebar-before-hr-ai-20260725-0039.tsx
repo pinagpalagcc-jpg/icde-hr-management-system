@@ -192,7 +192,6 @@ function Sidebar({ active }: { active: string }) {
     ["Leave Requests", "/leave-requests"],
     ["Document Expiry", "/document-expiry"],
     ["Reports", "/reports"],
-    ["HR AI Assistant", "/hr-ai-assistant"],
   ];
 
   return (

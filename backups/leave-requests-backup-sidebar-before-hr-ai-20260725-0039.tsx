@@ -773,7 +773,6 @@ function AdminSidebar({ active }: { active: string }) {
     ["Messenger", "/messenger"],
     ["Leave Requests", "/leave-requests"],
     ["Reports", "/reports"],
-    ["HR AI Assistant", "/hr-ai-assistant"],
     ["Document Expiry", "/document-expiry"],
   ];
 
