@@ -76,10 +76,10 @@ export default function HRAIAssistantPage() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-0">
+        <div className="flex-1 overflow-y-auto p-8">
 
           <div className="mx-auto max-w-4xl">
-                        <div className="flex h-[calc(100vh-150px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
 
               <div className="flex items-center gap-3 border-b p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d2b241] text-xl">
@@ -97,7 +97,7 @@ export default function HRAIAssistantPage() {
                 </div>
               </div>
 
-              <div className="flex h-[calc(100vh-210px)] flex-col">
+              <div className="space-y-4 p-8">
 
                 <div className="rounded-2xl bg-[#f7f4ec] p-5">
                   <div className="mb-2 text-sm font-semibold text-[#3f4447]">
@@ -123,7 +123,7 @@ export default function HRAIAssistantPage() {
 
               </div>
 
-              <div className="border-t bg-white p-5 mt-auto mt-auto mt-auto">
+              <div className="border-t bg-white p-5">
 
                 <div className="flex gap-3">
 
