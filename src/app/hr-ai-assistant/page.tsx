@@ -1,4 +1,18 @@
+"use client";
+
+import { useState } from "react";
+
+type ChatMessage = {
+  id: number;
+  role: "user" | "assistant";
+  text: string;
+};
+
 export default function HRAIAssistantPage() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [thinking, setThinking] = useState(false);
+
   const menu = [
     ["Dashboard", "/dashboard"],
     ["Employees", "/employees"],
@@ -10,11 +24,39 @@ export default function HRAIAssistantPage() {
   ];
 
   const examples = [
-    "How many employees are on leave in August?",
-    "Which employees have visa expiry within 30 days?",
-    "Show me all employees with pending documents.",
-    "Which department has the highest sick leave this year?",
+    "Employees on leave this month",
+    "Documents expiring in 30 days",
+    "Total active employees",
   ];
+
+  function sendMessage(messageText?: string) {
+    const finalText = (messageText ?? input).trim();
+
+    if (!finalText || thinking) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: Date.now(),
+      role: "user",
+      text: finalText,
+    };
+
+    setMessages((current) => [...current, userMessage]);
+    setInput("");
+    setThinking(true);
+
+    window.setTimeout(() => {
+      const assistantMessage: ChatMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        text: "I received your question. HR database connection will be added in the next step.",
+      };
+
+      setMessages((current) => [...current, assistantMessage]);
+      setThinking(false);
+    }, 900);
+  }
 
   return (
     <div className="flex min-h-screen bg-[#f7f4ec]">
@@ -82,10 +124,6 @@ export default function HRAIAssistantPage() {
                         <div className="flex h-[calc(100vh-150px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
 
               <div className="flex items-center gap-3 border-b p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d2b241] text-xl">
-                  🤖
-                </div>
-
                 <div>
                   <div className="font-semibold text-[#3f4447]">
                     HR AI Assistant
@@ -97,49 +135,93 @@ export default function HRAIAssistantPage() {
                 </div>
               </div>
 
-              <div className="flex h-[calc(100vh-210px)] flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                  {messages.length === 0 ? (
+                    <>
+                      <div className="rounded-xl bg-[#f7f4ec] px-4 py-3">
+                        <div className="text-sm font-semibold text-[#3f4447]">
+                          Welcome
+                        </div>
 
-                <div className="rounded-2xl bg-[#f7f4ec] p-5">
-                  <div className="mb-2 text-sm font-semibold text-[#3f4447]">
-                    Welcome
-                  </div>
+                        <p className="mt-1 text-xs leading-5 text-gray-600">
+                          Ask questions about employees, leave, documents,
+                          reports and other HR information.
+                        </p>
+                      </div>
 
-                  <p className="text-sm text-gray-600">
-                    Ask me anything about your employees, leave,
-                    documents, reports and other HR information.
-                  </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {examples.map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => sendMessage(item)}
+                            disabled={thinking}
+                            className="rounded-full border border-gray-300 bg-white px-4 py-2 text-xs text-[#3f4447] shadow-sm hover:border-[#d2b241] hover:bg-[#fff9df] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${
+                          message.role === "user"
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-5 ${
+                            message.role === "user"
+                              ? "bg-[#d2b241] text-[#3f4447]"
+                              : "border border-gray-200 bg-[#f7f4ec] text-gray-700"
+                          }`}
+                        >
+                          {message.text}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {thinking ? (
+                    <div className="flex justify-start">
+                      <div className="rounded-2xl border border-gray-200 bg-[#f7f4ec] px-4 py-2.5 text-xs text-gray-500">
+                        Thinking...
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
-                <div className="space-y-3">
-                  {examples.map((item) => (
+                <div className="mt-auto border-t bg-white p-4">
+                  <div className="flex gap-2">
+                    <input
+                      value={input}
+                      onChange={(event) => setInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      disabled={thinking}
+                      className="flex-1 rounded-xl border px-4 py-3 text-sm outline-none focus:border-[#d2b241] disabled:bg-gray-100"
+                      placeholder="Ask anything about your HR system..."
+                    />
+
                     <button
-                      key={item}
-                      className="block w-full rounded-xl border bg-gray-50 p-4 text-left text-sm hover:bg-gray-100"
+                      type="button"
+                      onClick={() => sendMessage()}
+                      disabled={!input.trim() || thinking}
+                      className="rounded-xl bg-[#d2b241] px-5 text-sm font-semibold text-[#3f4447] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {item}
+                      Send
                     </button>
-                  ))}
+                  </div>
                 </div>
-
-              </div>
-
-              <div className="border-t bg-white p-5 mt-auto mt-auto mt-auto">
-
-                <div className="flex gap-3">
-
-                  <input
-                    className="flex-1 rounded-xl border px-5 py-3 outline-none focus:border-[#d2b241]"
-                    placeholder="Ask anything about your HR system..."
-                  />
-
-                  <button
-                    className="rounded-xl bg-[#d2b241] px-6 font-semibold text-[#3f4447] hover:opacity-90"
-                  >
-                    Send
-                  </button>
-
-                </div>
-
               </div>
 
             </div>
