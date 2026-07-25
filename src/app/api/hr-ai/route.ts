@@ -45,6 +45,11 @@ type Department = {
   is_active: boolean | null;
 };
 
+type ConversationMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
 function securityError(error: unknown) {
   const message =
     error instanceof Error ? error.message : "";
@@ -149,6 +154,42 @@ export async function POST(request: Request) {
       body.message || ""
     ).trim();
 
+    const history: ConversationMessage[] =
+      Array.isArray(body.history)
+        ? body.history
+            .slice(-8)
+            .map((item: unknown) => {
+              const candidate =
+                item &&
+                typeof item === "object"
+                  ? (item as {
+                      role?: unknown;
+                      text?: unknown;
+                    })
+                  : {};
+
+              const role =
+                candidate.role === "assistant"
+                  ? "assistant"
+                  : "user";
+
+              const text = String(
+                candidate.text || ""
+              )
+                .trim()
+                .slice(0, 12000);
+
+              return {
+                role,
+                text,
+              } satisfies ConversationMessage;
+            })
+            .filter(
+              (item: ConversationMessage) =>
+                Boolean(item.text)
+            )
+        : [];
+
     if (!question) {
       return NextResponse.json(
         {
@@ -247,8 +288,28 @@ STRICT RULES:
 17. When counting active employees, treat statuses containing inactive, deactivated, or terminated as inactive. Treat all others as active.
 18. If the question asks for doctors, use the employee position. Include dental clinical positions such as dentist, orthodontist, endodontist, periodontist, pedodontist, prosthodontist and oral surgeon. Do not include every employee merely because their department is Clinicians.
 
-USER QUESTION:
+RECENT HR CONVERSATION:
+${
+  history.length
+    ? history
+        .map(
+          (item) =>
+            `${item.role === "user" ? "ADMIN" : "GEMINI"}: ${item.text}`
+        )
+        .join("\n\n")
+    : "No previous conversation."
+}
+
+CURRENT ADMIN QUESTION:
 ${question}
+
+CONVERSATION RULES:
+- Use the recent conversation to understand references such as "this table", "the same list", "add this column", "remove that column", "change the previous answer", or "show it again".
+- The current Admin question has priority over previous instructions.
+- Recreate the requested answer using the connected live HR data below.
+- Do not rely on an old answer when it conflicts with the current database data.
+- Conversation history does not expand the connected HR scope.
+- Continue answering only from the connected HR system data.
 
 CONNECTED DEPARTMENTS:
 ${JSON.stringify(departmentContext)}
