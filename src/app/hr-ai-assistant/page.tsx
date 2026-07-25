@@ -29,7 +29,7 @@ export default function HRAIAssistantPage() {
     "Total active employees",
   ];
 
-  function sendMessage(messageText?: string) {
+  async function sendMessage(messageText?: string) {
     const finalText = (messageText ?? input).trim();
 
     if (!finalText || thinking) {
@@ -46,16 +46,54 @@ export default function HRAIAssistantPage() {
     setInput("");
     setThinking(true);
 
-    window.setTimeout(() => {
+    try {
+      const response = await fetch("/api/hr-ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: finalText,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to answer the HR question."
+        );
+      }
+
       const assistantMessage: ChatMessage = {
         id: Date.now() + 1,
         role: "assistant",
-        text: "I received your question. HR database connection will be added in the next step.",
+        text:
+          result.answer ||
+          "No answer was returned.",
       };
 
-      setMessages((current) => [...current, assistantMessage]);
+      setMessages((current) => [
+        ...current,
+        assistantMessage,
+      ]);
+    } catch (error) {
+      const assistantMessage: ChatMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Unable to answer the HR question.",
+      };
+
+      setMessages((current) => [
+        ...current,
+        assistantMessage,
+      ]);
+    } finally {
       setThinking(false);
-    }, 900);
+    }
   }
 
   return (
