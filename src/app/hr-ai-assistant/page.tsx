@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ChatMessage = {
   id: number;
@@ -12,6 +14,50 @@ export default function HRAIAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [thinking, setThinking] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedHistory = window.localStorage.getItem(
+        "icde_hr_ai_chat_history"
+      );
+
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+
+        if (Array.isArray(parsedHistory)) {
+          setMessages(parsedHistory);
+        }
+      }
+    } catch (error) {
+      console.error("Unable to restore HR AI history:", error);
+    } finally {
+      setHistoryLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!historyLoaded) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        "icde_hr_ai_chat_history",
+        JSON.stringify(messages)
+      );
+    } catch (error) {
+      console.error("Unable to save HR AI history:", error);
+    }
+  }, [messages, historyLoaded]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, thinking]);
 
   const menu = [
     ["Dashboard", "/dashboard"],
@@ -156,22 +202,10 @@ export default function HRAIAssistantPage() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-0">
+        <div className="flex-1 overflow-hidden p-4 pb-0">
 
-          <div className="mx-auto max-w-4xl">
-                        <div className="flex h-[calc(100vh-150px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
-
-              <div className="flex items-center gap-3 border-b p-5">
-                <div>
-                  <div className="font-semibold text-[#3f4447]">
-                    HR AI Assistant
-                  </div>
-
-                  <div className="text-xs text-green-600">
-                    Ready
-                  </div>
-                </div>
-              </div>
+          <div className="h-full w-full">
+            <div className="flex h-[calc(100vh-105px)] w-full flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
 
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto p-5">
@@ -213,13 +247,105 @@ export default function HRAIAssistantPage() {
                         }`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-5 ${
+                          className={`max-w-[40%] rounded-2xl px-4 py-2.5 text-sm leading-5 ${
                             message.role === "user"
                               ? "bg-[#d2b241] text-[#3f4447]"
                               : "border border-gray-200 bg-[#f7f4ec] text-gray-700"
                           }`}
                         >
-                          {message.text}
+                          {message.role === "assistant" ? (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                h1: ({ children }) => (
+                                  <h1 className="mb-3 mt-1 text-lg font-bold text-[#3f4447]">
+                                    {children}
+                                  </h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="mb-2 mt-4 text-base font-bold text-[#3f4447]">
+                                    {children}
+                                  </h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="mb-2 mt-3 text-sm font-semibold text-[#3f4447]">
+                                    {children}
+                                  </h3>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="mb-3 whitespace-pre-wrap leading-6 last:mb-0">
+                                    {children}
+                                  </p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="mb-3 list-disc space-y-1 pl-5">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="mb-3 list-decimal space-y-1 pl-5">
+                                    {children}
+                                  </ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li className="leading-6">
+                                    {children}
+                                  </li>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold text-[#3f4447]">
+                                    {children}
+                                  </strong>
+                                ),
+                                table: ({ children }) => (
+                                  <div className="my-4 overflow-x-auto rounded-xl border border-gray-300">
+                                    <table className="w-full min-w-[520px] border-collapse text-left text-xs">
+                                      {children}
+                                    </table>
+                                  </div>
+                                ),
+                                thead: ({ children }) => (
+                                  <thead className="bg-[#3f4447] text-white">
+                                    {children}
+                                  </thead>
+                                ),
+                                tbody: ({ children }) => (
+                                  <tbody className="divide-y divide-gray-200 bg-white">
+                                    {children}
+                                  </tbody>
+                                ),
+                                tr: ({ children }) => (
+                                  <tr>{children}</tr>
+                                ),
+                                th: ({ children }) => (
+                                  <th className="border-r border-white/20 px-3 py-2.5 font-semibold last:border-r-0">
+                                    {children}
+                                  </th>
+                                ),
+                                td: ({ children }) => (
+                                  <td className="border-r border-gray-200 px-3 py-2.5 align-top last:border-r-0">
+                                    {children}
+                                  </td>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="my-3 border-l-4 border-[#d2b241] bg-white px-4 py-2 italic">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="rounded bg-gray-200 px-1.5 py-0.5 text-xs">
+                                    {children}
+                                  </code>
+                                ),
+                              }}
+                            >
+                              {message.text}
+                            </ReactMarkdown>
+                          ) : (
+                            <span className="whitespace-pre-wrap">
+                              {message.text}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))
@@ -232,6 +358,8 @@ export default function HRAIAssistantPage() {
                       </div>
                     </div>
                   ) : null}
+
+                  <div ref={chatEndRef} />
                 </div>
 
                 <div className="mt-auto border-t bg-white p-4">

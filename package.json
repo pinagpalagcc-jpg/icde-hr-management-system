@@ -5,6 +5,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@google/genai": "^2.13.0",
     "@hookform/resolvers": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/ssr": "latest",
@@ -19,6 +20,8 @@
     "react-dom": "latest",
     "react-hook-form": "latest",
     "react-icons": "latest",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.17.1",
     "sonner": "latest",
     "xlsx": "^0.18.5",
