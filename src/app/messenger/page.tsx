@@ -178,6 +178,9 @@ export default function MessengerPage() {
   const bottomRef =
     useRef<HTMLDivElement>(null);
 
+  const chatScrollRef =
+    useRef<HTMLDivElement>(null);
+
   const fileInputRef =
     useRef<HTMLInputElement>(null);
 
@@ -983,10 +986,92 @@ export default function MessengerPage() {
   }, [selectedEmployeeId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
-  }, [messages]);
+    if (!messages.length) {
+      return;
+    }
+
+    const scrollToNewestMessage = () => {
+      const container = chatScrollRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      container.scrollTop =
+        container.scrollHeight;
+    };
+
+    const firstFrameId =
+      window.requestAnimationFrame(() => {
+        scrollToNewestMessage();
+
+        window.requestAnimationFrame(
+          scrollToNewestMessage
+        );
+      });
+
+    const shortTimeoutId =
+      window.setTimeout(
+        scrollToNewestMessage,
+        120
+      );
+
+    const finalTimeoutId =
+      window.setTimeout(
+        scrollToNewestMessage,
+        500
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        firstFrameId
+      );
+
+      window.clearTimeout(
+        shortTimeoutId
+      );
+
+      window.clearTimeout(
+        finalTimeoutId
+      );
+    };
+  }, [
+    messages,
+    selectedEmployeeId,
+    loadingMessages,
+  ]);
+
+  useEffect(() => {
+    const container = chatScrollRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const resizeObserver =
+      new ResizeObserver(() => {
+        container.scrollTop =
+          container.scrollHeight;
+      });
+
+    resizeObserver.observe(container);
+
+    const messageContent =
+      container.firstElementChild;
+
+    if (messageContent) {
+      resizeObserver.observe(
+        messageContent
+      );
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [
+    selectedEmployeeId,
+    messages.length,
+  ]);
 
   return (
     <div className="min-h-screen bg-[#f7f4ec] flex">
@@ -1358,7 +1443,10 @@ export default function MessengerPage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+                <div
+                  ref={chatScrollRef}
+                  className="flex-1 overflow-y-auto px-4 py-5 md:px-6"
+                >
                   {loadingMessages ? (
                     <p className="text-center text-gray-500">
                       Loading conversation...
