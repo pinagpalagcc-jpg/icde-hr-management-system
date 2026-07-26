@@ -57,6 +57,7 @@ type LeaveEmployee = {
 type LeaveRequest = {
   id: string;
   employee_id: string | null;
+  employee_name?: string | null;
   leave_type: string | null;
   start_date: string | null;
   end_date: string | null;
@@ -91,6 +92,7 @@ function leaveEmployeeName(
 
   return (
     joinedName ||
+    String(leave.employee_name || "").trim() ||
     "Employee"
   );
 }
@@ -235,7 +237,7 @@ export async function POST(request: Request) {
     const history: ConversationMessage[] =
       Array.isArray(body.history)
         ? body.history
-            .slice(-4)
+            .slice(-8)
             .map((item: unknown) => {
               const candidate =
                 item &&
@@ -255,7 +257,7 @@ export async function POST(request: Request) {
                 candidate.text || ""
               )
                 .trim()
-                .slice(0, 3500);
+                .slice(0, 12000);
 
               return {
                 role,
@@ -316,6 +318,7 @@ export async function POST(request: Request) {
           `
             id,
             employee_id,
+            employee_name,
             leave_type,
             start_date,
             end_date,
@@ -382,93 +385,6 @@ export async function POST(request: Request) {
         prepareLeaveRequest
       );
 
-    const currentQuestion =
-      question.toLowerCase();
-
-    const isFollowUpQuestion =
-      /\b(this|same|previous|above|add|remove|change|sort|filter|only|again|recreate|table)\b/i.test(
-        question
-      );
-
-    const recentConversationText =
-      history
-        .map((item) => item.text)
-        .join(" ")
-        .toLowerCase();
-
-    const intentText =
-      isFollowUpQuestion
-        ? `${recentConversationText} ${currentQuestion}`
-        : currentQuestion;
-
-    const leaveBalanceTerms = [
-      "leave remaining",
-      "leaves remaining",
-      "remaining leave",
-      "remaining leaves",
-      "leave balance",
-      "balance leaves",
-      "total leaves",
-      "leaves used",
-      "leave used",
-      "credit leave",
-      "holiday credit",
-      "paternity balance",
-      "maternity balance",
-    ];
-
-    const leaveRequestTerms = [
-      "leave request",
-      "leave requests",
-      "approved leave",
-      "pending leave",
-      "rejected leave",
-      "on leave",
-      "going on leave",
-      "leave in",
-      "leave during",
-      "leave date",
-      "leave period",
-      "start date",
-      "end date",
-      "annual leave request",
-      "sick leave request",
-      "emergency leave request",
-      "maternity leave request",
-      "paternity leave request",
-    ];
-
-    const isLeaveBalanceQuestion =
-      leaveBalanceTerms.some((term) =>
-        intentText.includes(term)
-      );
-
-    const isLeaveRequestQuestion =
-      !isLeaveBalanceQuestion &&
-      leaveRequestTerms.some((term) =>
-        intentText.includes(term)
-      );
-
-    const promptEmployeeContext =
-      isLeaveRequestQuestion
-        ? []
-        : employeeContext;
-
-    const promptDepartmentContext =
-      isLeaveRequestQuestion
-        ? []
-        : departmentContext;
-
-    const promptLeaveRequestContext =
-      isLeaveRequestQuestion
-        ? leaveRequestContext
-        : [];
-
-    const connectedModuleNote =
-      isLeaveRequestQuestion
-        ? "Leave Requests with linked employee details"
-        : "Employees and Departments";
-
     const ai = new GoogleGenAI({
       vertexai: true,
       project,
@@ -533,17 +449,14 @@ CONVERSATION RULES:
 - Conversation history does not expand the connected HR scope.
 - Continue answering only from the connected HR system data.
 
-SELECTED CONNECTED MODULE:
-${connectedModuleNote}
-
 CONNECTED DEPARTMENTS:
-${JSON.stringify(promptDepartmentContext)}
+${JSON.stringify(departmentContext)}
 
 CONNECTED EMPLOYEES:
-${JSON.stringify(promptEmployeeContext)}
+${JSON.stringify(employeeContext)}
 
 CONNECTED LEAVE REQUESTS:
-${JSON.stringify(promptLeaveRequestContext)}
+${JSON.stringify(leaveRequestContext)}
 
 Now provide the best accurate HR answer using only this connected data.
 `.trim();

@@ -14,8 +14,6 @@ export default function HRAIAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [thinking, setThinking] = useState(false);
-  const [copiedMessageId, setCopiedMessageId] =
-    useState<number | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,27 +75,6 @@ export default function HRAIAssistantPage() {
     "Total active employees",
   ];
 
-  async function copyMessage(
-    messageId: number,
-    messageText: string
-  ) {
-    try {
-      await navigator.clipboard.writeText(messageText);
-      setCopiedMessageId(messageId);
-
-      window.setTimeout(() => {
-        setCopiedMessageId((current) =>
-          current === messageId ? null : current
-        );
-      }, 2000);
-    } catch (error) {
-      console.error(
-        "Unable to copy Gemini reply:",
-        error
-      );
-    }
-  }
-
   async function sendMessage(messageText?: string) {
     const finalText = (messageText ?? input).trim();
 
@@ -123,12 +100,6 @@ export default function HRAIAssistantPage() {
         },
         body: JSON.stringify({
           message: finalText,
-          history: messages
-            .slice(-4)
-            .map((message) => ({
-              role: message.role,
-              text: message.text,
-            })),
         }),
       });
 
@@ -231,10 +202,22 @@ export default function HRAIAssistantPage() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-hidden p-4 pb-0">
+        <div className="flex-1 overflow-y-auto p-8 pb-0">
 
-          <div className="h-full w-full">
-            <div className="flex h-[calc(100vh-105px)] w-full flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="mx-auto max-w-4xl">
+                        <div className="flex h-[calc(100vh-150px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm">
+
+              <div className="flex items-center gap-3 border-b p-5">
+                <div>
+                  <div className="font-semibold text-[#3f4447]">
+                    HR AI Assistant
+                  </div>
+
+                  <div className="text-xs text-green-600">
+                    Ready
+                  </div>
+                </div>
+              </div>
 
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex-1 space-y-4 overflow-y-auto p-5">
@@ -276,76 +259,14 @@ export default function HRAIAssistantPage() {
                         }`}
                       >
                         <div
-                          className={`rounded-2xl text-sm leading-5 ${
+                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-5 ${
                             message.role === "user"
-                              ? "w-fit max-w-[40%] bg-[#d2b241] px-4 py-2.5 text-[#3f4447]"
-                              : "w-full max-w-[75%] overflow-hidden border border-gray-200 bg-[#f7f4ec] text-gray-700"
+                              ? "bg-[#d2b241] text-[#3f4447]"
+                              : "border border-gray-200 bg-[#f7f4ec] text-gray-700"
                           }`}
                         >
                           {message.role === "assistant" ? (
-                            <div className="min-w-0">
-                              <div className="flex h-11 items-center justify-between border-b border-gray-200 bg-white/80 px-4">
-                                <span className="text-xs font-semibold text-[#3f4447]">
-                                  Gemini Reply
-                                </span>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    copyMessage(
-                                      message.id,
-                                      message.text
-                                    )
-                                  }
-                                  aria-label="Copy Gemini reply"
-                                  title={
-                                    copiedMessageId === message.id
-                                      ? "Copied"
-                                      : "Copy"
-                                  }
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-[#3f4447]"
-                                >
-                                {copiedMessageId === message.id ? (
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className="h-4 w-4"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="m5 12 4 4L19 6"
-                                    />
-                                  </svg>
-                                ) : (
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    className="h-4 w-4"
-                                  >
-                                    <rect
-                                      x="8"
-                                      y="8"
-                                      width="11"
-                                      height="11"
-                                      rx="2"
-                                    />
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"
-                                    />
-                                  </svg>
-                                )}
-                                </button>
-                              </div>
-
-                              <div className="max-h-[520px] overflow-y-auto p-4">
-                                <ReactMarkdown
+                            <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
                                 h1: ({ children }) => (
@@ -431,9 +352,7 @@ export default function HRAIAssistantPage() {
                               }}
                             >
                               {message.text}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
+                            </ReactMarkdown>
                           ) : (
                             <span className="whitespace-pre-wrap">
                               {message.text}

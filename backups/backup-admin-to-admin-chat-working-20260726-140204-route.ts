@@ -162,9 +162,7 @@ export async function GET(
         .from(
           "internal_chat_conversations"
         )
-        .select(
-          "id, employee_id, conversation_type, admin_one_id, admin_two_id, updated_at"
-        );
+        .select("id, employee_id");
 
       if (conversationsError) {
         throw new Error(
@@ -178,7 +176,6 @@ export async function GET(
       if (!conversationRows.length) {
         return NextResponse.json({
           unread_counts: {},
-          last_activity: {},
         });
       }
 
@@ -210,53 +207,15 @@ export async function GET(
         );
       }
 
-      const contactByConversation =
-        new Map<string, string>();
-
-      const lastActivity: Record<
-        string,
-        string
-      > = {};
-
-      for (const conversation of conversationRows) {
-        let contactId = "";
-
-        if (
-          conversation.conversation_type ===
-          "AdminAdmin"
-        ) {
-          if (
-            conversation.admin_one_id ===
-            session.userId
-          ) {
-            contactId =
-              conversation.admin_two_id || "";
-          } else if (
-            conversation.admin_two_id ===
-            session.userId
-          ) {
-            contactId =
-              conversation.admin_one_id || "";
-          }
-        } else {
-          contactId =
-            conversation.employee_id || "";
-        }
-
-        if (!contactId) {
-          continue;
-        }
-
-        contactByConversation.set(
-          conversation.id,
-          contactId
+      const employeeByConversation =
+        new Map(
+          conversationRows.map(
+            (conversation) => [
+              conversation.id,
+              conversation.employee_id,
+            ]
+          )
         );
-
-        if (conversation.updated_at) {
-          lastActivity[contactId] =
-            conversation.updated_at;
-        }
-      }
 
       const unreadCounts: Record<
         string,
@@ -267,22 +226,22 @@ export async function GET(
         const unreadMessage of
         unreadMessages || []
       ) {
-        const contactId =
-          contactByConversation.get(
+        const employeeId =
+          employeeByConversation.get(
             unreadMessage.conversation_id
           );
 
-        if (!contactId) {
+        if (!employeeId) {
           continue;
         }
 
-        unreadCounts[contactId] =
-          (unreadCounts[contactId] || 0) + 1;
+        unreadCounts[employeeId] =
+          (unreadCounts[employeeId] ||
+            0) + 1;
       }
 
       return NextResponse.json({
         unread_counts: unreadCounts,
-        last_activity: lastActivity,
       });
     }
 

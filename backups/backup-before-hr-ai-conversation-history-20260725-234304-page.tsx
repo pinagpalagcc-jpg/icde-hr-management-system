@@ -123,12 +123,6 @@ export default function HRAIAssistantPage() {
         },
         body: JSON.stringify({
           message: finalText,
-          history: messages
-            .slice(-4)
-            .map((message) => ({
-              role: message.role,
-              text: message.text,
-            })),
         }),
       });
 

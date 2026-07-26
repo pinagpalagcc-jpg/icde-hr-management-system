@@ -109,13 +109,6 @@ export default function MessengerPage() {
     {}
   );
 
-  const [
-    lastActivity,
-    setLastActivity,
-  ] = useState<Record<string, string>>(
-    {}
-  );
-
   const [search, setSearch] =
     useState("");
 
@@ -220,79 +213,22 @@ export default function MessengerPage() {
   const filteredEmployees = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    const matchingContacts = employees.filter(
-      (employee) => {
-        if (!term) {
-          return true;
-        }
+    if (!term) return employees;
 
-        const name =
-          employeeName(employee).toLowerCase();
+    return employees.filter((employee) => {
+      const name =
+        employeeName(employee).toLowerCase();
 
-        const employeeCode = String(
-          employee.employee_id || ""
-        ).toLowerCase();
+      const employeeId = String(
+        employee.employee_id || ""
+      ).toLowerCase();
 
-        return (
-          name.includes(term) ||
-          employeeCode.includes(term)
-        );
-      }
-    );
-
-    return [...matchingContacts].sort(
-      (first, second) => {
-        const firstUnread = Number(
-          unreadCounts[first.id] || 0
-        );
-
-        const secondUnread = Number(
-          unreadCounts[second.id] || 0
-        );
-
-        if (
-          firstUnread > 0 &&
-          secondUnread === 0
-        ) {
-          return -1;
-        }
-
-        if (
-          secondUnread > 0 &&
-          firstUnread === 0
-        ) {
-          return 1;
-        }
-
-        const firstTime =
-          lastActivity[first.id]
-            ? new Date(
-                lastActivity[first.id]
-              ).getTime()
-            : 0;
-
-        const secondTime =
-          lastActivity[second.id]
-            ? new Date(
-                lastActivity[second.id]
-              ).getTime()
-            : 0;
-
-        if (firstTime !== secondTime) {
-          return secondTime - firstTime;
-        }
-
-        return employeeName(first).localeCompare(
-          employeeName(second)
-        );
-      }
-    );
-  }, [
-    employees,
-    search,
-    unreadCounts,
-    lastActivity,
-  ]);
+      return (
+        name.includes(term) ||
+        employeeId.includes(term)
+      );
+    });
+  }, [employees, search]);
 
   async function loadUnreadCounts() {
     try {
@@ -328,40 +264,6 @@ export default function MessengerPage() {
           JSON.stringify(nextCounts)
             ? currentCounts
             : nextCounts
-      );
-
-      const nextLastActivity =
-        result.last_activity &&
-        typeof result.last_activity ===
-          "object"
-          ? result.last_activity
-          : {};
-
-      setLastActivity(
-        (currentActivity) =>
-          JSON.stringify(
-            currentActivity
-          ) ===
-          JSON.stringify(nextLastActivity)
-            ? currentActivity
-            : nextLastActivity
-      );
-
-      const nextActivity =
-        result.last_activity &&
-        typeof result.last_activity ===
-          "object"
-          ? result.last_activity
-          : {};
-
-      setLastActivity(
-        (currentActivity) =>
-          JSON.stringify(
-            currentActivity
-          ) ===
-          JSON.stringify(nextActivity)
-            ? currentActivity
-            : nextActivity
       );
     } catch (unreadError) {
       console.error(
@@ -437,24 +339,12 @@ export default function MessengerPage() {
   }
 
   async function loadMessages(
-    contactId: string,
+    employeeId: string,
     options?: {
       silent?: boolean;
     }
   ) {
-    if (!contactId) return;
-
-    const contact = employees.find(
-      (employee) =>
-        employee.id === contactId
-    );
-
-    const contactRole =
-      String(
-        contact?.user_role || "Staff"
-      ).toLowerCase() === "admin"
-        ? "Admin"
-        : "Staff";
+    if (!employeeId) return;
 
     try {
       if (!options?.silent) {
@@ -464,10 +354,8 @@ export default function MessengerPage() {
       setError("");
 
       const response = await fetch(
-        `/api/internal-chat?contact_id=${encodeURIComponent(
-          contactId
-        )}&contact_role=${encodeURIComponent(
-          contactRole
+        `/api/internal-chat?employee_id=${encodeURIComponent(
+          employeeId
         )}`,
         {
           cache: "no-store",
@@ -564,15 +452,8 @@ export default function MessengerPage() {
               "application/json",
           },
           body: JSON.stringify({
-            contact_id:
+            employee_id:
               selectedEmployeeId,
-            contact_role:
-              String(
-                selectedEmployee?.user_role ||
-                  "Staff"
-              ).toLowerCase() === "admin"
-                ? "Admin"
-                : "Staff",
             message_text:
               messageText.trim(),
             attachment_name:

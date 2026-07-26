@@ -229,13 +229,13 @@ export default function MessengerPage() {
         const name =
           employeeName(employee).toLowerCase();
 
-        const employeeCode = String(
+        const employeeId = String(
           employee.employee_id || ""
         ).toLowerCase();
 
         return (
           name.includes(term) ||
-          employeeCode.includes(term)
+          employeeId.includes(term)
         );
       }
     );
@@ -328,23 +328,6 @@ export default function MessengerPage() {
           JSON.stringify(nextCounts)
             ? currentCounts
             : nextCounts
-      );
-
-      const nextLastActivity =
-        result.last_activity &&
-        typeof result.last_activity ===
-          "object"
-          ? result.last_activity
-          : {};
-
-      setLastActivity(
-        (currentActivity) =>
-          JSON.stringify(
-            currentActivity
-          ) ===
-          JSON.stringify(nextLastActivity)
-            ? currentActivity
-            : nextLastActivity
       );
 
       const nextActivity =

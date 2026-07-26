@@ -123,12 +123,6 @@ export default function HRAIAssistantPage() {
         },
         body: JSON.stringify({
           message: finalText,
-          history: messages
-            .slice(-4)
-            .map((message) => ({
-              role: message.role,
-              text: message.text,
-            })),
         }),
       });
 
@@ -276,19 +270,15 @@ export default function HRAIAssistantPage() {
                         }`}
                       >
                         <div
-                          className={`rounded-2xl text-sm leading-5 ${
+                          className={`rounded-2xl px-4 py-2.5 text-sm leading-5 ${
                             message.role === "user"
-                              ? "w-fit max-w-[40%] bg-[#d2b241] px-4 py-2.5 text-[#3f4447]"
-                              : "w-full max-w-[75%] overflow-hidden border border-gray-200 bg-[#f7f4ec] text-gray-700"
+                              ? "w-fit max-w-[40%] bg-[#d2b241] text-[#3f4447]"
+                              : "w-full max-w-[75%] border border-gray-200 bg-[#f7f4ec] text-gray-700"
                           }`}
                         >
                           {message.role === "assistant" ? (
-                            <div className="min-w-0">
-                              <div className="flex h-11 items-center justify-between border-b border-gray-200 bg-white/80 px-4">
-                                <span className="text-xs font-semibold text-[#3f4447]">
-                                  Gemini Reply
-                                </span>
-
+                            <div className="relative">
+                              <div className="sticky top-2 z-20 -mb-8 flex justify-end">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -303,7 +293,7 @@ export default function HRAIAssistantPage() {
                                       ? "Copied"
                                       : "Copy"
                                   }
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-[#3f4447]"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-[#f7f4ec]/95 text-gray-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-[#3f4447]"
                                 >
                                 {copiedMessageId === message.id ? (
                                   <svg
@@ -344,7 +334,7 @@ export default function HRAIAssistantPage() {
                                 </button>
                               </div>
 
-                              <div className="max-h-[520px] overflow-y-auto p-4">
+                              <div className="pr-10">
                                 <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
