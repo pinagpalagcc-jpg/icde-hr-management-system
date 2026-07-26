@@ -94,16 +94,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const project =
-      process.env.GOOGLE_CLOUD_PROJECT;
+    const apiKey =
+      process.env.GEMINI_API_KEY;
 
-    const location =
-      process.env.GOOGLE_CLOUD_LOCATION ||
-      "global";
-
-    if (!project) {
+    if (!apiKey) {
       throw new Error(
-        "GOOGLE_CLOUD_PROJECT is missing."
+        "GEMINI_API_KEY is missing."
       );
     }
 
@@ -173,10 +169,7 @@ export async function POST(request: Request) {
       }));
 
     const ai = new GoogleGenAI({
-      vertexai: true,
-      project,
-      location,
-      apiVersion: "v1",
+      apiKey,
     });
 
     const geminiStart = Date.now();
