@@ -190,7 +190,7 @@ export async function POST(request: Request) {
 
     const response =
       await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-flash-lite",
         contents: `
 You are the private HR AI Assistant for the ICDE HR Management System.
 
