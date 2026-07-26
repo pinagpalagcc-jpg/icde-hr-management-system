@@ -97,9 +97,16 @@ export async function POST(request: Request) {
     const apiKey =
       process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
+    const project =
+      process.env.GOOGLE_CLOUD_PROJECT;
+
+    const location =
+      process.env.GOOGLE_CLOUD_LOCATION ||
+      "global";
+
+    if (!apiKey && !project) {
       throw new Error(
-        "GEMINI_API_KEY is missing."
+        "Gemini authentication is missing."
       );
     }
 
@@ -168,9 +175,16 @@ export async function POST(request: Request) {
           employee.transportation_allowance ?? "-",
       }));
 
-    const ai = new GoogleGenAI({
-      apiKey,
-    });
+    const ai = apiKey
+      ? new GoogleGenAI({
+          apiKey,
+        })
+      : new GoogleGenAI({
+          vertexai: true,
+          project: project as string,
+          location,
+          apiVersion: "v1",
+        });
 
     const geminiStart = Date.now();
 
