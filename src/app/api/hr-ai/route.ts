@@ -55,6 +55,35 @@ export async function POST(request: Request) {
       body.message || ""
     ).trim();
 
+    const history = Array.isArray(
+      body.history
+    )
+      ? body.history
+          .slice(-10)
+          .map(
+            (
+              item: {
+                role?: unknown;
+                text?: unknown;
+              }
+            ) => ({
+              role:
+                item.role === "assistant"
+                  ? "assistant"
+                  : "user",
+              text: String(
+                item.text || ""
+              ).slice(0, 8000),
+            })
+          )
+          .filter(
+            (item: {
+              role: string;
+              text: string;
+            }) => item.text.trim()
+          )
+      : [];
+
     if (!question) {
       return NextResponse.json(
         {
@@ -169,10 +198,38 @@ Rules:
 - For employee searches, match Employee ID or employee name.
 - If information is not available, say it is not available in the connected Employees data.
 
+CONVERSATION RULES:
+- Use the recent conversation to understand follow-up instructions.
+- Remember references such as "same employees", "that table", "add a column", "remove the phone number", "show it again", or "create table format".
+- The current Admin question has priority.
+- Recreate the answer from the connected live Employees data.
+- Do not copy an old answer when it conflicts with current Employees data.
+
+RECENT CONVERSATION — LAST 10 MESSAGES:
+${
+  history.length
+    ? history
+        .map(
+          (
+            item: {
+              role: string;
+              text: string;
+            }
+          ) =>
+            `${
+              item.role === "user"
+                ? "ADMIN"
+                : "GEMINI"
+            }: ${item.text}`
+        )
+        .join("\n\n")
+    : "No previous conversation."
+}
+
 CONNECTED EMPLOYEES:
 ${JSON.stringify(employeeContext)}
 
-ADMIN QUESTION:
+CURRENT ADMIN QUESTION:
 ${question}
         `.trim(),
       });
