@@ -39,16 +39,70 @@ function securityError(error: unknown) {
   );
 }
 
-async function getOrCreateConversation(
-  employeeId: string
-) {
+async function getOrCreateConversation({
+  currentUserId,
+  contactId,
+  contactRole,
+}: {
+  currentUserId: string;
+  contactId: string;
+  contactRole: "Admin" | "Staff";
+}) {
   const supabaseServer =
     getSupabaseServer();
+
+  if (contactRole === "Admin") {
+    if (currentUserId === contactId) {
+      throw new Error(
+        "You cannot start a conversation with yourself."
+      );
+    }
+
+    const [adminOneId, adminTwoId] =
+      [currentUserId, contactId].sort();
+
+    const { data: existing, error: findError } =
+      await supabaseServer
+        .from("internal_chat_conversations")
+        .select("*")
+        .eq("conversation_type", "AdminAdmin")
+        .eq("admin_one_id", adminOneId)
+        .eq("admin_two_id", adminTwoId)
+        .maybeSingle();
+
+    if (findError) {
+      throw new Error(findError.message);
+    }
+
+    if (existing) {
+      return existing;
+    }
+
+    const { data, error } =
+      await supabaseServer
+        .from("internal_chat_conversations")
+        .insert({
+          conversation_type: "AdminAdmin",
+          employee_id: null,
+          admin_one_id: adminOneId,
+          admin_two_id: adminTwoId,
+        })
+        .select()
+        .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
   const { data: existing, error: findError } =
     await supabaseServer
       .from("internal_chat_conversations")
       .select("*")
-      .eq("employee_id", employeeId)
+      .eq("conversation_type", "AdminStaff")
+      .eq("employee_id", contactId)
       .maybeSingle();
 
   if (findError) {
@@ -62,7 +116,10 @@ async function getOrCreateConversation(
   const { data, error } = await supabaseServer
     .from("internal_chat_conversations")
     .insert({
-      employee_id: employeeId,
+      conversation_type: "AdminStaff",
+      employee_id: contactId,
+      admin_one_id: null,
+      admin_two_id: null,
     })
     .select()
     .single();
@@ -188,30 +245,49 @@ export async function GET(
       });
     }
 
-    const requestedEmployeeId =
+    const requestedContactId =
+      request.nextUrl.searchParams.get(
+        "contact_id"
+      ) ||
       request.nextUrl.searchParams.get(
         "employee_id"
       );
 
-    const employeeId =
+    const requestedContactRole =
+      String(
+        request.nextUrl.searchParams.get(
+          "contact_role"
+        ) || "Staff"
+      ).toLowerCase() === "admin"
+        ? "Admin"
+        : "Staff";
+
+    const contactId =
       session.role === "Admin"
-        ? String(requestedEmployeeId || "").trim()
+        ? String(requestedContactId || "").trim()
         : session.userId;
 
-    if (!employeeId) {
+    const contactRole =
+      session.role === "Admin"
+        ? requestedContactRole
+        : "Staff";
+
+    if (!contactId) {
       return NextResponse.json(
         {
           error:
-            "Employee ID is required.",
+            "Contact ID is required.",
         },
         { status: 400 }
       );
     }
 
     const conversation =
-      await getOrCreateConversation(
-        employeeId
-      );
+      await getOrCreateConversation({
+        currentUserId: session.userId,
+        contactId,
+        contactRole,
+      });
 
     const hiddenColumn =
       session.role === "Admin"
@@ -280,20 +356,34 @@ export async function POST(
       getSupabaseServer();
     const body = await request.json();
 
-    const requestedEmployeeId = String(
-      body.employee_id || ""
+    const requestedContactId = String(
+      body.contact_id ||
+      body.employee_id ||
+      ""
     ).trim();
 
-    const employeeId =
+    const requestedContactRole =
+      String(
+        body.contact_role || "Staff"
+      ).toLowerCase() === "admin"
+        ? "Admin"
+        : "Staff";
+
+    const contactId =
       session.role === "Admin"
-        ? requestedEmployeeId
+        ? requestedContactId
         : session.userId;
 
-    if (!employeeId) {
+    const contactRole =
+      session.role === "Admin"
+        ? requestedContactRole
+        : "Staff";
+
+    if (!contactId) {
       return NextResponse.json(
         {
           error:
-            "Employee ID is required.",
+            "Contact ID is required.",
         },
         { status: 400 }
       );
@@ -330,9 +420,11 @@ export async function POST(
     }
 
     const conversation =
-      await getOrCreateConversation(
-        employeeId
-      );
+      await getOrCreateConversation({
+        currentUserId: session.userId,
+        contactId,
+        contactRole,
+      });
 
     if (replyToMessageId) {
       const {

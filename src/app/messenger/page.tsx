@@ -13,6 +13,7 @@ type Employee = {
   position?: string | null;
   designation?: string | null;
   department?: string | null;
+  user_role?: "Admin" | "Staff" | string | null;
 };
 
 type Message = {
@@ -46,6 +47,14 @@ function employeeName(employee: Employee) {
 function employeeDesignation(
   employee: Employee
 ) {
+  if (
+    String(
+      employee.user_role || ""
+    ).toLowerCase() === "admin"
+  ) {
+    return "Administrator";
+  }
+
   return (
     employee.position?.trim() ||
     employee.designation?.trim() ||
@@ -83,6 +92,9 @@ function formatDay(value: string) {
 export default function MessengerPage() {
   const [employees, setEmployees] =
     useState<Employee[]>([]);
+
+  const [currentAdminId, setCurrentAdminId] =
+    useState("");
 
   const [selectedEmployeeId, setSelectedEmployeeId] =
     useState("");
@@ -286,17 +298,33 @@ export default function MessengerPage() {
         Array.isArray(result) ? result : []
       ).filter(
         (employee: Employee) =>
-          employee.status !== "Inactive"
+          employee.status !== "Inactive" &&
+          employee.id !== currentAdminId
       );
 
-      setEmployees(activeEmployees);
+      const sortedContacts = [
+        ...activeEmployees.filter(
+          (employee: Employee) =>
+            String(
+              employee.user_role || ""
+            ).toLowerCase() === "admin"
+        ),
+        ...activeEmployees.filter(
+          (employee: Employee) =>
+            String(
+              employee.user_role || ""
+            ).toLowerCase() !== "admin"
+        ),
+      ];
+
+      setEmployees(sortedContacts);
 
       if (
         !selectedEmployeeId &&
-        activeEmployees.length
+        sortedContacts.length
       ) {
         setSelectedEmployeeId(
-          activeEmployees[0].id
+          sortedContacts[0].id
         );
       }
     } catch (loadError) {
@@ -311,12 +339,24 @@ export default function MessengerPage() {
   }
 
   async function loadMessages(
-    employeeId: string,
+    contactId: string,
     options?: {
       silent?: boolean;
     }
   ) {
-    if (!employeeId) return;
+    if (!contactId) return;
+
+    const contact = employees.find(
+      (employee) =>
+        employee.id === contactId
+    );
+
+    const contactRole =
+      String(
+        contact?.user_role || "Staff"
+      ).toLowerCase() === "admin"
+        ? "Admin"
+        : "Staff";
 
     try {
       if (!options?.silent) {
@@ -326,8 +366,10 @@ export default function MessengerPage() {
       setError("");
 
       const response = await fetch(
-        `/api/internal-chat?employee_id=${encodeURIComponent(
-          employeeId
+        `/api/internal-chat?contact_id=${encodeURIComponent(
+          contactId
+        )}&contact_role=${encodeURIComponent(
+          contactRole
         )}`,
         {
           cache: "no-store",
@@ -424,8 +466,15 @@ export default function MessengerPage() {
               "application/json",
           },
           body: JSON.stringify({
-            employee_id:
+            contact_id:
               selectedEmployeeId,
+            contact_role:
+              String(
+                selectedEmployee?.user_role ||
+                  "Staff"
+              ).toLowerCase() === "admin"
+                ? "Admin"
+                : "Staff",
             message_text:
               messageText.trim(),
             attachment_name:
@@ -717,6 +766,35 @@ export default function MessengerPage() {
   }
 
   useEffect(() => {
+    async function loadCurrentAdmin() {
+      try {
+        const response = await fetch(
+          "/api/auth/session",
+          {
+            cache: "no-store",
+          }
+        );
+
+        const result = await response.json();
+
+        if (
+          response.ok &&
+          result?.authenticated &&
+          result?.user?.id
+        ) {
+          setCurrentAdminId(
+            String(result.user.id)
+          );
+        }
+      } catch (sessionError) {
+        console.error(
+          "Unable to load current Admin session:",
+          sessionError
+        );
+      }
+    }
+
+    loadCurrentAdmin();
     loadEmployees();
     loadUnreadCounts();
   }, []);
