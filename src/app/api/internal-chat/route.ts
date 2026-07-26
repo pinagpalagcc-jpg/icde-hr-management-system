@@ -210,6 +210,31 @@ export async function GET(
         );
       }
 
+      const {
+        data: activityMessages,
+        error: activityError,
+      } = await supabaseServer
+        .from(
+          "internal_chat_messages"
+        )
+        .select(
+          "conversation_id, created_at"
+        )
+        .in(
+          "conversation_id",
+          conversationIds
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+      if (activityError) {
+        throw new Error(
+          activityError.message
+        );
+      }
+
       const contactByConversation =
         new Map<string, string>();
 
@@ -252,10 +277,28 @@ export async function GET(
           contactId
         );
 
-        if (conversation.updated_at) {
-          lastActivity[contactId] =
-            conversation.updated_at;
+
+      }
+
+      for (
+        const activityMessage of
+        activityMessages || []
+      ) {
+        const contactId =
+          contactByConversation.get(
+            activityMessage.conversation_id
+          );
+
+        if (
+          !contactId ||
+          !activityMessage.created_at ||
+          lastActivity[contactId]
+        ) {
+          continue;
         }
+
+        lastActivity[contactId] =
+          activityMessage.created_at;
       }
 
       const unreadCounts: Record<
