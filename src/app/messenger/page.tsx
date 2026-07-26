@@ -878,10 +878,16 @@ export default function MessengerPage() {
         if (
           response.ok &&
           result?.authenticated &&
-          result?.user?.id
+          (
+            result?.userId ||
+            result?.user?.userId
+          )
         ) {
           setCurrentAdminId(
-            String(result.user.id)
+            String(
+              result.userId ||
+              result.user.userId
+            )
           );
         }
       } catch (sessionError) {
@@ -1374,8 +1380,8 @@ export default function MessengerPage() {
                               );
 
                           const mine =
-                            message.sender_role ===
-                            "Admin";
+                            message.sender_id ===
+                            currentAdminId;
 
                           return (
                             <div
