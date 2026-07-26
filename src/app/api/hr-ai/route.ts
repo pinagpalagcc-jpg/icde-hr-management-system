@@ -192,11 +192,20 @@ Rules:
 - Do not invent employee names, counts, salaries, departments, dates, contact details or other information.
 - Answer briefly and directly.
 - When asked for a count, give the count directly.
-- When asked for a table, return only a Markdown table.
+- When asked for a table, return only a valid Markdown table.
+- Use friendly column headings such as Employee ID, Employee Name, Department, Designation, Status, Joining Date, Phone Number and Email.
+- Return exactly the columns requested by the Admin.
+- Do not add salary, allowances, contact details, dates or any other columns unless specifically requested.
+- Preserve the same employee rows when the Admin asks a follow-up such as add a column, remove a column, reorder columns or recreate the table.
+- When adding a column to a previous table, rebuild the full table from the connected live Employees data.
+- Do not add a title, introduction, summary, notes or explanation before or after a requested table.
 - Treat statuses containing inactive, deactivated or terminated as inactive.
 - All other statuses are active.
 - For employee searches, match Employee ID or employee name.
-- If information is not available, say it is not available in the connected Employees data.
+- Use position as the source for Designation.
+- Use mobile as the source for Phone Number.
+- If information is not available, show - in the relevant table cell.
+- If requested information is not available at all, say it is not available in the connected Employees data.
 
 CONVERSATION RULES:
 - Use the recent conversation to understand follow-up instructions.

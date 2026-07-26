@@ -170,8 +170,74 @@ export default function HRAIAssistantPage() {
   const [error, setError] =
     useState("");
 
+  const [historyLoaded, setHistoryLoaded] =
+    useState(false);
+
   const chatEndRef =
     useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const savedHistory =
+        window.localStorage.getItem(
+          "icde_hr_ai_chat_history"
+        );
+
+      if (savedHistory) {
+        const parsedHistory =
+          JSON.parse(savedHistory);
+
+        if (Array.isArray(parsedHistory)) {
+          const validMessages =
+            parsedHistory
+              .filter(
+                (message) =>
+                  message &&
+                  typeof message.id ===
+                    "number" &&
+                  (
+                    message.role ===
+                      "user" ||
+                    message.role ===
+                      "assistant"
+                  ) &&
+                  typeof message.text ===
+                    "string"
+              )
+              .slice(-100);
+
+          setMessages(validMessages);
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Unable to load HR AI chat history:",
+        error
+      );
+    } finally {
+      setHistoryLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!historyLoaded) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        "icde_hr_ai_chat_history",
+        JSON.stringify(
+          messages.slice(-100)
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Unable to save HR AI chat history:",
+        error
+      );
+    }
+  }, [messages, historyLoaded]);
 
   useEffect(() => {
     const frameId =
