@@ -255,13 +255,40 @@ export async function POST(request: Request) {
       "leave register",
     ];
 
-    const otherSpecialLeaveTerms = [
+    const holidayCreditTerms = [
       "holiday credit",
+      "holiday credits",
+      "holiday credit balance",
+      "holiday credit ledger",
+      "holiday credit register",
+      "holiday credit transaction",
+      "holiday credit transactions",
+      "holiday credit earned",
+      "holiday credit used",
+      "holiday credit usage",
+      "holiday credit adjustment",
+      "holiday credit adjustments",
+      "holiday credit history",
+      "holiday credit remaining",
+      "remaining holiday credit",
+      "available holiday credit",
+    ];
+
+    const isHolidayCreditQuestion =
+      !leaveRequestTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      ) &&
+      holidayCreditTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
+    const otherSpecialLeaveTerms = [
       "paternity",
       "maternity",
     ];
 
     const isAnnualLeaveQuestion =
+      !isHolidayCreditQuestion &&
       !leaveRequestTerms.some((term) =>
         normalizedQuestion.includes(term)
       ) &&
@@ -280,6 +307,195 @@ export async function POST(request: Request) {
       leaveRequestTerms.some((term) =>
         normalizedQuestion.includes(term)
       );
+
+    let holidayCreditContext: Array<Record<string, unknown>> = [];
+    let holidayCreditSummary: Array<Record<string, unknown>> = [];
+
+    if (isHolidayCreditQuestion) {
+      const holidayCreditQueryStart = Date.now();
+
+      const {
+        data: holidayCreditTransactions,
+        error: holidayCreditError,
+      } = await supabase
+        .from("holiday_credit_transactions")
+        .select(
+          `
+            employee_id,
+            transaction_date,
+            remarks,
+            from_date,
+            to_date,
+            earned_days,
+            used_days,
+            entry_type,
+            created_at
+          `
+        )
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (holidayCreditError) {
+        throw new Error(holidayCreditError.message);
+      }
+
+      const employeeLookup = new Map(
+        (employees || []).map((employee: any) => [
+          String(employee.id),
+          employee,
+        ])
+      );
+
+      const sortedHolidayCredits = [
+        ...(holidayCreditTransactions || []),
+      ].sort((a: any, b: any) => {
+        const dateA = new Date(
+          a.from_date ||
+            a.transaction_date ||
+            a.created_at ||
+            0
+        ).getTime();
+
+        const dateB = new Date(
+          b.from_date ||
+            b.transaction_date ||
+            b.created_at ||
+            0
+        ).getTime();
+
+        if (dateA !== dateB) {
+          return dateA - dateB;
+        }
+
+        return (
+          new Date(a.created_at || 0).getTime() -
+          new Date(b.created_at || 0).getTime()
+        );
+      });
+
+      const employeeBalances = new Map<string, number>();
+
+      holidayCreditContext =
+        sortedHolidayCredits.map((transaction: any) => {
+          const internalEmployeeId =
+            String(transaction.employee_id);
+
+          const employee =
+            employeeLookup.get(internalEmployeeId) as any;
+
+          const earnedDays = Number(
+            transaction.earned_days || 0
+          );
+
+          const usedDays = Number(
+            transaction.used_days || 0
+          );
+
+          const previousBalance =
+            employeeBalances.get(internalEmployeeId) || 0;
+
+          const calculatedBalance =
+            previousBalance + earnedDays - usedDays;
+
+          employeeBalances.set(
+            internalEmployeeId,
+            calculatedBalance
+          );
+
+          return {
+            employee_id:
+              employee?.employee_code || "-",
+            employee_name: [
+              employee?.first_name,
+              employee?.middle_name,
+              employee?.last_name,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .replace(/\s+/g, " ")
+              .trim() || "-",
+            department:
+              employee?.department || "-",
+            position:
+              employee?.position || "-",
+            transaction_date:
+              transaction.transaction_date || "-",
+            remarks:
+              transaction.remarks || "-",
+            from_date:
+              transaction.from_date || "-",
+            to_date:
+              transaction.to_date || "-",
+            earned_days:
+              earnedDays,
+            used_days:
+              usedDays,
+            calculated_balance:
+              calculatedBalance,
+            entry_type:
+              transaction.entry_type || "-",
+          };
+        });
+
+      const summaryMap = new Map<
+        string,
+        {
+          employee_id: string;
+          employee_name: string;
+          department: string;
+          position: string;
+          total_earned: number;
+          total_used: number;
+          current_balance: number;
+        }
+      >();
+
+      for (const row of holidayCreditContext) {
+        const employeeId =
+          String(row.employee_id || "-");
+
+        const current =
+          summaryMap.get(employeeId) || {
+            employee_id: employeeId,
+            employee_name:
+              String(row.employee_name || "-"),
+            department:
+              String(row.department || "-"),
+            position:
+              String(row.position || "-"),
+            total_earned: 0,
+            total_used: 0,
+            current_balance: 0,
+          };
+
+        current.total_earned += Number(
+          row.earned_days || 0
+        );
+
+        current.total_used += Number(
+          row.used_days || 0
+        );
+
+        current.current_balance =
+          current.total_earned -
+          current.total_used;
+
+        summaryMap.set(employeeId, current);
+      }
+
+      holidayCreditSummary =
+        Array.from(summaryMap.values());
+
+      console.log(
+        "HR AI HOLIDAY CREDIT QUERY:",
+        Date.now() - holidayCreditQueryStart,
+        "ms"
+      );
+    }
 
     let annualLeaveContext: Array<Record<string, unknown>> = [];
     let annualLeaveSummary: Array<Record<string, unknown>> = [];
@@ -629,6 +845,7 @@ export async function POST(request: Request) {
       );
 
     if (
+      !isHolidayCreditQuestion &&
       !isAnnualLeaveQuestion &&
       !isLeaveRequestQuestion &&
       countQuestion &&
@@ -647,6 +864,7 @@ export async function POST(request: Request) {
     }
 
     if (
+      !isHolidayCreditQuestion &&
       !isAnnualLeaveQuestion &&
       !isLeaveRequestQuestion &&
       countQuestion &&
@@ -662,7 +880,29 @@ export async function POST(request: Request) {
     }
 
     const moduleInstructions =
-      isAnnualLeaveQuestion
+      isHolidayCreditQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Holiday Credit Ledger data below.",
+            "- This connection is read-only. Never suggest that you added, edited, deleted, earned, used, adjusted or changed Holiday Credit records.",
+            "- Use the connected transaction values exactly as stored.",
+            "- Running balance follows the existing Holiday Credit Ledger order using from_date, otherwise transaction_date, otherwise created_at.",
+            "- Balance equals previous balance plus earned_days minus used_days.",
+            "- Do not invent or independently alter Holiday Credit balances.",
+            "- Use entry_type exactly as stored, including Earned, Used and Adjustment.",
+            "- For an employee's overall totals and current balance, use the connected employee summary.",
+            "- Match employees by Employee ID or employee name.",
+            "- Use position as Designation.",
+            "- Use transaction_date as Date, from_date as From and to_date as To.",
+            "- Do not expose internal database IDs, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If information is unavailable, show - in the relevant table cell.",
+            "- If no matching Holiday Credit Ledger record exists, say no matching record was found.",
+          ].join("\n")
+        : isAnnualLeaveQuestion
         ? [
             "Rules:",
             "- Answer only from the connected Annual Leave Ledger data below.",
@@ -782,7 +1022,13 @@ ${
 }
 
 ${
-  isAnnualLeaveQuestion
+  isHolidayCreditQuestion
+    ? `CONNECTED HOLIDAY CREDIT EMPLOYEE SUMMARY:
+${JSON.stringify(holidayCreditSummary)}
+
+CONNECTED HOLIDAY CREDIT TRANSACTIONS:
+${JSON.stringify(holidayCreditContext)}`
+    : isAnnualLeaveQuestion
     ? `CONNECTED ANNUAL LEAVE EMPLOYEE SUMMARY:
 ${JSON.stringify(annualLeaveSummary)}
 
@@ -830,7 +1076,9 @@ ${question}
 
     return NextResponse.json({
       answer,
-      module: isAnnualLeaveQuestion
+      module: isHolidayCreditQuestion
+        ? "holiday_credit_ledger"
+        : isAnnualLeaveQuestion
         ? "annual_leave_ledger"
         : isLeaveRequestQuestion
         ? "leave_requests"
