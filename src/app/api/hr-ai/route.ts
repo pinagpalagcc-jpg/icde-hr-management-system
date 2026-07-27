@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/session";
-import { getSupabaseServer } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase";
 
 function securityError(error: unknown) {
   const message =
@@ -110,8 +110,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = getSupabaseServer();
-
     const employeeQueryStart = Date.now();
 
     const { data: employees, error: employeeError } =
@@ -175,6 +173,98 @@ export async function POST(request: Request) {
           employee.transportation_allowance ?? "-",
       }));
 
+    const normalizeCountText = (
+      value: string
+    ) =>
+      value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const departmentCounts =
+      employeeContext.reduce<Record<string, number>>(
+        (counts, employee) => {
+          const department =
+            employee.department || "-";
+
+          counts[department] =
+            (counts[department] || 0) + 1;
+
+          return counts;
+        },
+        {}
+      );
+
+    const normalizedQuestion =
+      normalizeCountText(question);
+
+    const countQuestion =
+      /\b(how many|count|total)\b/.test(
+        normalizedQuestion
+      );
+
+    const departmentAliases: Record<
+      string,
+      string
+    > = {
+      admin: "Admin",
+      clinician: "Clinicians",
+      clinicians: "Clinicians",
+      "front desk": "Front Desk",
+      frontdesk: "Front Desk",
+      "dental assistant": "Dental Assistant",
+      "dental assistants": "Dental Assistant",
+      insurance: "Insurance",
+      housekeeping: "House Keeping",
+      "house keeping": "House Keeping",
+      dependant: "Dependants",
+      dependants: "Dependants",
+      dependent: "Dependants",
+      dependents: "Dependants",
+    };
+
+    const requestedDepartment =
+      Object.entries(departmentAliases).find(
+        ([alias]) =>
+          normalizedQuestion.includes(alias)
+      )?.[1] ||
+      Object.keys(departmentCounts).find(
+        (department) =>
+          normalizedQuestion.includes(
+            normalizeCountText(department)
+          )
+      );
+
+    if (
+      countQuestion &&
+      requestedDepartment &&
+      Object.prototype.hasOwnProperty.call(
+        departmentCounts,
+        requestedDepartment
+      )
+    ) {
+      return NextResponse.json({
+        answer: String(
+          departmentCounts[requestedDepartment]
+        ),
+        module: "employees",
+      });
+    }
+
+    if (
+      countQuestion &&
+      !requestedDepartment &&
+      /\b(employee|employees|staff|people)\b/.test(
+        normalizedQuestion
+      )
+    ) {
+      return NextResponse.json({
+        answer: String(employeeContext.length),
+        module: "employees",
+      });
+    }
+
     const ai = apiKey
       ? new GoogleGenAI({
           apiKey,
@@ -188,9 +278,13 @@ export async function POST(request: Request) {
 
     const geminiStart = Date.now();
 
+    const modelName = apiKey
+      ? "gemini-3.5-flash-lite"
+      : "gemini-2.5-flash-lite";
+
     const response =
       await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: modelName,
         contents: `
 You are the private HR AI Assistant for the ICDE HR Management System.
 
