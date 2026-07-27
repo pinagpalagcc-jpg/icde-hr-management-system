@@ -350,6 +350,81 @@ export async function POST(request: Request) {
         normalizedQuestion.includes(term)
       );
 
+    const documentExpiryTerms = [
+      "document expiry",
+      "document expiries",
+      "documents expiring",
+      "document expiring",
+      "expired document",
+      "expired documents",
+      "expiring document",
+      "expiring documents",
+      "passport expiry",
+      "passport expiring",
+      "visa expiry",
+      "visa expiring",
+      "emirates id expiry",
+      "emirates id expiring",
+      "contract expiry",
+      "contract end",
+      "annual ticket due",
+      "ticket due",
+      "documents within 30 days",
+      "documents within 60 days",
+      "documents within 90 days",
+      "documents next month",
+      "no expiry date",
+      "missing expiry date",
+      "employee documents",
+    ];
+
+    const isDocumentExpiryQuestion =
+      documentExpiryTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
+    const salaryBenefitsTerms = [
+      "salary and benefits",
+      "salary & benefits",
+      "salary details",
+      "salary detail",
+      "salary breakdown",
+      "salary information",
+      "current salary",
+      "basic salary",
+      "gross salary",
+      "total salary",
+      "monthly salary",
+      "accommodation allowance",
+      "housing allowance",
+      "transportation allowance",
+      "transport allowance",
+      "salary allowance",
+      "salary allowances",
+      "salary increment",
+      "salary increments",
+      "increment history",
+      "increment amount",
+      "increment type",
+      "previous salary",
+      "new salary",
+      "last increment",
+      "latest increment",
+      "received increment",
+      "salary increase",
+      "salary increases",
+      "salary history",
+      "employees salary",
+      "employee salary",
+      "highest salary",
+      "lowest salary",
+    ];
+
+    const isSalaryBenefitsQuestion =
+      salaryBenefitsTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
     const isAnnualLeaveQuestion =
       !isHolidayCreditQuestion &&
       !isPaternityLeaveQuestion &&
@@ -555,6 +630,499 @@ export async function POST(request: Request) {
       console.log(
         "HR AI HOLIDAY CREDIT QUERY:",
         Date.now() - holidayCreditQueryStart,
+        "ms"
+      );
+    }
+
+    let salaryBenefitsContext: Array<Record<string, unknown>> = [];
+    let salaryIncrementContext: Array<Record<string, unknown>> = [];
+    let salaryBenefitsSummary: Record<string, unknown> | null = null;
+
+    if (isSalaryBenefitsQuestion) {
+      const salaryQueryStart = Date.now();
+
+      const [
+        salaryEmployeeResult,
+        salaryIncrementResult,
+      ] = await Promise.all([
+        supabase
+          .from("employees")
+          .select(
+            `
+              id,
+              employee_code,
+              first_name,
+              middle_name,
+              last_name,
+              department,
+              position,
+              status,
+              basic_salary,
+              accommodation_allowance,
+              transportation_allowance
+            `
+          ),
+        supabase
+          .from("salary_increments")
+          .select(
+            `
+              employee_id,
+              year,
+              month,
+              previous_salary,
+              increment_amount,
+              new_salary,
+              increment_type,
+              notes,
+              created_at
+            `
+          )
+          .order("year", {
+            ascending: false,
+          })
+          .order("created_at", {
+            ascending: false,
+          }),
+      ]);
+
+      if (salaryEmployeeResult.error) {
+        throw new Error(
+          salaryEmployeeResult.error.message
+        );
+      }
+
+      if (salaryIncrementResult.error) {
+        throw new Error(
+          salaryIncrementResult.error.message
+        );
+      }
+
+      const salaryEmployeeLookup = new Map(
+        (salaryEmployeeResult.data || []).map(
+          (employee: any) => [
+            String(employee.id),
+            employee,
+          ]
+        )
+      );
+
+      salaryBenefitsContext =
+        (salaryEmployeeResult.data || []).map(
+          (employee: any) => {
+            const basicSalary = Number(
+              employee.basic_salary || 0
+            );
+
+            const accommodationAllowance = Number(
+              employee.accommodation_allowance || 0
+            );
+
+            const transportationAllowance = Number(
+              employee.transportation_allowance || 0
+            );
+
+            return {
+              employee_id:
+                employee.employee_code || "-",
+              employee_name: [
+                employee.first_name,
+                employee.middle_name,
+                employee.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim() || "-",
+              department:
+                employee.department || "-",
+              position:
+                employee.position || "-",
+              status:
+                employee.status || "-",
+              basic_salary:
+                basicSalary,
+              accommodation_allowance:
+                accommodationAllowance,
+              transportation_allowance:
+                transportationAllowance,
+              gross_salary:
+                basicSalary +
+                accommodationAllowance +
+                transportationAllowance,
+            };
+          }
+        );
+
+      salaryIncrementContext =
+        (salaryIncrementResult.data || []).map(
+          (increment: any) => {
+            const employee =
+              salaryEmployeeLookup.get(
+                String(increment.employee_id)
+              ) as any;
+
+            return {
+              employee_id:
+                employee?.employee_code || "-",
+              employee_name: [
+                employee?.first_name,
+                employee?.middle_name,
+                employee?.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim() || "-",
+              department:
+                employee?.department || "-",
+              position:
+                employee?.position || "-",
+              year:
+                Number(increment.year) || "-",
+              month:
+                increment.month || "-",
+              previous_salary:
+                Number(
+                  increment.previous_salary || 0
+                ),
+              increment_amount:
+                Number(
+                  increment.increment_amount || 0
+                ),
+              new_salary:
+                Number(
+                  increment.new_salary || 0
+                ),
+              increment_type:
+                increment.increment_type || "-",
+              notes:
+                increment.notes || "-",
+            };
+          }
+        );
+
+      const employeesWithSalary =
+        salaryBenefitsContext.filter(
+          (row) =>
+            Number(row.basic_salary || 0) > 0 ||
+            Number(
+              row.accommodation_allowance || 0
+            ) > 0 ||
+            Number(
+              row.transportation_allowance || 0
+            ) > 0
+        );
+
+      const totalMonthlyGross =
+        employeesWithSalary.reduce(
+          (sum, row) =>
+            sum +
+            Number(row.gross_salary || 0),
+          0
+        );
+
+      salaryBenefitsSummary = {
+        employees_with_salary:
+          employeesWithSalary.length,
+        employees_without_salary:
+          salaryBenefitsContext.length -
+          employeesWithSalary.length,
+        total_monthly_gross_salary:
+          totalMonthlyGross,
+        salary_increment_records:
+          salaryIncrementContext.length,
+      };
+
+      console.log(
+        "HR AI SALARY BENEFITS QUERY:",
+        Date.now() - salaryQueryStart,
+        "ms"
+      );
+    }
+
+    let documentExpiryContext: Array<Record<string, unknown>> = [];
+    let documentExpirySummary: Record<string, unknown> | null = null;
+
+    if (isDocumentExpiryQuestion) {
+      const documentExpiryQueryStart = Date.now();
+
+      const [
+        employeeDocumentResult,
+        documentEmployeeResult,
+      ] = await Promise.all([
+        supabase
+          .from("employee_documents")
+          .select(
+            `
+              employee_id,
+              document_name,
+              issue_date,
+              expiry_date,
+              not_applicable,
+              status,
+              created_at
+            `
+          )
+          .order("expiry_date", {
+            ascending: true,
+          }),
+        supabase
+          .from("employees")
+          .select(
+            `
+              id,
+              employee_code,
+              first_name,
+              middle_name,
+              last_name,
+              department,
+              position,
+              contract_end_date,
+              annual_ticket_due
+            `
+          ),
+      ]);
+
+      if (employeeDocumentResult.error) {
+        throw new Error(
+          employeeDocumentResult.error.message
+        );
+      }
+
+      if (documentEmployeeResult.error) {
+        throw new Error(
+          documentEmployeeResult.error.message
+        );
+      }
+
+      const employeeLookup = new Map(
+        (documentEmployeeResult.data || []).map(
+          (employee: any) => [
+            String(employee.id),
+            employee,
+          ]
+        )
+      );
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      function expiryDetails(
+        expiryDate: unknown,
+        notApplicable = false
+      ) {
+        if (notApplicable) {
+          return {
+            remaining_days: null,
+            expiry_status: "Not Applicable",
+          };
+        }
+
+        if (!expiryDate) {
+          return {
+            remaining_days: null,
+            expiry_status: "No Expiry",
+          };
+        }
+
+        const parsedDate = new Date(
+          String(expiryDate) + "T00:00:00"
+        );
+
+        if (Number.isNaN(parsedDate.getTime())) {
+          return {
+            remaining_days: null,
+            expiry_status: "Invalid Date",
+          };
+        }
+
+        const remainingDays = Math.ceil(
+          (parsedDate.getTime() - today.getTime()) /
+            86400000
+        );
+
+        let expiryStatus = "Available";
+
+        if (remainingDays < 0) {
+          expiryStatus = "Expired";
+        } else if (remainingDays <= 30) {
+          expiryStatus = "Critical";
+        } else if (remainingDays <= 60) {
+          expiryStatus = "Warning";
+        } else if (remainingDays <= 90) {
+          expiryStatus = "Upcoming";
+        }
+
+        return {
+          remaining_days: remainingDays,
+          expiry_status: expiryStatus,
+        };
+      }
+
+      const rows: Array<Record<string, unknown>> = [];
+
+      for (
+        const document of
+        employeeDocumentResult.data || []
+      ) {
+        const employee = employeeLookup.get(
+          String(document.employee_id)
+        ) as any;
+
+        const details = expiryDetails(
+          document.expiry_date,
+          Boolean(document.not_applicable)
+        );
+
+        rows.push({
+          employee_id:
+            employee?.employee_code || "-",
+          employee_name: [
+            employee?.first_name,
+            employee?.middle_name,
+            employee?.last_name,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim() || "-",
+          department:
+            employee?.department || "-",
+          position:
+            employee?.position || "-",
+          document_name:
+            document.document_name || "-",
+          issue_date:
+            document.issue_date || "-",
+          expiry_date:
+            document.expiry_date || "-",
+          remaining_days:
+            details.remaining_days,
+          expiry_status:
+            details.expiry_status,
+          stored_status:
+            document.status || "-",
+          not_applicable:
+            Boolean(document.not_applicable),
+          source:
+            "Employee Document",
+        });
+      }
+
+      for (
+        const employee of
+        documentEmployeeResult.data || []
+      ) {
+        const employeeName = [
+          employee.first_name,
+          employee.middle_name,
+          employee.last_name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim() || "-";
+
+        if (employee.contract_end_date) {
+          const details = expiryDetails(
+            employee.contract_end_date
+          );
+
+          rows.push({
+            employee_id:
+              employee.employee_code || "-",
+            employee_name: employeeName,
+            department:
+              employee.department || "-",
+            position:
+              employee.position || "-",
+            document_name: "Contract End",
+            issue_date: "-",
+            expiry_date:
+              employee.contract_end_date,
+            remaining_days:
+              details.remaining_days,
+            expiry_status:
+              details.expiry_status,
+            stored_status: "-",
+            not_applicable: false,
+            source: "Employee Profile",
+          });
+        }
+
+        if (employee.annual_ticket_due) {
+          const details = expiryDetails(
+            employee.annual_ticket_due
+          );
+
+          rows.push({
+            employee_id:
+              employee.employee_code || "-",
+            employee_name: employeeName,
+            department:
+              employee.department || "-",
+            position:
+              employee.position || "-",
+            document_name:
+              "Annual Ticket Due",
+            issue_date: "-",
+            expiry_date:
+              employee.annual_ticket_due,
+            remaining_days:
+              details.remaining_days,
+            expiry_status:
+              details.expiry_status,
+            stored_status: "-",
+            not_applicable: false,
+            source: "Employee Profile",
+          });
+        }
+      }
+
+      documentExpiryContext = rows.sort(
+        (a, b) => {
+          const aDays =
+            typeof a.remaining_days === "number"
+              ? a.remaining_days
+              : Number.MAX_SAFE_INTEGER;
+
+          const bDays =
+            typeof b.remaining_days === "number"
+              ? b.remaining_days
+              : Number.MAX_SAFE_INTEGER;
+
+          return aDays - bDays;
+        }
+      );
+
+      const countStatus = (status: string) =>
+        documentExpiryContext.filter(
+          (row) =>
+            row.expiry_status === status
+        ).length;
+
+      documentExpirySummary = {
+        current_date:
+          today.toISOString().slice(0, 10),
+        total_records:
+          documentExpiryContext.length,
+        expired:
+          countStatus("Expired"),
+        critical_0_to_30_days:
+          countStatus("Critical"),
+        warning_31_to_60_days:
+          countStatus("Warning"),
+        upcoming_61_to_90_days:
+          countStatus("Upcoming"),
+        no_expiry:
+          countStatus("No Expiry"),
+        not_applicable:
+          countStatus("Not Applicable"),
+      };
+
+      console.log(
+        "HR AI DOCUMENT EXPIRY QUERY:",
+        Date.now() - documentExpiryQueryStart,
         "ms"
       );
     }
@@ -1249,6 +1817,8 @@ export async function POST(request: Request) {
       );
 
     if (
+      !isSalaryBenefitsQuestion &&
+      !isDocumentExpiryQuestion &&
       !isMaternityLeaveQuestion &&
       !isPaternityLeaveQuestion &&
       !isHolidayCreditQuestion &&
@@ -1270,6 +1840,8 @@ export async function POST(request: Request) {
     }
 
     if (
+      !isSalaryBenefitsQuestion &&
+      !isDocumentExpiryQuestion &&
       !isMaternityLeaveQuestion &&
       !isPaternityLeaveQuestion &&
       !isHolidayCreditQuestion &&
@@ -1288,7 +1860,55 @@ export async function POST(request: Request) {
     }
 
     const moduleInstructions =
-      isMaternityLeaveQuestion
+      isSalaryBenefitsQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Salary & Benefits and Salary Increment data below.",
+            "- This connection is read-only. Never suggest that you added, edited, deleted or changed salary, allowances, benefits or increment records.",
+            "- Current salary values come from the Employees record.",
+            "- Gross Salary equals Basic Salary plus Accommodation Allowance plus Transportation Allowance.",
+            "- Use the supplied gross_salary value for current salary questions.",
+            "- Salary Increment History is separate from the current salary record.",
+            "- Use previous_salary, increment_amount and new_salary exactly as stored in the increment record.",
+            "- Do not add the increment amount again to the current salary.",
+            "- Latest increment means the newest record by year and stored creation order.",
+            "- Match employees by Employee ID, full name or partial employee name.",
+            "- Support filtering by department and position.",
+            "- Use position as Designation.",
+            "- Display monetary values in AED.",
+            "- Do not expose internal database IDs, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If salary information is zero or unavailable, clearly state that no salary information is recorded.",
+            "- If no matching increment exists, say no matching salary increment record was found.",
+          ].join("\n")
+        : isDocumentExpiryQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Document Expiry data below.",
+            "- This connection is read-only. Never suggest that you uploaded, edited, deleted, renewed or changed any document.",
+            "- Use the connected expiry_date, remaining_days and expiry_status values.",
+            "- Expired means remaining_days is below zero.",
+            "- Critical means 0 to 30 days remaining.",
+            "- Warning means 31 to 60 days remaining.",
+            "- Upcoming means 61 to 90 days remaining.",
+            "- Available means more than 90 days remaining.",
+            "- No Expiry means no expiry date is stored.",
+            "- Not Applicable records must not be treated as expired.",
+            "- Include Employee Documents, Contract End and Annual Ticket Due when relevant.",
+            "- Match employees by Employee ID or employee name.",
+            "- Use position as Designation.",
+            "- Do not expose internal database IDs, file data, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If information is unavailable, show - in the relevant table cell.",
+            "- If no matching document record exists, say no matching record was found.",
+          ].join("\n")
+        : isMaternityLeaveQuestion
         ? [
             "Rules:",
             "- Answer only from the connected Maternity Leave Ledger data below.",
@@ -1476,7 +2096,22 @@ ${
 }
 
 ${
-  isMaternityLeaveQuestion
+  isSalaryBenefitsQuestion
+    ? `CONNECTED SALARY AND BENEFITS SUMMARY:
+${JSON.stringify(salaryBenefitsSummary)}
+
+CONNECTED CURRENT SALARY AND BENEFITS:
+${JSON.stringify(salaryBenefitsContext)}
+
+CONNECTED SALARY INCREMENT HISTORY:
+${JSON.stringify(salaryIncrementContext)}`
+    : isDocumentExpiryQuestion
+    ? `CONNECTED DOCUMENT EXPIRY SUMMARY:
+${JSON.stringify(documentExpirySummary)}
+
+CONNECTED DOCUMENT EXPIRY RECORDS:
+${JSON.stringify(documentExpiryContext)}`
+    : isMaternityLeaveQuestion
     ? `CONNECTED MATERNITY LEAVE EMPLOYEE SUMMARY:
 ${JSON.stringify(maternityLeaveSummary)}
 
@@ -1542,7 +2177,11 @@ ${question}
 
     return NextResponse.json({
       answer,
-      module: isMaternityLeaveQuestion
+      module: isSalaryBenefitsQuestion
+        ? "salary_and_benefits"
+        : isDocumentExpiryQuestion
+        ? "document_expiry"
+        : isMaternityLeaveQuestion
         ? "maternity_leave_ledger"
         : isPaternityLeaveQuestion
         ? "paternity_leave_ledger"
