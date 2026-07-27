@@ -425,6 +425,47 @@ export async function POST(request: Request) {
         normalizedQuestion.includes(term)
       );
 
+    const employeeLoanTerms = [
+      "loan and deduction",
+      "loan & deduction",
+      "loan ledger",
+      "loan history",
+      "loan details",
+      "loan detail",
+      "loan balance",
+      "loan outstanding",
+      "outstanding loan",
+      "outstanding balance",
+      "remaining loan",
+      "remaining loan balance",
+      "employee loan",
+      "employees with loans",
+      "active loans",
+      "loan received",
+      "loan received history",
+      "loan transaction",
+      "loan transactions",
+      "loan repayment",
+      "loan repayments",
+      "loan installment",
+      "loan installments",
+      "installment deduction",
+      "installment deductions",
+      "amount paid",
+      "loan amount paid",
+      "deduction history",
+      "loan deduction history",
+      "current loan balance",
+      "who has a loan",
+      "who has loans",
+      "highest loan balance",
+    ];
+
+    const isEmployeeLoanQuestion =
+      employeeLoanTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
     const isAnnualLeaveQuestion =
       !isHolidayCreditQuestion &&
       !isPaternityLeaveQuestion &&
@@ -630,6 +671,183 @@ export async function POST(request: Request) {
       console.log(
         "HR AI HOLIDAY CREDIT QUERY:",
         Date.now() - holidayCreditQueryStart,
+        "ms"
+      );
+    }
+
+    let employeeLoanContext: Array<Record<string, unknown>> = [];
+    let employeeLoanSummary: Array<Record<string, unknown>> = [];
+
+    if (isEmployeeLoanQuestion) {
+      const employeeLoanQueryStart = Date.now();
+
+      const [
+        employeeLoanResult,
+        loanEmployeeResult,
+      ] = await Promise.all([
+        supabase
+          .from("employee_loan_ledger")
+          .select(
+            `
+              employee_id,
+              transaction_date,
+              detail,
+              entry_type,
+              loan_received,
+              amount_paid,
+              balance_after,
+              remarks,
+              created_at
+            `
+          )
+          .order("transaction_date", {
+            ascending: true,
+          })
+          .order("created_at", {
+            ascending: true,
+          }),
+        supabase
+          .from("employees")
+          .select(
+            `
+              id,
+              employee_code,
+              first_name,
+              middle_name,
+              last_name,
+              department,
+              position,
+              status
+            `
+          ),
+      ]);
+
+      if (employeeLoanResult.error) {
+        throw new Error(
+          employeeLoanResult.error.message
+        );
+      }
+
+      if (loanEmployeeResult.error) {
+        throw new Error(
+          loanEmployeeResult.error.message
+        );
+      }
+
+      const loanEmployeeLookup = new Map(
+        (loanEmployeeResult.data || []).map(
+          (employee: any) => [
+            String(employee.id),
+            employee,
+          ]
+        )
+      );
+
+      employeeLoanContext =
+        (employeeLoanResult.data || []).map(
+          (entry: any) => {
+            const employee =
+              loanEmployeeLookup.get(
+                String(entry.employee_id)
+              ) as any;
+
+            return {
+              employee_id:
+                employee?.employee_code || "-",
+              employee_name: [
+                employee?.first_name,
+                employee?.middle_name,
+                employee?.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim() || "-",
+              department:
+                employee?.department || "-",
+              position:
+                employee?.position || "-",
+              employee_status:
+                employee?.status || "-",
+              transaction_date:
+                entry.transaction_date || "-",
+              detail:
+                entry.detail || "-",
+              entry_type:
+                entry.entry_type || "-",
+              loan_received:
+                Number(entry.loan_received || 0),
+              amount_paid:
+                Number(entry.amount_paid || 0),
+              balance_after:
+                Number(entry.balance_after || 0),
+              remarks:
+                entry.remarks || "-",
+            };
+          }
+        );
+
+      const summaryMap = new Map<
+        string,
+        {
+          employee_id: string;
+          employee_name: string;
+          department: string;
+          position: string;
+          employee_status: string;
+          total_loan_received: number;
+          total_amount_paid: number;
+          current_balance: number;
+          transaction_count: number;
+          latest_transaction_date: string;
+        }
+      >();
+
+      for (const row of employeeLoanContext) {
+        const employeeId =
+          String(row.employee_id || "-");
+
+        const current =
+          summaryMap.get(employeeId) || {
+            employee_id: employeeId,
+            employee_name:
+              String(row.employee_name || "-"),
+            department:
+              String(row.department || "-"),
+            position:
+              String(row.position || "-"),
+            employee_status:
+              String(row.employee_status || "-"),
+            total_loan_received: 0,
+            total_amount_paid: 0,
+            current_balance: 0,
+            transaction_count: 0,
+            latest_transaction_date: "-",
+          };
+
+        current.total_loan_received +=
+          Number(row.loan_received || 0);
+
+        current.total_amount_paid +=
+          Number(row.amount_paid || 0);
+
+        current.current_balance =
+          Number(row.balance_after || 0);
+
+        current.transaction_count += 1;
+
+        current.latest_transaction_date =
+          String(row.transaction_date || "-");
+
+        summaryMap.set(employeeId, current);
+      }
+
+      employeeLoanSummary =
+        Array.from(summaryMap.values());
+
+      console.log(
+        "HR AI EMPLOYEE LOAN QUERY:",
+        Date.now() - employeeLoanQueryStart,
         "ms"
       );
     }
@@ -1817,6 +2035,7 @@ export async function POST(request: Request) {
       );
 
     if (
+      !isEmployeeLoanQuestion &&
       !isSalaryBenefitsQuestion &&
       !isDocumentExpiryQuestion &&
       !isMaternityLeaveQuestion &&
@@ -1840,6 +2059,7 @@ export async function POST(request: Request) {
     }
 
     if (
+      !isEmployeeLoanQuestion &&
       !isSalaryBenefitsQuestion &&
       !isDocumentExpiryQuestion &&
       !isMaternityLeaveQuestion &&
@@ -1859,8 +2079,144 @@ export async function POST(request: Request) {
       });
     }
 
+    const isExactLoanBalanceQuestion =
+      isEmployeeLoanQuestion &&
+      /\b(loan balance|current loan balance|outstanding loan|outstanding balance|remaining loan|remaining loan balance)\b/.test(
+        normalizedQuestion
+      );
+
+    if (isExactLoanBalanceQuestion) {
+      const requestedEmployeeCode =
+        normalizedQuestion.match(
+          /\bicde[-\s]?\d+\b/i
+        )?.[0]
+          ?.replace(/\s+/g, "-")
+          .toUpperCase();
+
+      const normalizedLoanQuestion =
+        normalizedQuestion
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      let matchingLoanEmployees =
+        employeeLoanSummary.filter((row) => {
+          const employeeCode =
+            String(row.employee_id || "")
+              .toUpperCase();
+
+          const employeeName =
+            String(row.employee_name || "")
+              .toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          if (requestedEmployeeCode) {
+            return employeeCode ===
+              requestedEmployeeCode;
+          }
+
+          if (!employeeName) {
+            return false;
+          }
+
+          const nameParts =
+            employeeName
+              .split(" ")
+              .filter(
+                (part) => part.length >= 3
+              );
+
+          return (
+            normalizedLoanQuestion.includes(
+              employeeName
+            ) ||
+            nameParts.some((part) =>
+              normalizedLoanQuestion.includes(
+                part
+              )
+            )
+          );
+        });
+
+      if (
+        matchingLoanEmployees.length === 0
+      ) {
+        return NextResponse.json({
+          answer:
+            "No matching loan ledger record was found.",
+          module: "employee_loan_ledger",
+        });
+      }
+
+      if (
+        requestedEmployeeCode ||
+        matchingLoanEmployees.length === 1
+      ) {
+        matchingLoanEmployees =
+          [matchingLoanEmployees[0]];
+      }
+
+      const rows =
+        matchingLoanEmployees.map((row) => {
+          const balance =
+            Number(row.current_balance || 0);
+
+          return `| ${String(
+            row.employee_id || "-"
+          )} | ${String(
+            row.employee_name || "-"
+          )} | ${String(
+            row.position || "-"
+          )} | AED ${balance.toLocaleString(
+            "en-AE",
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }
+          )} |`;
+        });
+
+      const answer = [
+        "| Employee ID | Employee Name | Designation | Current Balance |",
+        "|---|---|---|---:|",
+        ...rows,
+      ].join("\n");
+
+      return NextResponse.json({
+        answer,
+        module: "employee_loan_ledger",
+      });
+    }
+
     const moduleInstructions =
-      isSalaryBenefitsQuestion
+      isEmployeeLoanQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Employee Loan & Deduction Ledger data below.",
+            "- This connection is read-only. Never suggest that you added, edited, deleted, imported, deducted, paid or changed any loan ledger entry.",
+            "- Loan Received increases the outstanding balance.",
+            "- Installment Deduction reduces the outstanding balance.",
+            "- Use loan_received, amount_paid and balance_after exactly as stored.",
+            "- For the current outstanding loan balance, use current_balance from the connected employee summary.",
+            "- Do not independently recalculate or alter the stored balance_after value.",
+            "- Employees with active loans means employees whose current_balance is greater than zero.",
+            "- Fully repaid loans means current_balance is zero.",
+            "- Match employees by Employee ID, full name or partial employee name.",
+            "- Support filtering by department and position.",
+            "- Use position as Designation.",
+            "- Display monetary values in AED.",
+            "- Use entry_type exactly as stored, including LOAN_RECEIVED and INSTALLMENT_DEDUCTION.",
+            "- Do not expose internal database IDs, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If no matching Loan Ledger record exists, say no matching loan ledger record was found.",
+          ].join("\n")
+        : isSalaryBenefitsQuestion
         ? [
             "Rules:",
             "- Answer only from the connected Salary & Benefits and Salary Increment data below.",
@@ -2096,7 +2452,13 @@ ${
 }
 
 ${
-  isSalaryBenefitsQuestion
+  isEmployeeLoanQuestion
+    ? `CONNECTED EMPLOYEE LOAN SUMMARY:
+${JSON.stringify(employeeLoanSummary)}
+
+CONNECTED EMPLOYEE LOAN TRANSACTIONS:
+${JSON.stringify(employeeLoanContext)}`
+    : isSalaryBenefitsQuestion
     ? `CONNECTED SALARY AND BENEFITS SUMMARY:
 ${JSON.stringify(salaryBenefitsSummary)}
 
@@ -2177,7 +2539,9 @@ ${question}
 
     return NextResponse.json({
       answer,
-      module: isSalaryBenefitsQuestion
+      module: isEmployeeLoanQuestion
+        ? "employee_loan_ledger"
+        : isSalaryBenefitsQuestion
         ? "salary_and_benefits"
         : isDocumentExpiryQuestion
         ? "document_expiry"
