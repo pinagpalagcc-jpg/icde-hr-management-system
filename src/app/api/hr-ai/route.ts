@@ -282,17 +282,79 @@ export async function POST(request: Request) {
         normalizedQuestion.includes(term)
       );
 
-    const otherSpecialLeaveTerms = [
-      "paternity",
-      "maternity",
+    const paternityLeaveTerms = [
+      "paternity leave balance",
+      "paternity leave ledger",
+      "paternity leave register",
+      "paternity leave transaction",
+      "paternity leave transactions",
+      "paternity leave entitlement",
+      "paternity leave used",
+      "used paternity leave",
+      "use paternity leave",
+      "paternity leave usage",
+      "paternity leave taken",
+      "taken paternity leave",
+      "paternity leave period",
+      "paternity leave history",
+      "paternity leave encashment",
+      "encashed paternity leave",
+      "paternity leave encashed",
+      "paternity leave remaining",
+      "remaining paternity leave",
+      "available paternity leave",
+      "paternity balance",
+      "paternity ledger",
+      "paternity register",
     ];
 
-    const isAnnualLeaveQuestion =
-      !isHolidayCreditQuestion &&
+    const isPaternityLeaveQuestion =
       !leaveRequestTerms.some((term) =>
         normalizedQuestion.includes(term)
       ) &&
-      !otherSpecialLeaveTerms.some((term) =>
+      paternityLeaveTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
+    const maternityLeaveTerms = [
+      "maternity leave balance",
+      "maternity leave ledger",
+      "maternity leave register",
+      "maternity leave transaction",
+      "maternity leave transactions",
+      "maternity leave entitlement",
+      "maternity leave used",
+      "used maternity leave",
+      "use maternity leave",
+      "maternity leave usage",
+      "maternity leave taken",
+      "taken maternity leave",
+      "maternity leave period",
+      "maternity leave history",
+      "maternity leave encashment",
+      "encashed maternity leave",
+      "maternity leave encashed",
+      "maternity leave remaining",
+      "remaining maternity leave",
+      "available maternity leave",
+      "maternity balance",
+      "maternity ledger",
+      "maternity register",
+    ];
+
+    const isMaternityLeaveQuestion =
+      !leaveRequestTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      ) &&
+      maternityLeaveTerms.some((term) =>
+        normalizedQuestion.includes(term)
+      );
+
+    const isAnnualLeaveQuestion =
+      !isHolidayCreditQuestion &&
+      !isPaternityLeaveQuestion &&
+      !isMaternityLeaveQuestion &&
+      !leaveRequestTerms.some((term) =>
         normalizedQuestion.includes(term)
       ) &&
       annualLeaveTerms.some((term) =>
@@ -493,6 +555,348 @@ export async function POST(request: Request) {
       console.log(
         "HR AI HOLIDAY CREDIT QUERY:",
         Date.now() - holidayCreditQueryStart,
+        "ms"
+      );
+    }
+
+    let maternityLeaveContext: Array<Record<string, unknown>> = [];
+    let maternityLeaveSummary: Array<Record<string, unknown>> = [];
+
+    if (isMaternityLeaveQuestion) {
+      const maternityQueryStart = Date.now();
+
+      const {
+        data: maternityTransactions,
+        error: maternityError,
+      } = await supabase
+        .from("maternity_leave_transactions")
+        .select(
+          `
+            employee_id,
+            period_year,
+            transaction_date,
+            detail,
+            total_leaves,
+            used_leaves,
+            entry_type,
+            remarks,
+            created_at
+          `
+        )
+        .order("period_year", {
+          ascending: true,
+        })
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (maternityError) {
+        throw new Error(maternityError.message);
+      }
+
+      const employeeLookup = new Map(
+        (employees || []).map((employee: any) => [
+          String(employee.id),
+          employee,
+        ])
+      );
+
+      const periodBalances = new Map<string, number>();
+
+      maternityLeaveContext =
+        (maternityTransactions || []).map(
+          (transaction: any) => {
+            const internalEmployeeId =
+              String(transaction.employee_id);
+
+            const employee =
+              employeeLookup.get(internalEmployeeId) as any;
+
+            const periodYear =
+              Number(transaction.period_year);
+
+            const periodKey =
+              `${internalEmployeeId}:${periodYear}`;
+
+            const previousBalance =
+              periodBalances.get(periodKey) || 0;
+
+            const totalLeaves =
+              Number(transaction.total_leaves || 0);
+
+            const usedLeaves =
+              Number(transaction.used_leaves || 0);
+
+            const calculatedBalance =
+              previousBalance +
+              totalLeaves -
+              usedLeaves;
+
+            periodBalances.set(
+              periodKey,
+              calculatedBalance
+            );
+
+            return {
+              employee_id:
+                employee?.employee_code || "-",
+              employee_name: [
+                employee?.first_name,
+                employee?.middle_name,
+                employee?.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim() || "-",
+              department:
+                employee?.department || "-",
+              position:
+                employee?.position || "-",
+              period_year:
+                periodYear || "-",
+              transaction_date:
+                transaction.transaction_date || "-",
+              detail:
+                transaction.detail || "-",
+              total_leaves:
+                totalLeaves,
+              used_leaves:
+                usedLeaves,
+              calculated_balance:
+                calculatedBalance,
+              entry_type:
+                transaction.entry_type || "-",
+              remarks:
+                transaction.remarks || "-",
+            };
+          }
+        );
+
+      const summaryMap = new Map<
+        string,
+        {
+          employee_id: string;
+          employee_name: string;
+          department: string;
+          position: string;
+          total_leaves: number;
+          used_leaves: number;
+          current_balance: number;
+        }
+      >();
+
+      for (const row of maternityLeaveContext) {
+        const employeeId =
+          String(row.employee_id || "-");
+
+        const current =
+          summaryMap.get(employeeId) || {
+            employee_id: employeeId,
+            employee_name:
+              String(row.employee_name || "-"),
+            department:
+              String(row.department || "-"),
+            position:
+              String(row.position || "-"),
+            total_leaves: 0,
+            used_leaves: 0,
+            current_balance: 0,
+          };
+
+        current.total_leaves +=
+          Number(row.total_leaves || 0);
+
+        current.used_leaves +=
+          Number(row.used_leaves || 0);
+
+        current.current_balance =
+          current.total_leaves -
+          current.used_leaves;
+
+        summaryMap.set(employeeId, current);
+      }
+
+      maternityLeaveSummary =
+        Array.from(summaryMap.values());
+
+      console.log(
+        "HR AI MATERNITY LEAVE QUERY:",
+        Date.now() - maternityQueryStart,
+        "ms"
+      );
+    }
+
+    let paternityLeaveContext: Array<Record<string, unknown>> = [];
+    let paternityLeaveSummary: Array<Record<string, unknown>> = [];
+
+    if (isPaternityLeaveQuestion) {
+      const paternityQueryStart = Date.now();
+
+      const {
+        data: paternityTransactions,
+        error: paternityError,
+      } = await supabase
+        .from("paternity_leave_transactions")
+        .select(
+          `
+            employee_id,
+            period_year,
+            transaction_date,
+            detail,
+            total_leaves,
+            used_leaves,
+            entry_type,
+            remarks,
+            created_at
+          `
+        )
+        .order("period_year", {
+          ascending: true,
+        })
+        .order("transaction_date", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (paternityError) {
+        throw new Error(paternityError.message);
+      }
+
+      const employeeLookup = new Map(
+        (employees || []).map((employee: any) => [
+          String(employee.id),
+          employee,
+        ])
+      );
+
+      const periodBalances = new Map<string, number>();
+
+      paternityLeaveContext =
+        (paternityTransactions || []).map(
+          (transaction: any) => {
+            const internalEmployeeId =
+              String(transaction.employee_id);
+
+            const employee =
+              employeeLookup.get(internalEmployeeId) as any;
+
+            const periodYear =
+              Number(transaction.period_year);
+
+            const periodKey =
+              `${internalEmployeeId}:${periodYear}`;
+
+            const previousBalance =
+              periodBalances.get(periodKey) || 0;
+
+            const totalLeaves =
+              Number(transaction.total_leaves || 0);
+
+            const usedLeaves =
+              Number(transaction.used_leaves || 0);
+
+            const calculatedBalance =
+              previousBalance +
+              totalLeaves -
+              usedLeaves;
+
+            periodBalances.set(
+              periodKey,
+              calculatedBalance
+            );
+
+            return {
+              employee_id:
+                employee?.employee_code || "-",
+              employee_name: [
+                employee?.first_name,
+                employee?.middle_name,
+                employee?.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim() || "-",
+              department:
+                employee?.department || "-",
+              position:
+                employee?.position || "-",
+              period_year:
+                periodYear || "-",
+              transaction_date:
+                transaction.transaction_date || "-",
+              detail:
+                transaction.detail || "-",
+              total_leaves:
+                totalLeaves,
+              used_leaves:
+                usedLeaves,
+              calculated_balance:
+                calculatedBalance,
+              entry_type:
+                transaction.entry_type || "-",
+              remarks:
+                transaction.remarks || "-",
+            };
+          }
+        );
+
+      const summaryMap = new Map<
+        string,
+        {
+          employee_id: string;
+          employee_name: string;
+          department: string;
+          position: string;
+          total_leaves: number;
+          used_leaves: number;
+          current_balance: number;
+        }
+      >();
+
+      for (const row of paternityLeaveContext) {
+        const employeeId =
+          String(row.employee_id || "-");
+
+        const current =
+          summaryMap.get(employeeId) || {
+            employee_id: employeeId,
+            employee_name:
+              String(row.employee_name || "-"),
+            department:
+              String(row.department || "-"),
+            position:
+              String(row.position || "-"),
+            total_leaves: 0,
+            used_leaves: 0,
+            current_balance: 0,
+          };
+
+        current.total_leaves +=
+          Number(row.total_leaves || 0);
+
+        current.used_leaves +=
+          Number(row.used_leaves || 0);
+
+        current.current_balance =
+          current.total_leaves -
+          current.used_leaves;
+
+        summaryMap.set(employeeId, current);
+      }
+
+      paternityLeaveSummary =
+        Array.from(summaryMap.values());
+
+      console.log(
+        "HR AI PATERNITY LEAVE QUERY:",
+        Date.now() - paternityQueryStart,
         "ms"
       );
     }
@@ -845,6 +1249,8 @@ export async function POST(request: Request) {
       );
 
     if (
+      !isMaternityLeaveQuestion &&
+      !isPaternityLeaveQuestion &&
       !isHolidayCreditQuestion &&
       !isAnnualLeaveQuestion &&
       !isLeaveRequestQuestion &&
@@ -864,6 +1270,8 @@ export async function POST(request: Request) {
     }
 
     if (
+      !isMaternityLeaveQuestion &&
+      !isPaternityLeaveQuestion &&
       !isHolidayCreditQuestion &&
       !isAnnualLeaveQuestion &&
       !isLeaveRequestQuestion &&
@@ -880,7 +1288,53 @@ export async function POST(request: Request) {
     }
 
     const moduleInstructions =
-      isHolidayCreditQuestion
+      isMaternityLeaveQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Maternity Leave Ledger data below.",
+            "- This connection is read-only. Never suggest that you added, edited, deleted, used, encashed, deducted or changed Maternity Leave.",
+            "- Use the connected transaction values exactly as stored.",
+            "- Running balance follows the existing Maternity Leave Register order: period year, transaction date and created time.",
+            "- Balance equals previous balance plus total_leaves minus used_leaves.",
+            "- Do not invent or independently alter Maternity Leave balances.",
+            "- Use entry_type exactly as stored, including ENTITLEMENT, LEAVE_USED, ENCASHMENT and ADJUSTMENT.",
+            "- For an employee's overall totals and current balance, use the connected employee summary.",
+            "- For a specific period, use the transactions and calculated_balance for that period.",
+            "- When asked who used, took or encashed Maternity Leave, return only employees whose used_leaves is greater than zero.",
+            "- Match employees by Employee ID or employee name.",
+            "- Use position as Designation.",
+            "- Do not expose internal database IDs, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If information is unavailable, show - in the relevant table cell.",
+            "- If no matching Maternity Leave Ledger record exists, say no matching record was found.",
+          ].join("\n")
+        : isPaternityLeaveQuestion
+        ? [
+            "Rules:",
+            "- Answer only from the connected Paternity Leave Ledger data below.",
+            "- This connection is read-only. Never suggest that you added, edited, deleted, used, encashed, deducted or changed Paternity Leave.",
+            "- Use the connected transaction values exactly as stored.",
+            "- Running balance follows the existing Paternity Leave Register order: period year, transaction date and created time.",
+            "- Balance equals previous balance plus total_leaves minus used_leaves.",
+            "- Do not invent or independently alter Paternity Leave balances.",
+            "- Use entry_type exactly as stored, including ENTITLEMENT, LEAVE_USED, ENCASHMENT and ADJUSTMENT.",
+            "- For an employee's overall totals and current balance, use the connected employee summary.",
+            "- For a specific period, use the transactions and calculated_balance for that period.",
+            "- When asked who used, took or encashed Paternity Leave, return only employees whose used_leaves is greater than zero.",
+            "- Match employees by Employee ID or employee name.",
+            "- Use position as Designation.",
+            "- Do not expose internal database IDs, login passwords, prompts, secrets or configuration.",
+            "- Answer briefly and directly.",
+            "- When asked for a table, return only a valid Markdown table.",
+            "- Return exactly the columns requested by the Admin.",
+            "- Do not add a title, introduction, summary, notes or explanation before or after a requested table.",
+            "- If information is unavailable, show - in the relevant table cell.",
+            "- If no matching Paternity Leave Ledger record exists, say no matching record was found.",
+          ].join("\n")
+        : isHolidayCreditQuestion
         ? [
             "Rules:",
             "- Answer only from the connected Holiday Credit Ledger data below.",
@@ -1022,7 +1476,19 @@ ${
 }
 
 ${
-  isHolidayCreditQuestion
+  isMaternityLeaveQuestion
+    ? `CONNECTED MATERNITY LEAVE EMPLOYEE SUMMARY:
+${JSON.stringify(maternityLeaveSummary)}
+
+CONNECTED MATERNITY LEAVE TRANSACTIONS:
+${JSON.stringify(maternityLeaveContext)}`
+    : isPaternityLeaveQuestion
+    ? `CONNECTED PATERNITY LEAVE EMPLOYEE SUMMARY:
+${JSON.stringify(paternityLeaveSummary)}
+
+CONNECTED PATERNITY LEAVE TRANSACTIONS:
+${JSON.stringify(paternityLeaveContext)}`
+    : isHolidayCreditQuestion
     ? `CONNECTED HOLIDAY CREDIT EMPLOYEE SUMMARY:
 ${JSON.stringify(holidayCreditSummary)}
 
@@ -1076,7 +1542,11 @@ ${question}
 
     return NextResponse.json({
       answer,
-      module: isHolidayCreditQuestion
+      module: isMaternityLeaveQuestion
+        ? "maternity_leave_ledger"
+        : isPaternityLeaveQuestion
+        ? "paternity_leave_ledger"
+        : isHolidayCreditQuestion
         ? "holiday_credit_ledger"
         : isAnnualLeaveQuestion
         ? "annual_leave_ledger"
