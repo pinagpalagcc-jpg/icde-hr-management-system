@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+import { formatDate } from "@/lib/date";
+
 export default function LeaveRequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -650,11 +652,11 @@ function LeaveTable({
                   </td>
 
                   <td className="p-3">
-                    {leave.start_date}
+                    {formatDate(leave.start_date)}
                   </td>
 
                   <td className="p-3">
-                    {leave.end_date}
+                    {formatDate(leave.end_date)}
                   </td>
 
                   <td className="p-3">
