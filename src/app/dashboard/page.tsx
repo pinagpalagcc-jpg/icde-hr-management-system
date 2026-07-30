@@ -7,18 +7,32 @@ import DocumentExpiryAccordion from "@/components/DocumentExpiryAccordion";
 
 export default async function DashboardPage() {
   const employees = await getEmployees();
-  const activeLeaveIds = await getActiveLeaveEmployeeIds();
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: activeLeaves } = await supabase
+    .from("leave_requests")
+    .select("employee_id")
+    .eq("status", "Approved")
+    .lte("start_date", today)
+    .gte("end_date", today);
 
   const { data: leaves } = await supabase
     .from("leave_requests")
     .select("*")
     .eq("status", "Pending");
 
-  const onLeaveIds = new Set(activeLeaveIds);
+  const onLeaveIds = new Set(
+    (activeLeaves || []).map((leave: any) => leave.employee_id)
+  );
 
   const total = employees.length;
-  const inactive = employees.filter((e: any) => onLeaveIds.has(e.id)).length;
-  const active = total - inactive;
+  const inactive = employees.filter(
+    (e: any) => onLeaveIds.has(e.id)
+  ).length;
+  const active = employees.filter(
+    (e: any) => !onLeaveIds.has(e.id)
+  ).length;
 
   const deptCounts = departments.map((d) => [d, employees.filter((e) => e.department === d).length]);
 
@@ -105,7 +119,7 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-3 gap-3">
             <Kpi title="Total Employees" value={total} href="/employees?view=all" />
             <Kpi title="Available Employees" value={active} href="/employees?status=Available" />
-            <Kpi title="Employees On Leave" value={inactive} href="/employees?status=On%20Leave" />
+            <Kpi title="Employees On Leave" value={inactive} href="/employees-on-leave" />
           </div>
         </div>
 
@@ -120,7 +134,7 @@ export default async function DashboardPage() {
 
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Kpi title="Pending Leave Requests" value={(leaves || []).length} href="/leave-requests" />
-          <Kpi title="Employees On Leave" value={inactive} href="/employees?status=On%20Leave" />
+          <Kpi title="Employees On Leave" value={inactive} href="/employees-on-leave" />
           <Kpi title="Documents Expiring" value={alerts.length} href="/document-expiry" />
           <Kpi title="Annual Tickets Due" value={employees.filter((e: any) => daysRemaining(e.annual_ticket_due) !== null && daysRemaining(e.annual_ticket_due)! >= 0 && daysRemaining(e.annual_ticket_due)! <= 90).length} href="/document-expiry?type=annual-ticket" />
         </section>
