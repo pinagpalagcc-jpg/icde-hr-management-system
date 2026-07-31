@@ -27,6 +27,9 @@ type Employee = {
   paternity_leave_balance?: number | string;
   maternity_leave_used?: number | string;
   maternity_leave_balance?: number | string;
+  sick_leave_total?: number | string;
+  sick_leave_used?: number | string;
+  sick_leave_balance?: number | string;
 };
 
 type LeaveRequest = {
@@ -100,12 +103,12 @@ export default function LeaveLedgerPage({
         balance: Number((employee as any)?.sick_leave_balance ?? 0),
       }
     : {
-        title: "Annual Leave Ledger",
-        subtitle: "Approved Annual, Emergency and Encash Leave records",
-        leaveTypes: ANNUAL_GROUP_TYPES,
-        entitlement: Number(employee?.total_leaves ?? 0),
-        used: Number(employee?.leaves_used ?? 0),
-        balance: Number(employee?.balance_leaves ?? 0),
+        title: "Sick Leave Ledger",
+        subtitle: "Approved Sick Leave records",
+        leaveTypes: ["Sick Leave"],
+        entitlement: Number(employee?.sick_leave_total ?? 0),
+        used: Number(employee?.sick_leave_used ?? 0),
+        balance: Number(employee?.sick_leave_balance ?? 0),
       };
   useEffect(() => {
     let active = true;
@@ -129,14 +132,7 @@ export default function LeaveLedgerPage({
         );
         setEmployeeId(id);
 
-        const selectedLeaveTypes =
-          currentLedgerType === "paternity"
-            ? ["Paternity Leave"]
-            : currentLedgerType === "maternity"
-            ? ["Maternity Leave"]
-            : currentLedgerType === "sick"
-            ? ["Sick Leave"]
-            : ANNUAL_GROUP_TYPES;
+        const selectedLeaveTypes = ["Sick Leave"];
 
         const [employeeRes, leaveRes] =
           await Promise.all([
@@ -203,7 +199,7 @@ export default function LeaveLedgerPage({
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : "Unable to load Annual Leave Ledger."
+            : "Unable to load Sick Leave Ledger."
         );
       } finally {
         if (active) {
@@ -479,7 +475,7 @@ const currentBalance = Math.max(
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <p className="text-[#3f4447] font-semibold">
-              Loading Annual Leave Ledger...
+              Loading Sick Leave Ledger...
             </p>
           </div>
         </div>
@@ -540,7 +536,7 @@ const currentBalance = Math.max(
         {ledgerType === "annual" ? (
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <LeaveTypeSummary
-              title="Annual Leave Used"
+              title="Sick Leave Used"
               value={`${annualLeaveUsed} Days`}
             />
 
@@ -550,7 +546,7 @@ const currentBalance = Math.max(
             />
 
             <LeaveTypeSummary
-              title="Emergency Leave Used"
+              title="0"
               value={`${emergencyLeaveUsed} Days`}
             />
           </section>

@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 const ANNUAL_GROUP_TYPES = [
   "Annual Leave",
+  "Sick Leave",
   "Emergency Leave",
   "Encash Leave",
 ];
 
 type Employee = {
-  paternity_leave_total?: number | null;
-  maternity_leave_total?: number | null;
   id?: string;
   employee_id?: string;
   first_name?: string;
@@ -64,49 +63,34 @@ export default function LeaveLedgerPage({
   const [appliedToDate, setAppliedToDate] = useState("");
   const [appliedLeaveType, setAppliedLeaveType] = useState("All");
 
-  const [editingRequest, setEditingRequest] =
-    useState<LeaveRequest | null>(null);
-
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [deletingRequestId, setDeletingRequestId] =
-    useState<string | null>(null);
-
   const ledgerConfig =
-  ledgerType === "paternity"
-    ? {
-        title: "Paternity Leave Ledger",
-        subtitle: "Approved Paternity Leave records",
-        leaveTypes: ["Paternity Leave"],
-        entitlement: Number(employee?.paternity_leave_total ?? 0),
-        used: Number(employee?.paternity_leave_used ?? 0),
-        balance: Number(employee?.paternity_leave_balance ?? 0),
-      }
-    : ledgerType === "maternity"
-    ? {
-        title: "Maternity Leave Ledger",
-        subtitle: "Approved Maternity Leave records",
-        leaveTypes: ["Maternity Leave"],
-        entitlement: Number(employee?.maternity_leave_total ?? 0),
-        used: Number(employee?.maternity_leave_used ?? 0),
-        balance: Number(employee?.maternity_leave_balance ?? 0),
-      }
-    : ledgerType === "sick"
-    ? {
-        title: "Sick Leave Ledger",
-        subtitle: "Approved Sick Leave records",
-        leaveTypes: ["Sick Leave"],
-        entitlement: Number((employee as any)?.sick_leave_total ?? 0),
-        used: Number((employee as any)?.sick_leave_used ?? 0),
-        balance: Number((employee as any)?.sick_leave_balance ?? 0),
-      }
-    : {
-        title: "Annual Leave Ledger",
-        subtitle: "Approved Annual, Emergency and Encash Leave records",
-        leaveTypes: ANNUAL_GROUP_TYPES,
-        entitlement: Number(employee?.total_leaves ?? 0),
-        used: Number(employee?.leaves_used ?? 0),
-        balance: Number(employee?.balance_leaves ?? 0),
-      };
+    ledgerType === "paternity"
+      ? {
+          title: "Paternity Leave Ledger",
+          subtitle: "Approved Paternity Leave records",
+          leaveTypes: ["Paternity Leave"],
+          entitlement: 0,
+          used: Number(employee?.paternity_leave_used ?? 0),
+          balance: Number(employee?.paternity_leave_balance ?? 0),
+        }
+      : ledgerType === "maternity"
+      ? {
+          title: "Maternity Leave Ledger",
+          subtitle: "Approved Maternity Leave records",
+          leaveTypes: ["Maternity Leave"],
+          entitlement: 0,
+          used: Number(employee?.maternity_leave_used ?? 0),
+          balance: Number(employee?.maternity_leave_balance ?? 0),
+        }
+      : {
+          title: "Annual Leave Ledger",
+          subtitle: "Approved Annual, Sick and Emergency Leave records",
+          leaveTypes: ANNUAL_GROUP_TYPES,
+          entitlement: Number(employee?.total_leaves ?? 0),
+          used: Number(employee?.leaves_used ?? 0),
+          balance: Number(employee?.balance_leaves ?? 0),
+        };
+
   useEffect(() => {
     let active = true;
 
@@ -123,10 +107,7 @@ export default function LeaveLedgerPage({
           new URLSearchParams(window.location.search).get("type") || "annual";
 
         setLedgerType(currentLedgerType);
-        setIsStaffView(
-          new URLSearchParams(window.location.search).get("portal") ===
-            "staff"
-        );
+        setIsStaffView(true);
         setEmployeeId(id);
 
         const selectedLeaveTypes =
@@ -134,19 +115,16 @@ export default function LeaveLedgerPage({
             ? ["Paternity Leave"]
             : currentLedgerType === "maternity"
             ? ["Maternity Leave"]
-            : currentLedgerType === "sick"
-            ? ["Sick Leave"]
             : ANNUAL_GROUP_TYPES;
 
-        const [employeeRes, leaveRes] =
-          await Promise.all([
-            fetch(`/api/employees/${id}`, {
-              cache: "no-store",
-            }),
-            fetch("/api/leave-requests", {
-              cache: "no-store",
-            }),
-          ]);
+        const [employeeRes, leaveRes] = await Promise.all([
+          fetch(`/api/employees/${id}`, {
+            cache: "no-store",
+          }),
+          fetch("/api/leave-requests", {
+            cache: "no-store",
+          }),
+        ]);
 
         if (!employeeRes.ok) {
           throw new Error("Unable to load employee information.");
@@ -163,23 +141,15 @@ export default function LeaveLedgerPage({
 
         setEmployee(employeeData);
 
-        const approvedRequests: LeaveRequest[] =
-          Array.isArray(leaveData)
-            ? leaveData.filter(
-                (request: LeaveRequest) => {
-                  return (
-                    String(request.employee_id) ===
-                      String(id) &&
-                    String(
-                      request.status
-                    ).toLowerCase() === "approved" &&
-                    selectedLeaveTypes.includes(
-                      String(request.leave_type)
-                    )
-                  );
-                }
-              )
-            : [];
+        const approvedRequests = Array.isArray(leaveData)
+          ? leaveData.filter((request: LeaveRequest) => {
+              return (
+                String(request.employee_id) === String(id) &&
+                String(request.status).toLowerCase() === "approved" &&
+                selectedLeaveTypes.includes(String(request.leave_type))
+              );
+            })
+          : [];
 
         approvedRequests.sort((a: LeaveRequest, b: LeaveRequest) => {
           const dateA = new Date(
@@ -248,20 +218,16 @@ export default function LeaveLedgerPage({
 
   const totalEntitlement = ledgerConfig.entitlement;
 
-  const totalUsed = requests
-  .filter((request) =>
-    ledgerConfig.leaveTypes.includes(String(request.leave_type))
-  )
-  .reduce(
+  const totalUsed = requests.reduce(
     (total, request) =>
       total + Number(request.total_days || 0),
     0
   );
 
-const currentBalance = Math.max(
-  totalEntitlement - totalUsed,
-  0
-);
+  const currentBalance = Math.max(
+    totalEntitlement - totalUsed,
+    0
+  );
 
   const filteredUsedDays = filteredRequests.reduce(
     (total, request) =>
@@ -343,136 +309,6 @@ const currentBalance = Math.max(
     setAppliedLeaveType("All");
   };
 
-  const updateEditingRequest = (
-    field: keyof LeaveRequest,
-    value: string
-  ) => {
-    setEditingRequest((current) =>
-      current
-        ? {
-            ...current,
-            [field]: value,
-          }
-        : current
-    );
-  };
-
-  const deleteApprovedLeave = async (
-    request: LeaveRequest
-  ) => {
-    const confirmed = window.confirm(
-      `Delete this approved ${request.leave_type || "leave"} record?\n\nThis will also remove it from the employee's Staff Portal and recalculate all leave totals.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setDeletingRequestId(request.id);
-
-      const response = await fetch(
-        `/api/leave-requests/${request.id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ||
-            "Unable to delete approved leave."
-        );
-      }
-
-      alert(
-        "Approved leave deleted successfully. Leave totals have been recalculated."
-      );
-
-      window.location.reload();
-    } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete approved leave."
-      );
-    } finally {
-      setDeletingRequestId(null);
-    }
-  };
-
-  const saveApprovedEdit = async () => {
-    if (!editingRequest?.id) return;
-
-    const days = Number(
-      editingRequest.total_days || 0
-    );
-
-    if (
-      !editingRequest.start_date ||
-      !editingRequest.end_date
-    ) {
-      alert("From Date and To Date are required.");
-      return;
-    }
-
-    if (days <= 0) {
-      alert("Days Used must be greater than zero.");
-      return;
-    }
-
-    try {
-      setSavingEdit(true);
-
-      const response = await fetch(
-        `/api/leave-requests/${editingRequest.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            leave_type:
-              editingRequest.leave_type,
-            start_date:
-              editingRequest.start_date,
-            end_date:
-              editingRequest.end_date,
-            total_days: days,
-            annual_period_year:
-              editingRequest.annual_period_year,
-            reason:
-              editingRequest.reason || "",
-            status: "Approved",
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ||
-            "Unable to update approved leave."
-        );
-      }
-
-      alert(
-        "Approved leave updated successfully."
-      );
-
-      window.location.reload();
-    } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Unable to update approved leave."
-      );
-    } finally {
-      setSavingEdit(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f4ec] p-8">
@@ -491,14 +327,10 @@ const currentBalance = Math.max(
     <div className="min-h-screen bg-[#f7f4ec] p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <a
-          href={
-            isStaffView
-              ? `/staff/profile/${employeeId}`
-              : `/employees/${employeeId}`
-          }
+          href={`/staff/profile/${employeeId}`}
           className="inline-flex items-center text-[#b59628] font-bold hover:underline"
         >
-          ← Back to Profile
+          ← Back to My Profile
         </a>
 
         <div className="mt-6 mb-8">
@@ -630,195 +462,7 @@ const currentBalance = Math.max(
           </div>
         </section>
 
-                {!isStaffView &&
-        ledgerType === "annual" &&
-        editingRequest ? (
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-              <div>
-                <h2 className="text-xl font-bold text-[#3f4447]">
-                  Edit Approved Leave
-                </h2>
-
-                <p className="text-sm text-gray-500 mt-1">
-                  Updating this record will automatically update the linked leave register and totals.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingRequest(null)
-                }
-                className="px-5 py-3 rounded-xl bg-gray-200 text-[#3f4447] font-bold"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  Leave Type
-                </label>
-
-                <select
-                  value={
-                    editingRequest.leave_type || ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "leave_type",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3 bg-white"
-                >
-                  <option value="Annual Leave">
-                    Annual Leave
-                  </option>
-
-                  <option value="Sick Leave">
-                    Sick Leave
-                  </option>
-
-                  <option value="Emergency Leave">
-                    Emergency Leave
-                  </option>
-
-                  <option value="Encash Leave">
-                    Encash Leave
-                  </option>
-
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  From Date
-                </label>
-
-                <input
-                  type="date"
-                  value={
-                    editingRequest.start_date?.slice(
-                      0,
-                      10
-                    ) || ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "start_date",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  To Date
-                </label>
-
-                <input
-                  type="date"
-                  value={
-                    editingRequest.end_date?.slice(
-                      0,
-                      10
-                    ) || ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "end_date",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  Days Used
-                </label>
-
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  value={
-                    editingRequest.total_days || ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "total_days",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  Leave Period
-                </label>
-
-                <input
-                  type="number"
-                  value={
-                    editingRequest.annual_period_year ||
-                    ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "annual_period_year",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-600">
-                  Reason
-                </label>
-
-                <input
-                  type="text"
-                  value={
-                    editingRequest.reason || ""
-                  }
-                  onChange={(event) =>
-                    updateEditingRequest(
-                      "reason",
-                      event.target.value
-                    )
-                  }
-                  className="mt-2 w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-5">
-              <button
-                type="button"
-                onClick={saveApprovedEdit}
-                disabled={savingEdit}
-                className="px-6 py-3 rounded-xl bg-[#3f4447] text-white font-bold disabled:opacity-50"
-              >
-                {savingEdit
-                  ? "Saving..."
-                  : "Save Changes"}
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-<section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
             <div>
               <h2 className="text-xl font-bold text-[#3f4447]">
@@ -837,7 +481,7 @@ const currentBalance = Math.max(
           </div>
 
           <div className="overflow-x-auto border border-gray-200 rounded-xl">
-            <table className="min-w-[1200px] w-full text-sm">
+            <table className="min-w-[1100px] w-full text-sm">
               <thead>
                 <tr className="bg-[#d2b241] text-white">
                   <th className="p-3 text-left">
@@ -871,13 +515,6 @@ const currentBalance = Math.max(
                   <th className="p-3 text-left">
                     Status
                   </th>
-
-                  {!isStaffView &&
-                  ledgerType === "annual" ? (
-                    <th className="p-3 text-center">
-                      Action
-                    </th>
-                  ) : null}
                 </tr>
               </thead>
 
@@ -885,12 +522,7 @@ const currentBalance = Math.max(
                 {filteredRequests.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={
-                        !isStaffView &&
-                        ledgerType === "annual"
-                          ? 9
-                          : 8
-                      }
+                      colSpan={8}
                       className="p-8 text-center text-gray-500"
                     >
                       No approved leave records found for the selected filters.
@@ -932,7 +564,7 @@ const currentBalance = Math.max(
                         )}
                       </td>
 
-                      <td className="p-3 text-center font-semibold text-[#3f4447]">
+                      <td className="p-3 text-center font-semibold">
                         {request.annual_period_year || "-"}
                       </td>
 
@@ -947,59 +579,6 @@ const currentBalance = Math.max(
                           {request.status || "Approved"}
                         </span>
                       </td>
-
-                      {!isStaffView &&
-                      ledgerType === "annual" ? (
-                        <td className="p-3 text-center">
-                          <div className="flex items-center justify-center gap-4">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingRequest({
-                                  ...request,
-                                  start_date:
-                                    request.start_date?.slice(
-                                      0,
-                                      10
-                                    ) || "",
-                                  end_date:
-                                    request.end_date?.slice(
-                                      0,
-                                      10
-                                    ) || "",
-                                });
-
-                                window.scrollTo({
-                                  top: 450,
-                                  behavior: "smooth",
-                                });
-                              }}
-                              className="text-blue-700 font-bold hover:underline"
-                            >
-                              Edit
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteApprovedLeave(
-                                  request
-                                )
-                              }
-                              disabled={
-                                deletingRequestId ===
-                                request.id
-                              }
-                              className="text-red-700 font-bold hover:underline disabled:opacity-50"
-                            >
-                              {deletingRequestId ===
-                              request.id
-                                ? "Deleting..."
-                                : "Delete"}
-                            </button>
-                          </div>
-                        </td>
-                      ) : null}
                     </tr>
                   ))
                 )}

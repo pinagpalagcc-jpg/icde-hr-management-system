@@ -167,6 +167,11 @@ export async function GET(
         );
 
       if (conversationsError) {
+        console.error(
+          "INTERNAL_CHAT_CONVERSATIONS_ERROR:",
+          conversationsError
+        );
+
         throw new Error(
           conversationsError.message
         );

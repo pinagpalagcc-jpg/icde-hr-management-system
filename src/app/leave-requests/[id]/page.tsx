@@ -106,7 +106,11 @@ export default function LeaveRequestEditorPage({
             cache: "no-store",
           }),
           fetch(
-            `/api/annual-leave-transactions?employee_id=${encodeURIComponent(
+            `/${
+              leaveData.leave_type === "Sick Leave"
+                ? "api/sick-leave-transactions"
+                : "api/annual-leave-transactions"
+            }?employee_id=${encodeURIComponent(
               leaveData.employee_id
             )}`,
             { cache: "no-store" }

@@ -55,6 +55,7 @@ export default function StaffProfilePage({
 
     const annualGroupTypes = [
       "Annual Leave",
+      "Sick Leave",
       "Emergency Leave",
   "Encash Leave",
     ];
@@ -338,34 +339,7 @@ export default function StaffProfilePage({
         .trim()
         .toLowerCase() === "male" && (
       <div className="rounded-2xl border border-gray-100 p-5">
-        <div className="rounded-2xl border border-gray-100 p-5">
         <h3 className="text-lg font-bold text-[#3f4447] mb-4">
-          Sick Leave
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MiniKpi
-            title="Total"
-            value={`${employee.sick_leave_total ?? 0} Days`}
-            onClick={() =>
-              window.location.href = `/staff/profile/${id}/sick-leave-register`
-            }
-          />
-          <MiniKpi
-            title="Used"
-            value={`${employee.sick_leave_used ?? 0} Days`}
-            onClick={() =>
-              window.location.href = `/staff/profile/${id}/sick-leave-ledger`
-            }
-          />
-          <MiniKpi
-            title="Balance"
-            value={`${employee.sick_leave_balance ?? 0} Days`}
-          />
-        </div>
-      </div>
-
-      <h3 className="text-lg font-bold text-[#3f4447] mb-4">
           Paternity Leave
         </h3>
 

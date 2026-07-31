@@ -423,38 +423,9 @@ async function updateLeaveRequest(req: Request, id: string) {
       }
     }
     if (
-  isNewApproval &&
-  leaveType === "Sick Leave"
-) {
-  const newUsed =
-    numberValue(employee?.sick_leave_used) +
-    totalDays;
-
-  const newBalance =
-    numberValue(employee?.sick_leave_balance ?? 0) -
-    totalDays;
-
-  if (newBalance < 0) {
-    return NextResponse.json(
-      { error: "Sick Leave balance is insufficient." },
-      { status: 400 }
-    );
-  }
-
-  const { error } = await supabase
-    .from("employees")
-    .update({
-      sick_leave_used: newUsed,
-      sick_leave_balance: newBalance,
-    })
-    .eq("id", employeeId);
-
-  if (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
-  }
+      isNewApproval &&
+      leaveType === "Sick Leave"
+   ) {
 
 }
     if (

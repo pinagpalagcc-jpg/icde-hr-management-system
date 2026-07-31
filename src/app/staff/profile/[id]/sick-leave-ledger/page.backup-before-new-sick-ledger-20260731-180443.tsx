@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const ANNUAL_GROUP_TYPES = [
-  "Annual Leave",
-  "Emergency Leave",
-  "Encash Leave",
+const SICK_GROUP_TYPES = [
+  "Sick Leave",
 ];
 
 type Employee = {
@@ -23,6 +21,9 @@ type Employee = {
   total_leaves?: number | string;
   leaves_used?: number | string;
   balance_leaves?: number | string;
+  sick_leave_total?: number | string;
+  sick_leave_used?: number | string;
+  sick_leave_balance?: number | string;
   paternity_leave_used?: number | string;
   paternity_leave_balance?: number | string;
   maternity_leave_used?: number | string;
@@ -72,41 +73,33 @@ export default function LeaveLedgerPage({
     useState<string | null>(null);
 
   const ledgerConfig =
-  ledgerType === "paternity"
-    ? {
-        title: "Paternity Leave Ledger",
-        subtitle: "Approved Paternity Leave records",
-        leaveTypes: ["Paternity Leave"],
-        entitlement: Number(employee?.paternity_leave_total ?? 0),
-        used: Number(employee?.paternity_leave_used ?? 0),
-        balance: Number(employee?.paternity_leave_balance ?? 0),
-      }
-    : ledgerType === "maternity"
-    ? {
-        title: "Maternity Leave Ledger",
-        subtitle: "Approved Maternity Leave records",
-        leaveTypes: ["Maternity Leave"],
-        entitlement: Number(employee?.maternity_leave_total ?? 0),
-        used: Number(employee?.maternity_leave_used ?? 0),
-        balance: Number(employee?.maternity_leave_balance ?? 0),
-      }
-    : ledgerType === "sick"
-    ? {
-        title: "Sick Leave Ledger",
-        subtitle: "Approved Sick Leave records",
-        leaveTypes: ["Sick Leave"],
-        entitlement: Number((employee as any)?.sick_leave_total ?? 0),
-        used: Number((employee as any)?.sick_leave_used ?? 0),
-        balance: Number((employee as any)?.sick_leave_balance ?? 0),
-      }
-    : {
-        title: "Annual Leave Ledger",
-        subtitle: "Approved Annual, Emergency and Encash Leave records",
-        leaveTypes: ANNUAL_GROUP_TYPES,
-        entitlement: Number(employee?.total_leaves ?? 0),
-        used: Number(employee?.leaves_used ?? 0),
-        balance: Number(employee?.balance_leaves ?? 0),
-      };
+    ledgerType === "paternity"
+      ? {
+          title: "Paternity Leave Ledger",
+          subtitle: "Approved Paternity Leave records",
+          leaveTypes: ["Paternity Leave"],
+          entitlement: Number(employee?.paternity_leave_total ?? 0),
+          used: Number(employee?.paternity_leave_used ?? 0),
+          balance: Number(employee?.paternity_leave_balance ?? 0),
+        }
+      : ledgerType === "maternity"
+      ? {
+          title: "Maternity Leave Ledger",
+          subtitle: "Approved Maternity Leave records",
+          leaveTypes: ["Maternity Leave"],
+          entitlement: Number(employee?.maternity_leave_total ?? 0),
+          used: Number(employee?.maternity_leave_used ?? 0),
+          balance: Number(employee?.maternity_leave_balance ?? 0),
+        }
+      : {
+          title: "Sick Leave Ledger",
+          subtitle: "Approved Sick Leave records",
+          leaveTypes: SICK_GROUP_TYPES,
+          entitlement: Number(employee?.sick_leave_total ?? 0),
+          used: Number(employee?.sick_leave_used ?? 0),
+          balance: Number(employee?.sick_leave_balance ?? 0),
+        };
+
   useEffect(() => {
     let active = true;
 
@@ -135,8 +128,8 @@ export default function LeaveLedgerPage({
             : currentLedgerType === "maternity"
             ? ["Maternity Leave"]
             : currentLedgerType === "sick"
-            ? ["Sick Leave"]
-            : ANNUAL_GROUP_TYPES;
+            ? SICK_GROUP_TYPES
+            : [];
 
         const [employeeRes, leaveRes] =
           await Promise.all([
@@ -248,20 +241,16 @@ export default function LeaveLedgerPage({
 
   const totalEntitlement = ledgerConfig.entitlement;
 
-  const totalUsed = requests
-  .filter((request) =>
-    ledgerConfig.leaveTypes.includes(String(request.leave_type))
-  )
-  .reduce(
+  const totalUsed = requests.reduce(
     (total, request) =>
       total + Number(request.total_days || 0),
     0
   );
 
-const currentBalance = Math.max(
-  totalEntitlement - totalUsed,
-  0
-);
+  const currentBalance = Math.max(
+    totalEntitlement - totalUsed,
+    0
+  );
 
   const filteredUsedDays = filteredRequests.reduce(
     (total, request) =>

@@ -65,8 +65,8 @@ export async function getActiveLeaveEmployeeIds() {
     .from("leave_requests")
     .select("employee_id")
     .eq("status", "Approved")
-    .lte("from_date", today)
-    .gte("to_date", today);
+    .lte("start_date", today)
+    .gte("end_date", today);
 
   if (error) return [];
 

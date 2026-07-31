@@ -253,7 +253,7 @@ export default function LeaveRequestsPage() {
           <>
             <LeaveTable
               title="Pending Leave Applications"
-              leaves={pending}
+              leaves={pending.slice(0, 10)}
               showActions
               approveLeave={approveLeave}
               rejectLeave={rejectLeave}
@@ -578,8 +578,8 @@ function ApprovedEmployeeAccordion({
               )
             )}
           </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
     </section>
   );
 }
@@ -600,7 +600,8 @@ function LeaveTable({
       </h2>
 
       <div className="overflow-x-auto border rounded-xl">
-        <table className="min-w-[1250px] w-full text-sm border-collapse">
+        <div className="max-h-[650px] overflow-y-auto">
+          <table className="min-w-[1250px] w-full text-sm border-collapse">
           <thead>
             <tr className="bg-[#d2b241] text-white">
               <th className="p-3 text-left">Employee</th>
@@ -668,9 +669,17 @@ function LeaveTable({
                   </td>
 
                   <td className="p-3">
-                    {leave.employee?.balance_leaves ??
-                      leave.employees?.balance_leaves ??
-                      "-"}
+                    {leave.leave_type === "Sick Leave"
+  ? (
+      leave.employee?.sick_leave_balance ??
+      leave.employees?.sick_leave_balance ??
+      "-"
+    )
+  : (
+      leave.employee?.balance_leaves ??
+      leave.employees?.balance_leaves ??
+      "-"
+    )}
                   </td>
 
                   <td className="p-3 font-semibold">
@@ -718,6 +727,7 @@ function LeaveTable({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <p className="text-xs text-gray-400 mt-2">

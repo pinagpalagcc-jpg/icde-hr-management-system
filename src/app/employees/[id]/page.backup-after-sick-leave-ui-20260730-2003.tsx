@@ -93,8 +93,9 @@ export default function EmployeeProfilePage({
 
     const annualGroupTypes = [
       "Annual Leave",
+      "Sick Leave",
       "Emergency Leave",
-      "Encash Leave",
+  "Encash Leave",
     ];
 
     const approvedAnnualRequests = Array.isArray(leaveData)
@@ -1056,23 +1057,17 @@ export default function EmployeeProfilePage({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MiniKpi
             title="Total"
-            value={`${employee.sick_leave_total ?? 0} Days`}
-            onClick={() => {
-              window.location.href = `/employees/${id}/sick-leave-register`;
-            }}
+            value="0 Days"
           />
 
           <MiniKpi
             title="Used"
-            value={`${employee.sick_leave_used ?? 0} Days`}
-            onClick={() => {
-              window.location.href = `/employees/${id}/sick-leave-ledger`;
-            }}
+            value="0 Days"
           />
 
           <MiniKpi
             title="Balance"
-            value={`${employee.sick_leave_balance ?? 0} Days`}
+            value="0 Days"
           />
         </div>
       </div>

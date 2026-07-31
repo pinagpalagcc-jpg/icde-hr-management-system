@@ -218,35 +218,11 @@ if (
           Submit leave request for Admin approval.
         </p>
 
-        {![
-          "Unpaid Leave",
-          "Holiday Credit Leave",
-          "Maternity Leave",
-          "Paternity Leave",
-        ].includes(form.leave_type) && (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Kpi
-            title="Total Leaves"
-            value={`${form.leave_type === "Sick Leave"
-              ? employee.sick_leave_total ?? 0
-              : employee.total_leaves ?? 0} Days`}
-          />
-
-          <Kpi
-            title="Leaves Used"
-            value={`${form.leave_type === "Sick Leave"
-              ? employee.sick_leave_used ?? 0
-              : employee.leaves_used ?? 0} Days`}
-          />
-
-          <Kpi
-            title="Balance Leaves"
-            value={`${form.leave_type === "Sick Leave"
-              ? employee.sick_leave_balance ?? 0
-              : employee.balance_leaves ?? 0} Days`}
-          />
+          <Kpi title="Total Leaves" value={`${employee.total_leaves ?? 0} Days`} />
+          <Kpi title="Leaves Used" value={`${employee.leaves_used || 0} Days`} />
+          <Kpi title="Balance Leaves" value={`${employee.balance_leaves ?? 0} Days`} />
         </section>
-        )}
 
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-xl font-bold text-[#3f4447] mb-5">
@@ -304,19 +280,14 @@ if (
                 Selected leave days: <b>{totalDays()}</b>
               </p>
 
-              {![
-                "Unpaid Leave",
-                "Holiday Credit Leave",
-                "Maternity Leave",
-                "Paternity Leave",
-              ].includes(form.leave_type) && (
+              {isHolidayCreditLeave() ? (
+                <p className="text-sm text-green-700 mt-1 font-semibold">
+                  This leave type will not reduce balance leaves.
+                </p>
+              ) : (
                 <p className="text-sm text-gray-500 mt-1">
                   Available balance:{" "}
-                  <b>{
-                    form.leave_type === "Sick Leave"
-                      ? Number(employee?.sick_leave_balance ?? 0)
-                      : Number(employee?.balance_leaves ?? 0)
-                  } Days</b>
+                  <b>{Number(employee?.balance_leaves || 0)} Days</b>
                 </p>
               )}
             </div>

@@ -93,8 +93,9 @@ export default function EmployeeProfilePage({
 
     const annualGroupTypes = [
       "Annual Leave",
+      "Sick Leave",
       "Emergency Leave",
-      "Encash Leave",
+  "Encash Leave",
     ];
 
     const approvedAnnualRequests = Array.isArray(leaveData)

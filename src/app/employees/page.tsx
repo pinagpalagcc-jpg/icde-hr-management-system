@@ -1,4 +1,5 @@
 import { departments, getEmployees, getActiveLeaveEmployeeIds, displayStatus } from "@/lib/hr";
+import { supabase } from "@/lib/supabase";
 import ExportEmployeesButton from "@/components/ExportEmployeesButton";
 
 export default async function EmployeesPage({
@@ -13,6 +14,22 @@ export default async function EmployeesPage({
 
   const employees = await getEmployees();
   const activeLeaveIds = await getActiveLeaveEmployeeIds();
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: activeLeaves } = await supabase
+    .from("leave_requests")
+    .select("employee_id, start_date, end_date")
+    .eq("status", "Approved")
+    .lte("start_date", today)
+    .gte("end_date", today);
+
+  const activeLeaveMap = new Map(
+    (activeLeaves || []).map((leave: any) => [
+      leave.employee_id,
+      leave,
+    ])
+  );
 
   const filteredEmployees = employees.filter((employee: any) => {
     const matchesDepartment =
@@ -75,6 +92,8 @@ export default async function EmployeesPage({
               <h2 className="text-xl font-bold text-[#3f4447]">
                 {selectedDepartment
                   ? `${selectedDepartment} Employees`
+                  : selectedStatus === "On Leave"
+                  ? "Employees On Leave"
                   : selectedStatus
                   ? `${selectedStatus} Employees`
                   : "All Employees"}

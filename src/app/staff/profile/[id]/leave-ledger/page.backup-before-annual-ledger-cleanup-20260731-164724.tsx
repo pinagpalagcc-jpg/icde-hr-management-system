@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const ANNUAL_GROUP_TYPES = [
   "Annual Leave",
+  "Sick Leave",
   "Emergency Leave",
   "Encash Leave",
 ];
@@ -72,41 +73,33 @@ export default function LeaveLedgerPage({
     useState<string | null>(null);
 
   const ledgerConfig =
-  ledgerType === "paternity"
-    ? {
-        title: "Paternity Leave Ledger",
-        subtitle: "Approved Paternity Leave records",
-        leaveTypes: ["Paternity Leave"],
-        entitlement: Number(employee?.paternity_leave_total ?? 0),
-        used: Number(employee?.paternity_leave_used ?? 0),
-        balance: Number(employee?.paternity_leave_balance ?? 0),
-      }
-    : ledgerType === "maternity"
-    ? {
-        title: "Maternity Leave Ledger",
-        subtitle: "Approved Maternity Leave records",
-        leaveTypes: ["Maternity Leave"],
-        entitlement: Number(employee?.maternity_leave_total ?? 0),
-        used: Number(employee?.maternity_leave_used ?? 0),
-        balance: Number(employee?.maternity_leave_balance ?? 0),
-      }
-    : ledgerType === "sick"
-    ? {
-        title: "Sick Leave Ledger",
-        subtitle: "Approved Sick Leave records",
-        leaveTypes: ["Sick Leave"],
-        entitlement: Number((employee as any)?.sick_leave_total ?? 0),
-        used: Number((employee as any)?.sick_leave_used ?? 0),
-        balance: Number((employee as any)?.sick_leave_balance ?? 0),
-      }
-    : {
-        title: "Annual Leave Ledger",
-        subtitle: "Approved Annual, Emergency and Encash Leave records",
-        leaveTypes: ANNUAL_GROUP_TYPES,
-        entitlement: Number(employee?.total_leaves ?? 0),
-        used: Number(employee?.leaves_used ?? 0),
-        balance: Number(employee?.balance_leaves ?? 0),
-      };
+    ledgerType === "paternity"
+      ? {
+          title: "Paternity Leave Ledger",
+          subtitle: "Approved Paternity Leave records",
+          leaveTypes: ["Paternity Leave"],
+          entitlement: Number(employee?.paternity_leave_total ?? 0),
+          used: Number(employee?.paternity_leave_used ?? 0),
+          balance: Number(employee?.paternity_leave_balance ?? 0),
+        }
+      : ledgerType === "maternity"
+      ? {
+          title: "Maternity Leave Ledger",
+          subtitle: "Approved Maternity Leave records",
+          leaveTypes: ["Maternity Leave"],
+          entitlement: Number(employee?.maternity_leave_total ?? 0),
+          used: Number(employee?.maternity_leave_used ?? 0),
+          balance: Number(employee?.maternity_leave_balance ?? 0),
+        }
+      : {
+          title: "Annual Leave Ledger",
+          subtitle: "Approved Annual, Sick and Emergency Leave records",
+          leaveTypes: ANNUAL_GROUP_TYPES,
+          entitlement: Number(employee?.total_leaves ?? 0),
+          used: Number(employee?.leaves_used ?? 0),
+          balance: Number(employee?.balance_leaves ?? 0),
+        };
+
   useEffect(() => {
     let active = true;
 
@@ -134,8 +127,6 @@ export default function LeaveLedgerPage({
             ? ["Paternity Leave"]
             : currentLedgerType === "maternity"
             ? ["Maternity Leave"]
-            : currentLedgerType === "sick"
-            ? ["Sick Leave"]
             : ANNUAL_GROUP_TYPES;
 
         const [employeeRes, leaveRes] =
@@ -249,8 +240,11 @@ export default function LeaveLedgerPage({
   const totalEntitlement = ledgerConfig.entitlement;
 
   const totalUsed = requests
-  .filter((request) =>
-    ledgerConfig.leaveTypes.includes(String(request.leave_type))
+  .filter(
+    (request) =>
+      request.leave_type === "Annual Leave" ||
+      request.leave_type === "Emergency Leave" ||
+      request.leave_type === "Encash Leave"
   )
   .reduce(
     (total, request) =>
