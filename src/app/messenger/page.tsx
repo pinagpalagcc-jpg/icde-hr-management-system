@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Employee = {
@@ -2004,12 +2006,22 @@ function Sidebar() {
   return (
     <aside className="hidden w-72 shrink-0 flex-col justify-between bg-[#3f4447] p-6 text-white md:flex">
       <div>
-        <div className="mb-10 text-3xl font-bold tracking-widest">
-          IC
-          <span className="text-[#d2b241]">
-            D
-          </span>
-          E
+        <div className="mb-10 text-center">
+          <Image
+            src="/logo/icde-logo.png"
+            alt="ICDE"
+            width={320}
+            height={120}
+            priority
+            className="mx-auto w-full max-w-[220px] h-auto"
+          />
+          <div className="mt-4 text-sm text-white/90">
+            HR Management Portal
+          </div>
+          <div className="mx-auto mt-3 h-[3px] w-24 rounded-full bg-[#d2b241]"></div>
+          <div className="mt-3 text-xs text-white/60">
+            @2026 V.1.1
+          </div>
         </div>
 
         <nav className="space-y-3">

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import {
   Fragment,
   useEffect,
@@ -792,13 +794,22 @@ function AdminSidebar({ active }: { active: string }) {
   return (
     <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between">
       <div>
-        <div className="mb-10">
-          <div className="text-4xl font-black tracking-widest">
-            <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
+        <div className="mb-10 text-center">
+          <Image
+            src="/logo/icde-logo.png"
+            alt="ICDE"
+            width={320}
+            height={120}
+            priority
+            className="mx-auto w-full max-w-[220px] h-auto"
+          />
+          <div className="mt-4 text-sm text-white/90">
+            HR Management Portal
           </div>
-          <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
-          <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
-          <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
+          <div className="mx-auto mt-3 h-[3px] w-24 rounded-full bg-[#d2b241]"></div>
+          <div className="mt-3 text-xs text-white/60">
+            @2026 V.1.1
+          </div>
         </div>
 
         <nav className="space-y-3">

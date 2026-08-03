@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function LoginPage() {
@@ -76,11 +77,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f7f4ec] flex items-center justify-center p-6">
       <section className="w-full max-w-5xl bg-white rounded-3xl shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2">
         <div className="bg-[#3f4447] text-white p-12 flex flex-col justify-center">
-          <div className="text-7xl font-serif tracking-widest font-bold leading-none">
-            <span className="text-white">IC</span>
-            <span className="text-[#d2b241]">D</span>
-            <span className="text-white">E</span>
-          </div>
+          <Image
+            src="/logo/icde-logo.png"
+            alt="ICDE"
+            width={300}
+            height={80}
+            priority
+            className="mx-auto w-full max-w-[300px] h-auto"
+/>
 
           <div className="w-32 h-[4px] bg-[#d2b241] mt-6 rounded-full"></div>
 

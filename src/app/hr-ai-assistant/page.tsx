@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -346,19 +348,23 @@ export default function HRAIAssistantPage() {
     <div className="flex h-screen overflow-hidden bg-[#f7f4ec]">
       <aside className="hidden h-screen w-72 shrink-0 flex-col justify-between bg-[#3f4447] p-6 text-white md:flex">
         <div>
-          <div className="text-3xl font-bold tracking-[0.18em]">
-            <span>IC</span>
-            <span className="text-[#d2b241]">
-              D
-            </span>
-            <span>E</span>
+          <div className="mb-10 text-center">
+            <Image
+              src="/logo/icde-logo.png"
+              alt="ICDE"
+              width={320}
+              height={120}
+              priority
+              className="mx-auto w-full max-w-[220px] h-auto"
+            />
+            <div className="mt-4 text-sm text-white/90">
+              HR Management Portal
+            </div>
+            <div className="mx-auto mt-3 h-[3px] w-24 rounded-full bg-[#d2b241]"></div>
+            <div className="mt-3 text-xs text-white/60">
+              @2026 V.1.1
+            </div>
           </div>
-
-          <p className="mt-3 text-sm text-white/90">
-            HR Management Portal
-          </p>
-
-          <div className="mt-4 h-[3px] w-24 rounded-full bg-[#d2b241]" />
 
           <nav className="mt-10 space-y-2">
             {menu.map(([label, href]) => {

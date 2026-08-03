@@ -1,3 +1,4 @@
+import Image from "next/image";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -205,12 +206,17 @@ function Sidebar({ active }: { active: string }) {
   return <aside className="w-72 shrink-0 bg-[#3f4447] text-white p-6 hidden md:flex flex-col justify-between"><div>
         
       <div className="mb-10">
-        <div className="text-4xl font-black tracking-widest">
-          <span className="text-white">IC</span><span className="text-[#d2b241]">D</span><span className="text-white">E</span>
-        </div>
-        <div className="text-sm text-white/90 mt-3">HR Management Portal</div>
-        <div className="w-24 h-[3px] bg-[#d2b241] mt-3 rounded-full"></div>
-        <div className="text-xs text-white/60 mt-3">@2026 V.1.1</div>
+        <Image
+          src="/logo/icde-logo.png"
+          alt="ICDE"
+          width={300}
+          height={100}
+          priority
+          className="mx-auto w-full max-w-[220px] h-auto"
+        />
+        <div className="text-sm text-white/90 mt-3 text-center">HR Management Portal</div>
+        <div className="w-24 h-[3px] bg-[#d2b241] mt-3 mx-auto rounded-full"></div>
+        <div className="text-xs text-white/60 mt-3 text-center">@2026 V.1.1</div>
       </div>
       <nav className="space-y-3">{items.map(([n,h])=><a key={n} href={h} className={`block px-4 py-3 rounded-xl ${active===n?"bg-[#d2b241] font-semibold":"hover:bg-white/10"}`}>{n}</a>)}</nav></div><a href="/logout" className="block text-center w-full rounded-2xl border border-white/25 py-4 text-white font-semibold hover:bg-white/10">Sign Out</a></aside>;
 }
