@@ -7,6 +7,7 @@ type Employee = {
   first_name?: string;
   middle_name?: string;
   last_name?: string;
+  joining_date?: string;
 };
 
 type Transaction = {
@@ -324,6 +325,10 @@ export default function AnnualLeaveRegisterPage({
               {employee?.employee_id
                 ? ` — ${employee.employee_id}`
                 : ""}
+            </p>
+
+            <p className="text-gray-500 mt-1">
+              Date of Joining: {employee?.joining_date || "-"}
             </p>
           </div>
 
