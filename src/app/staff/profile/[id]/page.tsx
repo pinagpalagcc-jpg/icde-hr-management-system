@@ -495,6 +495,7 @@ export default function StaffProfilePage({
             <DocumentCenter
               category="HAAD"
               documents={documents}
+             
             />
           )}
       </main>
@@ -515,7 +516,7 @@ function DocumentCenter({
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10">
       <h2 className="text-xl font-bold text-[#3f4447] mb-2">{category}</h2>
       <p className="text-gray-500 text-sm mb-6">
-        View-only access. You can preview and download documents.
+        View-only access. You can preview documents or securely email them to yourself.
       </p>
 
       <div className="overflow-x-auto border rounded-xl">
@@ -527,7 +528,7 @@ function DocumentCenter({
               <th className="p-3 text-left">Date of Expiry</th>
               <th className="p-3 text-left">Remaining Days</th>
               <th className="p-3 text-left">Preview</th>
-              <th className="p-3 text-left">Download</th>
+              
             </tr>
           </thead>
 
@@ -546,37 +547,14 @@ function DocumentCenter({
                         {info.text}
                       </span>
                     </td>
-                    <td className="p-3">
-                      {doc.file_data ? (
-                        <button
-                          onClick={() => previewDoc(doc)}
-                          className="text-[#d2b241] font-bold"
-                        >
-                          Preview
-                        </button>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {doc.file_data ? (
-                        <a
-                          href={doc.file_data}
-                          download={doc.file_name || doc.document_name}
-                          className="text-[#d2b241] font-bold"
-                        >
-                          Download
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+
+
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={6} className="p-5 text-center text-gray-500">
+                <td colSpan={5} className="p-5 text-center text-gray-500">
                   No {category.toLowerCase()} uploaded yet.
                 </td>
               </tr>
@@ -586,7 +564,7 @@ function DocumentCenter({
       </div>
 
       <p className="text-xs text-gray-400 mt-2">
-        Staff can only preview and download documents. Upload and delete are Admin-only.
+        Staff can preview documents or securely email them to their registered email address. Upload and delete are Admin-only.
       </p>
     </section>
   );
