@@ -13,8 +13,8 @@ export default function LogoutPage() {
       } catch (error) {
         console.error("Logout request failed:", error);
       } finally {
-        localStorage.removeItem("icde_user_id");
-        localStorage.removeItem("icde_user_role");
+        localStorage.clear();
+        sessionStorage.clear();
 
         document.cookie =
           "icde_auth=; path=/; max-age=0";

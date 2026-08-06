@@ -110,8 +110,39 @@ export default function AuthGuard({
 
     verifySession();
 
+    let logoutTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function clearLogoutTimer() {
+      if (logoutTimer) {
+        clearTimeout(logoutTimer);
+        logoutTimer = null;
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        clearLogoutTimer();
+
+        logoutTimer = setTimeout(() => {
+          window.location.replace("/logout");
+        }, 2 * 60 * 1000);
+      } else {
+        clearLogoutTimer();
+      }
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
     return () => {
       active = false;
+      clearLogoutTimer();
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
     };
   }, []);
 
