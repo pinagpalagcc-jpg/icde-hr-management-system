@@ -547,7 +547,19 @@ function DocumentCenter({
                         {info.text}
                       </span>
                     </td>
-
+                    <td className="p-3">
+                      {doc.file_data ? (
+                        <button
+                          type="button"
+                          onClick={() => previewDoc(doc)}
+                          className="text-[#d2b241] font-bold"
+                        >
+                          Preview
+                        </button>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
                   </tr>
                 );
