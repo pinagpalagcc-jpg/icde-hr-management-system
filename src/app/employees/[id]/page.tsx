@@ -68,6 +68,19 @@ export default function EmployeeProfilePage({
     file_data: "",
   });
 
+  const [showEmailDialog, setShowEmailDialog] =
+    useState(false);
+
+  const [selectedDocument, setSelectedDocument] =
+    useState<any>(null);
+
+  const [emailAddress, setEmailAddress] =
+    useState("");
+
+  const [sendingEmail, setSendingEmail] =
+    useState(false);
+
+
   useEffect(() => {
     Promise.resolve(params).then((p) => {
       setId(p.id);
@@ -75,6 +88,16 @@ export default function EmployeeProfilePage({
       loadDocuments(p.id);
     });
   }, [params]);
+
+  function openEmailDialog(document: any) {
+    setSelectedDocument(document);
+
+    setEmailAddress(
+      employee?.email || ""
+    );
+
+    setShowEmailDialog(true);
+  }
 
   async function loadEmployee(employeeId: string) {
     const [employeeResponse, leaveResponse] = await Promise.all([
@@ -524,6 +547,37 @@ export default function EmployeeProfilePage({
     await loadDocuments(id);
 
     alert("ICDE Form updated successfully.");
+  }
+
+
+  async function sendDocumentEmail() {
+    if (!selectedDocument) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/employee-documents/${selectedDocument.id}/email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailAddress,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error || "Unable to send email.");
+      return;
+    }
+
+    alert(result.message || "Document emailed successfully.");
+
+    setShowEmailDialog(false);
   }
 
   async function deleteDocument(documentId: string) {
@@ -1180,15 +1234,18 @@ export default function EmployeeProfilePage({
 )}
 
         {activeTab === "Office Documents" && (
-          <DocumentCenter category="Office Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument} />
+          <DocumentCenter category="Office Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument}
+            onEmailClick={openEmailDialog} />
         )}
 
         {activeTab === "Immigration Documents" && (
-          <DocumentCenter category="Immigration Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument} />
+          <DocumentCenter category="Immigration Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument}
+            onEmailClick={openEmailDialog} />
         )}
 
         {activeTab === "Personal Documents" && (
-          <DocumentCenter category="Personal Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument} />
+          <DocumentCenter category="Personal Documents" docForm={docForm} setDocForm={setDocForm} handleFile={handleFile} uploadDocument={uploadDocument} documents={documents} deleteDocument={deleteDocument}
+            onEmailClick={openEmailDialog} />
         )}
 
         {activeTab === "ICDE Forms" && (
@@ -1267,6 +1324,90 @@ export default function EmployeeProfilePage({
           )}
 
         <AuditSection status={employee.status || "Available"} />
+
+      {showEmailDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+
+            <div className="border-b px-6 py-4">
+              <h2 className="text-2xl font-bold text-[#3f4447]">
+                Send Employee Document
+              </h2>
+            </div>
+
+            <div className="space-y-5 p-6">
+
+              <div>
+                <label className="text-sm font-semibold text-gray-500">
+                  Employee
+                </label>
+                <div className="mt-2 rounded-xl border bg-gray-50 px-4 py-3">
+                  {employee?.first_name} {employee?.last_name}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-500">
+                  Document
+                </label>
+                <div className="mt-2 rounded-xl border bg-gray-50 px-4 py-3">
+                  {selectedDocument?.document_name}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-500">
+                  Registered Email
+                </label>
+                <div className="mt-2 rounded-xl border bg-gray-50 px-4 py-3">
+                  {employee?.email || "-"}
+                </div>
+              </div>
+
+              <div className="text-center text-sm font-semibold text-gray-400">
+                OR
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-500">
+                  Send to another Email
+                </label>
+
+                <input
+                  type="email"
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  placeholder="example@email.com"
+                  className="mt-2 w-full rounded-xl border px-4 py-3"
+                />
+              </div>
+
+            </div>
+
+            <div className="flex justify-end gap-3 border-t px-6 py-4">
+
+              <button
+                type="button"
+                onClick={() => setShowEmailDialog(false)}
+                className="rounded-xl border px-5 py-2 font-semibold"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={sendDocumentEmail}
+                className="rounded-xl bg-[#d2b241] px-6 py-2 font-semibold text-white"
+              >
+                Send Email
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
       </main>
     </div>
   );
@@ -1566,7 +1707,16 @@ function ICDEFormsCenter({
   );
 }
 
-function DocumentCenter({ category, docForm, setDocForm, handleFile, uploadDocument, documents, deleteDocument }: any) {
+function DocumentCenter({
+  category,
+  docForm,
+  setDocForm,
+  handleFile,
+  uploadDocument,
+  documents,
+  deleteDocument,
+  onEmailClick,
+}: any) {
   const rows = documents.filter((d: any) => d.category === category);
 
   return (
@@ -1642,7 +1792,15 @@ function DocumentCenter({ category, docForm, setDocForm, handleFile, uploadDocum
                     <td className="px-2 py-2 whitespace-nowrap text-sm"><span className={`${info.className} px-3 py-1 rounded-full font-semibold`}>{info.daysText}</span></td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm"><span className={`${info.className} px-3 py-1 rounded-full font-semibold`}>{info.status}</span></td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm">{doc.file_data ? <button type="button" onClick={() => previewDoc(doc)} className="text-[#d2b241] font-bold">Preview</button> : "-"}</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm">{doc.file_data ? <a href={doc.file_data} download={doc.file_name || doc.document_name} className="text-[#d2b241] font-bold">Download</a> : "-"}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm">{doc.file_data ? (
+  <button
+    type="button"
+    onClick={() => onEmailClick(doc)}
+    className="text-[#d2b241] font-bold"
+  >
+    Email
+  </button>
+) : "-"}</td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm"><button onClick={() => deleteDocument(doc.id)} className="bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold">Delete</button></td>
                   </tr>
                 );
